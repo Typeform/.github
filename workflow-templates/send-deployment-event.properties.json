@@ -1,0 +1,5 @@
+{
+  "name": "Send Deployment Event for 4KM",
+  "description": "Send Deployment Frequency Event to 4KM",
+  "iconName": "send-deployment-event"
+}
