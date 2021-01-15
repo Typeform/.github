@@ -1,0 +1,16 @@
+name: Release
+on:
+  release:
+    types: [released]
+
+jobs:
+  release:
+    runs-on: [self-hosted, node-12, automatic-checks]
+    steps:
+      - uses: Typeform/.github/shared-actions/send-deployment-event@master
+        with:
+          user-id: ${{ secrets.DEPLOYMENT_SEGMENT_USER_ID }}
+          event: "engineering_deploy"
+          repository-slug: ${{ github.repository }}
+          segment-deploy-key: ${{ secrets.DEPLOYMENT_SEGMENT_WRITE_KEY }}
+          is-internal-repository-deployment: true

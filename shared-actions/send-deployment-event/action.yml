@@ -1,0 +1,29 @@
+name: tf-send-deployment-event
+author: Typeform
+description: Github Action for sending deployment events
+inputs:
+  user-id:
+    description: string, segment user id
+    required: true
+  event:
+    description: string, name of event
+    required: true
+  repository-slug:
+    description: string, for example Typeform/siesta
+    required: true
+  segment-deploy-key:
+    description: string, the deploy key of segment
+    required: true
+  is-internal-repository-deployment:
+    description: boolean,
+    default: false
+    required: false
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
+
+branding:
+  icon: 'send'
+  color: 'purple'
+

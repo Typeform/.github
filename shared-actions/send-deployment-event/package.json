@@ -1,0 +1,21 @@
+{
+  "name": "@typeform/.github",
+  "version": "0.0.1",
+  "description": "GitHub Action for sending segment event",
+  "main": "deployment-frequency-event.js",
+  "repository": "git@github.com:Typeform/.github.git",
+  "license": "NOLICENSE",
+  "private": false,
+  "dependencies": {
+    "analytics-node": "^3.5.0",
+    "@actions/core": "^1.2.6",
+    "@actions/github": "^4.0.0"
+  },
+  "devDependencies": {
+    "@zeit/ncc": "^0.22.3"
+  },
+  "scripts": {
+    "distribute": "yarn ncc build deployment-frequency-event.js",
+    "send-deployment-event": "node deployment-frequency-event.js"
+  }
+}
