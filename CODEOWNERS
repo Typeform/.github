@@ -1,1 +1,6 @@
 * @Typeform/security
+shared-actions/send-deployment-event @Typeform/seti
+workflow-templates/send-deployment-event.properties.json @Typeform/seti
+workflow-templates/send-deployment-event.svg @Typeform/seti
+workflow-templates/send-deployment-event.yml @Typeform/seti
+
