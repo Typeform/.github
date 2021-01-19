@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Check if docker is installed
-if [ ! "$(which docker)" -eq "0" ]; then
+if ! command -v "docker" &> /dev/null
+then
     echo "Unable to find docker. Is it installed and added to your \$PATH?"
     exit 1
 fi
