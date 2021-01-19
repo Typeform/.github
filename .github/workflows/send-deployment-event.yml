@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    runs-on: [self-hosted, node-12, automatic-checks]
+    runs-on: [ubuntu-latest]
     steps:
       - uses: Typeform/.github/shared-actions/send-deployment-event@master
         with:
