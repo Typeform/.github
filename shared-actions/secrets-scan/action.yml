@@ -12,6 +12,7 @@ inputs:
     required: true
   gh-token:
     description: 'Github Token'
+    required: true
 runs:
   using: "composite"
   steps:
