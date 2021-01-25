@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Check if docker is installed
 if ! command -v "docker" &> /dev/null
@@ -53,5 +52,5 @@ fi
 docker container run --rm --name=gitleaks \
     -v $final_config:$final_config \
     -v $repo_dir:/tmp/$repo_name \
-    $gitleaks_container:$gitleaks_version --config=$final_config --repo=/tmp/$repo_name --verbose --pretty \
+    $gitleaks_container:$gitleaks_version --config-path=$final_config --path=/tmp/$repo_name --verbose --pretty \
     $commit_opts
