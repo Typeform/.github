@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Check if docker is installed
 if ! command -v "docker" &> /dev/null
