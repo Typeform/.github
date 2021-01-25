@@ -23,6 +23,7 @@ repo_name="$(basename "$repo_dir")"
 # Generate gitleaks configuration
 local_config=".gitleaks.toml"
 final_config="/tmp/gitleaks_config.toml"
+commits_file="/tmp/commit_list.txt"
 gitleaks_config_container="${DOCKER_REGISTRY}/typeform/gitleaks-config"
 gitleaks_container="zricethezav/gitleaks"
 gitleaks_version="v7.2.0"
@@ -43,14 +44,15 @@ else
     # We're on a PR
     git --git-dir="$GITHUB_WORKSPACE/.git" log \
         --left-right --cherry-pick --pretty=format:"%H" \
-        remotes/origin/$GITHUB_BASE_REF... > commit_list.txt
+        remotes/origin/$GITHUB_BASE_REF... > $commits_file
 
-    commit_opts="--commits-file=commit_list.txt"
+    commit_opts="--commits-file=${commits_file}"
 fi
 
 # Run gitleaks with the generated config
 docker container run --rm --name=gitleaks \
     -v $final_config:$final_config \
+    -v $commits_file:$commits_file \
     -v $repo_dir:/tmp/$repo_name \
     $gitleaks_container:$gitleaks_version --config-path=$final_config --path=/tmp/$repo_name --verbose \
     $commit_opts
