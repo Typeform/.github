@@ -18,7 +18,7 @@ runs:
     - run: docker login -u=${{ inputs.docker-username }} -p=${{ inputs.docker-password }} ${{ inputs.docker-registry}}
       shell: bash
 
-    - run: ${{ github.action_path }}/secret-scan.sh
+    - run: ${{ github.action_path }}/secrets-scan.sh
       env:
         DOCKER_REGISTRY: ${{ inputs.docker-registry }}
         DOCKER_USERNAME: ${{ inputs.docker-username }}
