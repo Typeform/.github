@@ -45,7 +45,7 @@ else
         --left-right --cherry-pick --pretty=format:"%H" \
         remotes/origin/$GITHUB_BASE_REF... > commit_list.txt
 
-    commit_opts="--commit-file=commit_list.txt"
+    commit_opts="--commits-file=commit_list.txt"
 fi
 
 # Run gitleaks with the generated config
