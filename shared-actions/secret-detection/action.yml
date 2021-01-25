@@ -1,0 +1,27 @@
+name: Secrets Scan
+description: 'Scan for secrets using Gitleaks'
+inputs:
+  docker-username:
+    description: 'Docker Username'
+    required: true
+  docker-password:
+    description: 'Docker Password'
+    required: true
+  docker-registry:
+    description: 'Docker Registry'
+    required: true
+  gh-token:
+    description: 'Github Token'
+runs:
+  using: "composite"
+  steps:
+    - run: docker login -u=${{ inputs.docker-username }} -p=${{ inputs.docker-password }} ${{ inputs.docker-registry}}
+      shell: bash
+
+    - run: ${{ github.action_path }}/secret-scan.sh
+      env:
+        DOCKER_REGISTRY: ${{ inputs.docker-registry }}
+        DOCKER_USERNAME: ${{ inputs.docker-username }}
+        DOCKER_PASSWORD: ${{ inputs.docker-password }}
+        GH_TOKEN: ${{ inputs.gh-token }}
+      shell: bash
