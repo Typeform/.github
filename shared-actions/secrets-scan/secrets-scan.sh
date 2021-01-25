@@ -52,5 +52,5 @@ fi
 docker container run --rm --name=gitleaks \
     -v $final_config:$final_config \
     -v $repo_dir:/tmp/$repo_name \
-    $gitleaks_container:$gitleaks_version --config-path=$final_config --path=/tmp/$repo_name --verbose --pretty \
+    $gitleaks_container:$gitleaks_version --config-path=$final_config --path=/tmp/$repo_name --verbose \
     $commit_opts
