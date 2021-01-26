@@ -38,10 +38,10 @@ else
 fi
 
 if [ -z "${GITHUB_BASE_REF}" ]; then
-    # We're on master
+    # push event
     commit_opts="--commit=${GITHUB_SHA}"
 else
-    # We're on a PR
+    # pull_request event
     git --git-dir="$GITHUB_WORKSPACE/.git" log \
         --left-right --cherry-pick --pretty=format:"%H" \
         remotes/origin/$GITHUB_BASE_REF... > $commits_file
