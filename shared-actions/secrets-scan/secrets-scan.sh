@@ -22,8 +22,8 @@ repo_name="$(basename "$repo_dir")"
 
 # Generate gitleaks configuration
 local_config=".gitleaks.toml"
-final_config="/tmp/gitleaks_config.toml"
-commits_file="/tmp/commit_list.txt"
+final_config="${repo_dir}/tmp.${RANDOM}/gitleaks_config.toml"
+commits_file="${repo_dir}/tmp.${RANDOM}/commit_list.txt"
 gitleaks_config_container="${DOCKER_REGISTRY}/typeform/gitleaks-config"
 gitleaks_container="zricethezav/gitleaks"
 gitleaks_version="v7.2.0"
