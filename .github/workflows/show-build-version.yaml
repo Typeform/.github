@@ -1,0 +1,22 @@
+name: Show Build Version
+
+on:
+  pull_request:
+    branches:
+      - master
+
+env:
+  VERSION: ${{ github.run_id }}
+
+jobs:
+  show-build-version:
+    runs-on: [ self-hosted, automated-checks ]
+
+    steps:
+      - name: Check Out Source Code
+        uses: actions/checkout@v2
+
+      - name: Show Build Version
+        uses: Typeform/.github/shared-actions/show-build-version@BEAR-1497_show_build_number_action
+        with:
+          version: ${{ env.VERSION }}
