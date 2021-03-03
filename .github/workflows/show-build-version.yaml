@@ -10,7 +10,7 @@ env:
 
 jobs:
   show-build-version:
-    runs-on: [ self-hosted, automated-checks ]
+    runs-on: [ubuntu-latest]
 
     steps:
       - name: Check Out Source Code
