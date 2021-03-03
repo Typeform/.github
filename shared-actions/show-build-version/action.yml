@@ -1,0 +1,21 @@
+name: Show Build Version
+description: 'Publish a comment to the PR with the build version'
+runs:
+  using: "composite"
+  steps:
+    - name: Find previous build version comment
+      uses: peter-evans/find-comment@v1
+      id: previous-build-version-comment
+      with:
+        issue-number: ${{ github.event.number }}
+        body-includes: deploy this build to any of the available environments
+
+    - name: Publish a build version comment to the PR
+      uses: peter-evans/create-or-update-comment@v1
+      with:
+        comment-id: ${{ steps.previous-build-version-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.number }}
+        edit-mode: replace
+        body: |
+          To deploy this build to any of the available environments, use the following information:
+          - Version: ${{ env.VERSION }}
