@@ -8,7 +8,7 @@ jobs:
   release:
     runs-on: [ubuntu-latest]
     steps:
-      - uses: Typeform/.github/shared-actions/send-deployment-event@master
+      - uses: Typeform/.github/shared-actions/send-deployment-event@seti-1020-libraries-not-reporting-correctly
         with:
           user-id: "16235864"
           event: "engineering_deploy"
