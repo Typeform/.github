@@ -4,11 +4,9 @@ const Analytics = require('analytics-node')
 try {
   const userId = core.getInput('user-id');
   const event = core.getInput('event');
-
   const isInternalRepositoryDeployment = () => {
     return core.getInput('is-internal-repository-deployment').toLowerCase() === 'true';
   }
-  console.log(isInternalRepositoryDeployment())
   const repositorySlug = core.getInput('repository-slug');
   const segmentDeployKey = core.getInput('segment-deploy-key');
 
@@ -19,7 +17,7 @@ try {
     properties: {
       repository_slug: repositorySlug,
       dt: Math.floor(new Date().getTime() / 1000),
-      is_internal_repository_deployment: isInternalRepositoryDeployment,
+      is_internal_repository_deployment: isInternalRepositoryDeployment(),
     },
   })
 } catch (error) {
