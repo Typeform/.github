@@ -4444,7 +4444,11 @@ const Analytics = __webpack_require__(39)
 try {
   const userId = core.getInput('user-id');
   const event = core.getInput('event');
-  const isInternalRepositoryDeployment = core.getInput('is-internal-repository-deployment');
+
+  const isInternalRepositoryDeployment = () => {
+    return core.getInput('is-internal-repository-deployment').toLowerCase() === 'true';
+  }
+  console.log(isInternalRepositoryDeployment())
   const repositorySlug = core.getInput('repository-slug');
   const segmentDeployKey = core.getInput('segment-deploy-key');
 
