@@ -17,6 +17,6 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Show Build Version
-        uses: Typeform/.github/shared-actions/show-build-version@BEAR-1497_show_build_number_action
+        uses: Typeform/.github/shared-actions/show-build-version@v0.0.1-beta
         with:
           version: ${{ env.VERSION }}
