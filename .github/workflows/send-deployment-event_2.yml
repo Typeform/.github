@@ -14,4 +14,5 @@ jobs:
           event: "engineering_deploy"
           repository-slug: ${{ github.repository }}
           segment-deploy-key: ${{ secrets.DEPLOYMENT_SEGMENT_WRITE_KEY }}
+          is-internal-repository-deployment: true
 
