@@ -1,5 +1,9 @@
 name: Show Build Version
 description: 'Publish a comment to the PR with the build version'
+inputs:
+  version:
+    description: string, build version
+    required: true
 runs:
   using: "composite"
   steps:
@@ -18,4 +22,4 @@ runs:
         edit-mode: replace
         body: |
           To deploy this build to any of the available environments, use the following information:
-          - Version: ${{ env.VERSION }}
+          - Version: ${{ inputs.version }}

@@ -1,0 +1,25 @@
+name: Show Build Version
+
+on:
+  pull_request:
+    branches:
+      - master
+
+env:
+  VERSION: ${{ github.run_id }}
+
+jobs:
+  show-build-version:
+    # for private repositories
+    runs-on: [ self-hosted, automated-checks ]
+    # for public repositories
+    # runs-on: [ubuntu-latest]
+
+    steps:
+      - name: Check Out Source Code
+        uses: actions/checkout@v2
+
+      - name: Show Build Version
+        uses: Typeform/.github/shared-actions/show-build-version@master
+        with:
+          version: ${{ env.VERSION }}
