@@ -4,7 +4,10 @@ const Analytics = require('analytics-node')
 try {
   const userId = core.getInput('user-id');
   const event = core.getInput('event');
-  const isInternalRepositoryDeployment = core.getInput('is-internal-repository-deployment');
+
+  const isInternalRepositoryDeployment = () => {
+    return core.getInput('is-internal-repository-deployment').toLowerCase() === 'true';
+  }
   const repositorySlug = core.getInput('repository-slug');
   const segmentDeployKey = core.getInput('segment-deploy-key');
 
