@@ -8,6 +8,7 @@ try {
   const isInternalRepositoryDeployment = () => {
     return core.getInput('is-internal-repository-deployment').toLowerCase() === 'true';
   }
+  console.log(isInternalRepositoryDeployment())
   const repositorySlug = core.getInput('repository-slug');
   const segmentDeployKey = core.getInput('segment-deploy-key');
 
