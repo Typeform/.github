@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# exit when any command fails
+set -e
+
 # Check if docker is installed
 if ! command -v "docker" &> /dev/null
 then
@@ -59,3 +62,6 @@ docker container run --rm --name=gitleaks \
     -v $repo_dir:/tmp/$repo_name \
     $gitleaks_container:$gitleaks_version --config-path=$final_config --path=/tmp/$repo_name --verbose \
     $commit_opts
+
+# Clean up
+docker logout
