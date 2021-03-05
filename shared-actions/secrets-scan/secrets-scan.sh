@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# exit when any command fails
+set -e
+
 # Check if docker is installed
 if ! command -v "docker" &> /dev/null
 then
@@ -52,6 +55,9 @@ else
     commit_opts="--commits-file=${commits_file}"
 fi
 
+# Do not exit if the gitleaks run fails. This way we can display some custom messages.
+set +e
+
 # Run gitleaks with the generated config
 docker container run --rm --name=gitleaks \
     -v $final_config:$final_config \
@@ -59,3 +65,20 @@ docker container run --rm --name=gitleaks \
     -v $repo_dir:/tmp/$repo_name \
     $gitleaks_container:$gitleaks_version --config-path=$final_config --path=/tmp/$repo_name --verbose \
     $commit_opts
+
+# Maintain the exit code of the gitleaks run
+exit_code=$?
+
+# If a secret was detected show what to do next
+notion_page='https://www.notion.so/typeform/Detecting-Secrets-and-Keeping-Them-Secret-c2c427bf1ded4b908ce9b2746ffcde88'
+
+if [ $exit_code -eq 0 ]; then
+    echo "Scan finished. No secrets were detected"
+elif [ $exit_code -eq 1 ]; then
+    echo "Scan finished. Looks like one or more secrets were uploaded, check out this Notion page to know what to do next ${notion_page}"
+else
+    echo "Error scanning"
+fi
+
+# Clean up
+docker logout
