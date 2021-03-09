@@ -82,3 +82,5 @@ fi
 
 # Clean up
 docker logout
+
+exit $exit_code
