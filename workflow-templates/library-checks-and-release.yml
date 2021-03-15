@@ -7,7 +7,13 @@ on:
       - next
       - alpha
       - beta
-
+  pull_request:
+    branches:
+      - master
+      - next
+      - alpha
+      - beta
+   
 env:
   GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
