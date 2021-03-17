@@ -1,0 +1,31 @@
+name: JS/TS environment setup
+description: 'Set up node & npm config, Get repo and install its dependencies (using cache)'
+inputs:
+  gh-token:
+    description: 'Github Token'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12
+
+    - name: Set up registry
+      run: |
+        npm config set '//npm.pkg.github.com/:_authToken' ${{ inputs.gh-token }}
+        npm config set @typeform:registry https://npm.pkg.github.com/
+
+    - name: Get yarn cache
+      uses: actions/cache@v2
+      id: yarn-cache
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('.github/workflows/**.yml') }}
+
+    - name: Install Node.js dependencies
+      if: steps.yarn-cache.outputs.cache-hit != 'true'
+      run: yarn install --frozen-lockfile
