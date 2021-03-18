@@ -2,6 +2,7 @@ name: Check PR title follows Typeform's rules
 description: 'Check PR title follows Typeform''s rules'
 runs:
   steps:
+    - name: Check PR title meets rules
     - uses: deepakputhraya/action-pr-title@master
         with:
           regex: '((?<!([A-Z]{1,10})-?)[A-Z]+-\d+)' # Regex the title should match.
