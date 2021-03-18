@@ -1,14 +1,14 @@
 name: Check PR title follows Typeform's rules
 description: 'Check PR title follows Typeform''s rules'
 runs:
+  using: "composite"
   steps:
-    - name: Check PR title meets rules
     - uses: deepakputhraya/action-pr-title@master
-        with:
-          regex: '((?<!([A-Z]{1,10})-?)[A-Z]+-\d+)' # Regex the title should match.
-          allowed_prefixes: '' # title should start with the given prefix
-          disallowed_prefixes: '' # title should not start with the given prefix
-          prefix_case_sensitive: false # title prefix are case insensitive
-          min_length: 5 # Min length of the title
-          max_length: 80 # Max length of the title
-          github_token: ${{ github.token }} # Default: ${{ github.token }}
+      with:
+        regex: '((?<!([A-Z]{1,10})-?)[A-Z]+-\d+)' # Regex the title should match.
+        allowed_prefixes: '' # title should start with the given prefix
+        disallowed_prefixes: '' # title should not start with the given prefix
+        prefix_case_sensitive: false # title prefix are case insensitive
+        min_length: 5 # Min length of the title
+        max_length: 80 # Max length of the title
+        github_token: ${{ github.token }} # Default: ${{ github.token }}
