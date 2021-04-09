@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    registries:
+      - gh-packages
+    directory: '/'
+    schedule:
+      interval: 'daily'
+    allow:
+      - dependency-name: '@typeform*'
+
+registries:
+  gh-packages:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{ secrets.GH_TOKEN }}
