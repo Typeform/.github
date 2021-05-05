@@ -9,12 +9,6 @@ make enable-git-hooks
 
 All code should pass tests, as well as be well documented. [Please also see the Commit Message Guidelines](CONTRIBUTING.MD) for how commit messages should be structured.
 
+## Credits
 
-## Developing
-
-### Prerequisites
-
-### Installation
-
-### How to run it
-
+[Yeti Vector Art by ayaankabir in Vecteezy](https://www.vecteezy.com/vector-art/125972-yeti-vector)
