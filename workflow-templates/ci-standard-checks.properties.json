@@ -1,0 +1,5 @@
+{
+  "name": "Standard Typeform CI Checks",
+  "description": "Wraps up the CI checks you need to get started with your project",
+  "iconName": "ci-standard-checks"
+}
