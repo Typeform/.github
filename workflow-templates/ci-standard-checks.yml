@@ -4,8 +4,10 @@ on:
     branches:
       - main
   pull_request:
+    types: [opened, edited, synchronize, reopened]
     branches:
-      - main
+      - main 
+  
 
 jobs:
   ci-standard-checks:
