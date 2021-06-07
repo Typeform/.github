@@ -1,0 +1,44 @@
+name: Canary Cleanup
+
+concurrency:
+  group: 'deploy'
+  cancel-in-progress: true
+
+on:
+  workflow_run:
+    workflows: ["Deploy"]
+    branches: [main]
+    types:
+      - completed
+jobs:
+  on-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'cancelled'}}
+    steps:
+      - name: Report deployment status
+        run: |
+          echo "Deploy was not successful, deploy workflow exited with status:  ${{ github.event.workflow_run.conclusion}}. You may need to revert your PR."
+
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+
+      - name: Set GitHub packages registry
+        run: |
+          npm config set '//npm.pkg.github.com/:_authToken' ${{ secrets.GH_TOKEN }}
+          npm config set @typeform:registry https://npm.pkg.github.com/
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Install jarvis
+        run: npm install @typeform/jarvis
+
+      - name: Rollback
+        run: npx jarvis canary-rollback
+        env:
+          FRONTEND_CANARY_AWS_ACCESS_KEY_ID: ${{ secrets.FRONTEND_CANARY_AWS_ACCESS_KEY_ID }}
+          FRONTEND_CANARY_AWS_SECRET_ACCESS_KEY: ${{ secrets.FRONTEND_CANARY_AWS_SECRET_ACCESS_KEY }}
