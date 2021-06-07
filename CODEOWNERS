@@ -6,4 +6,4 @@ workflow-templates/send-deployment-event.yml @Typeform/seti
 workflow-templates/ci-standard-checks.yml @Typeform/seti
 workflow-templates/ci-standard-checks.svg @Typeform/seti
 workflow-templates/ci-standard-checks.properties.json @Typeform/seti
-
+workflow-templates/frontend-canary-cleanup.yml @Typeform/frontend-architecture
