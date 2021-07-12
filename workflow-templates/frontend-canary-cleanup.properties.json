@@ -2,4 +2,8 @@
   "name": "Frontend Canary Cleaup",
   "description": "Will attempt to rollback failed canary deployments",
   "iconName": "frontend-canary-cleanup",
+   "categories": [
+     "TypeScript",
+     "JavaScript"
+   ]
 }
