@@ -12,3 +12,5 @@ All code should pass tests, as well as be well documented. [Please also see the 
 ## Credits
 
 [Yeti Vector Art by ayaankabir in Vecteezy](https://www.vecteezy.com/vector-art/125972-yeti-vector)
+
+[Vector drawing of twitter bird published by OpenClipart in Freesvg.org](https://freesvg.org/vector-drawing-of-twitter-bird)
