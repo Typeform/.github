@@ -7,3 +7,5 @@ workflow-templates/ci-standard-checks.yml @Typeform/seti
 workflow-templates/ci-standard-checks.svg @Typeform/seti
 workflow-templates/ci-standard-checks.properties.json @Typeform/seti
 workflow-templates/frontend-canary-cleanup.yml @Typeform/frontend-architecture
+workflow-templates/frontend-canary-cleanup.svg @Typeform/frontend-architecture
+workflow-templates/frontend-canary-cleanup.properties.json @Typeform/frontend-architecture
