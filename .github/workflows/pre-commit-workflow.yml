@@ -1,0 +1,38 @@
+name: Workflow to execute pre-commit checks
+
+on:
+  workflow_call:
+    inputs:
+      gha-runner-label:
+        required: true
+        type: string
+
+jobs:
+  pre-commit:
+    runs-on: ${{ inputs.gha-runner-label }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run pre-commit
+        id: run_pre_commit
+        shell: bash {0}
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
+          pre-commit run --color never --to-ref origin/${{ github.head_ref }} --from-ref origin/${{ github.base_ref }} > /tmp/pre_commit_output.out
+          pre_commit_exit_code=$?
+          cat /tmp/pre_commit_output.out
+          exit $pre_commit_exit_code
+        continue-on-error: true
+      - name: Update Pull Request comments
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            const script = require('./gh_comments.js');
+            var gh_actor = "${{ github.actor }}";
+            var gh_event_name = "${{ github.event_name }}";
+            var pre_commit_outcome = "${{ steps.run_pre_commit.outcome }}";
+            await script({github, context, gh_actor, gh_event_name, pre_commit_outcome});
+      - name: Check pre-commit Status
+        if: steps.run_pre_commit.outcome == 'failure'
+        run: exit 1  
