@@ -25,10 +25,12 @@ jobs:
         continue-on-error: true
       - name: Update Pull Request comments
         uses: actions/github-script@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
-            const script = require('./gh_comments.js');
+            const script = require('./pre-commit-workflow/gh_comments.js');
             var gh_actor = "${{ github.actor }}";
             var gh_event_name = "${{ github.event_name }}";
             var pre_commit_outcome = "${{ steps.run_pre_commit.outcome }}";
