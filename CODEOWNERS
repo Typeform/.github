@@ -1,4 +1,5 @@
 * @Typeform/security
+.github/workflows/go-lint-workflow.yaml                     @Typeform/backend-architecture
 reusable-workflows/go-lint                                  @Typeform/backend-architecture
 shared-actions/send-deployment-event                        @Typeform/engineering-intelligence
 workflow-templates/send-deployment-event.properties.json    @Typeform/engineering-intelligence
