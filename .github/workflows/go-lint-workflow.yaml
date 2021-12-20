@@ -1,0 +1,93 @@
+name: Standard Lint Workflow
+
+on:
+  workflow_call:
+    secrets:
+      GH_TOKEN:
+        required: true
+      ECR_REGISTRY:
+        required: true
+
+jobs:
+  lint:
+    if: ${{ !contains('Bot', github.event.pull_request.user.type) }}
+    name: Run linter
+    runs-on: [self-hosted, bear]
+
+    steps:
+
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Parse Repository Name
+        id: repo-name
+        run: echo "::set-output name=value::$(echo '${{ github.repository }}' | cut -d "/" -f2"
+
+      - name: Check out repository containing linter config
+        uses: actions/checkout@v2
+        with:
+          repository: Typeform/golang-builder
+          ref: main
+          path: lint-config
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Set local imports
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
+          find: "<repository>"
+          replace: ${{ steps.repo-name.outputs.value }}
+          regex: false
+          include: "lint-config/config/golangci.yaml"
+
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config --global url."https://${TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+          export GOPRIVATE=github.com/Typeform/*
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        id: golangci-lint
+        with:
+          version: v1.43.0
+          only-new-issues: true
+          args: --config lint-config/config/golangci.yaml --issues-exit-code=1
+
+      - name: Comment body
+        id: comment-body-content
+        if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
+        run: |
+          if [[ "${{ steps.golangci-lint.conclusion }}" == "success" ]]; then
+            echo "::set-output name=results::$(echo ":tada::tada: **Congratulations! Your code seems to be really nice!** :tada::tada:")"
+          else
+            echo "::set-output name=results::$(echo ":rotating_light::rotating_light: **There are linting issues, check the \`Files changed\` tab for more info** :rotating_light::rotating_light:")"
+          fi
+
+      - name: Find previous lint comment
+        if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
+        uses: peter-evans/find-comment@v1
+        id: previous-lint-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: To run the linter locally
+
+      - name: Publish lint comment
+        if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
+        uses: peter-evans/create-or-update-comment@v1
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+        with:
+          comment-id: ${{ steps.previous-lint-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.number }}
+          edit-mode: replace
+          body: |
+            ${{ steps.comment-body-content.outputs.results }}
+
+            To run the linter locally, please, run this command:
+            ```
+            docker run --rm \
+              -v $PWD:/app:ro \
+              -w /app \
+                ${{env.ECR_REGISTRY}}/golang-builder:latest lint-repository ${{ steps.repo-name.outputs.value }}
+            ```
