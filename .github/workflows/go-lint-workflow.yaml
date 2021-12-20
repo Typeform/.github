@@ -21,7 +21,7 @@ jobs:
 
       - name: Parse Repository Name
         id: repo-name
-        run: echo "::set-output name=value::$(echo '${{ github.repository }}' | cut -d "/" -f2"
+        run: echo "::set-output name=value::$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')"
 
       - name: Check out repository containing linter config
         uses: actions/checkout@v2
