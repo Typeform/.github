@@ -75,7 +75,7 @@ If your issue appears to be a bug, and hasn't been reported, open a new issue. P
     git push origin my-fix-branch
     ```
 
-* In GitHub, send a pull request to `siesta:master`.
+* In GitHub, send a pull request to `siesta:main`.
 * All pull requests must be reviewed by a member of the Typeform team, who will merge it when/if they feel it is good to go.
 
 ## Commit Message Guidelines
