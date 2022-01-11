@@ -10,6 +10,9 @@ on:
       fod_release_id:
         required: true
         type: string
+      files:
+        required: true
+        type: string
     secrets:
       FOD_USER:
         required: true
@@ -36,7 +39,7 @@ jobs:
       - name: Zip source code
         uses: vimtor/action-zip@v1
         with:
-          files: cmd/ internal/ pkg/ vendor/ Makefile go.mod go.sum
+          files: ${{ inputs.files }}
           dest: source.zip
       
       # Start Fortify on Demand SAST scan
