@@ -21,7 +21,7 @@ on:
 
 jobs:
   FoD-SAST-Scan:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, automated-checks]
 
     steps:
       - name: Check Out Source Code
