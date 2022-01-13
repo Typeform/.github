@@ -14,7 +14,7 @@ jobs:
     # runs-on: [ubuntu-latest]
 
     steps:
-      - uses: Typeform/.github/shared-actions/send-deployment-event@main
+      - uses: Typeform/.github/shared-actions/send-deployment-event@v1
         with:
           user-id: "16235864"
           event: "engineering_deploy"
