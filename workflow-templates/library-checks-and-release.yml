@@ -3,13 +3,13 @@ name: Library checks & release
 on:
   push:
     branches:
-      - master
+      - main
       - next
       - alpha
       - beta
   pull_request:
     branches:
-      - master
+      - main
    
 env:
   GH_TOKEN: ${{ secrets.GH_TOKEN }}
