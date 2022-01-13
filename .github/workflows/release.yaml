@@ -1,0 +1,19 @@
+name: 'release'
+on:
+  workflow_dispatch
+
+jobs:
+  release: # this releases in v1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Update major version tag
+        run: |
+          git config --global user.email "security@typeform.com"
+          git config --global user.name "Emilio Bot"
+          git tag -fa v${TAG} -m "Update v${TAG} tag"
+          git push origin v${TAG} --force
+        env:
+          TAG: 1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
