@@ -55,7 +55,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         id: golangci-lint
         with:
-          version: v1.44.0
+          version: v1.44.2
           only-new-issues: true
           skip-go-installation: true
           args: --config lint-config/config/golangci.yaml --issues-exit-code=1
