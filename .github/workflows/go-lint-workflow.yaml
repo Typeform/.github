@@ -49,13 +49,13 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.17.6'
+          go-version: '1.17.9'
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         id: golangci-lint
         with:
-          version: v1.44.2
+          version: v1.45.2
           only-new-issues: true
           skip-go-installation: true
           args: --config lint-config/config/golangci.yaml --issues-exit-code=1
