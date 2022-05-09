@@ -7,6 +7,14 @@ on:
         required: true
       ECR_REGISTRY:
         required: true
+    inputs:
+      working-directory:
+        type: string
+        required: false
+      only-new-issues:
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   lint:
@@ -15,7 +23,6 @@ jobs:
     runs-on: [self-hosted, bear]
 
     steps:
-
       - name: Check out Git repository
         uses: actions/checkout@v2
 
@@ -28,7 +35,7 @@ jobs:
         with:
           repository: Typeform/golang-builder
           ref: main
-          path: lint-config
+          path: ${{ github.workspace }}/lint-config
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set local imports
@@ -37,7 +44,7 @@ jobs:
           find: "<repository>"
           replace: ${{ steps.repo-name.outputs.value }}
           regex: false
-          include: "lint-config/config/golangci.yaml"
+          include: "${{ github.workspace }}/lint-config/config/golangci.yaml"
 
       - name: Configure git for private modules
         env:
@@ -49,16 +56,17 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.17.9'
+          go-version: "1.17.9"
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         id: golangci-lint
         with:
           version: v1.45.2
-          only-new-issues: true
+          only-new-issues: ${{ inputs.only-new-issues }}
           skip-go-installation: true
-          args: --config lint-config/config/golangci.yaml --issues-exit-code=1
+          working-directory: ${{ inputs.working-directory }}
+          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --issues-exit-code=1
 
       - name: Comment body
         id: comment-body-content
