@@ -17,10 +17,6 @@ on:
         required: false
         default: true
 
-defaults:
-  run:
-    working-directory: ${{ inputs.working-directory }}
-
 jobs:
   lint:
     if: ${{ !contains('Bot', github.event.pull_request.user.type) }}
@@ -40,7 +36,7 @@ jobs:
         with:
           repository: Typeform/golang-builder
           ref: main
-          path: lint-config
+          path: ${{ github.workspace }}/lint-config
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set local imports
@@ -71,7 +67,7 @@ jobs:
           only-new-issues: ${{ inputs.only-new-issues }}
           skip-go-installation: true
           working-directory: ${{ inputs.working-directory }}
-          args: --config lint-config/config/golangci.yaml --issues-exit-code=1
+          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --issues-exit-code=1
 
       - name: Comment body
         id: comment-body-content
