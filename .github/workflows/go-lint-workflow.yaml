@@ -17,6 +17,10 @@ on:
         required: false
         default: true
 
+defaults:
+  run:
+    working-directory: ${{ inputs.working-directory }}
+
 jobs:
   lint:
     if: ${{ !contains('Bot', github.event.pull_request.user.type) }}
