@@ -45,7 +45,7 @@ jobs:
           find: "<repository>"
           replace: ${{ steps.repo-name.outputs.value }}
           regex: false
-          include: "lint-config/config/golangci.yaml"
+          include: "${{ github.workspace }}/lint-config/config/golangci.yaml"
 
       - name: Configure git for private modules
         env:
