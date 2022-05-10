@@ -35,7 +35,7 @@ jobs:
         with:
           repository: Typeform/golang-builder
           ref: main
-          path: ${{ github.workspace }}/lint-config
+          path: lint-config
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set local imports
@@ -44,7 +44,7 @@ jobs:
           find: "<repository>"
           replace: ${{ steps.repo-name.outputs.value }}
           regex: false
-          include: "${{ github.workspace }}/lint-config/config/golangci.yaml"
+          include: "lint-config/config/golangci.yaml"
 
       - name: Configure git for private modules
         env:
