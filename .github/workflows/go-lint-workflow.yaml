@@ -58,6 +58,12 @@ jobs:
         with:
           go-version: "1.17.9"
           
+      - name: Print $PATH
+        run: echo $PATH
+      
+      - name: Print Go env
+        run: go env
+          
       - name: Download dependencies
         run: go mod download
         
