@@ -19,6 +19,10 @@ on:
         type: string
         required: false
         default: "1.17.9"
+      golangci-lint-version:
+        type: string
+        required: false
+        default: "v1.45.2"
 
 jobs:
   lint:
@@ -66,7 +70,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         id: golangci-lint
         with:
-          version: v1.45.2
+          version: ${{ inputs.golangci-lint-version }}
           only-new-issues: ${{ inputs.only-new-issues }}
           skip-go-installation: true
           working-directory: ${{ inputs.working-directory }}
