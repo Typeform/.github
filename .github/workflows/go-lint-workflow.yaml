@@ -20,7 +20,7 @@ jobs:
   lint:
     if: ${{ !contains('Bot', github.event.pull_request.user.type) }}
     name: Run linter
-    runs-on: [self-hosted, bear]
+    runs-on: [self-hosted, bear-ephemeral]
 
     steps:
       - name: Check out Git repository
