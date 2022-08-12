@@ -23,6 +23,14 @@ on:
         type: string
         required: false
         default: "v1.45.2"
+      generate-mocks:
+        type: boolean
+        required: false
+        default: false
+      gomock-version:
+        type: string
+        required: false
+        default: "v1.6.0"
 
 jobs:
   lint:
@@ -65,6 +73,10 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ inputs.go-version }}
+
+      - name: Generate mocks
+        if: ${{ inputs.generate-mocks }}
+        run: go get github.com/golang/mock/mockgen@${{ inputs.gomock-version }} && go generate -v ./...
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
