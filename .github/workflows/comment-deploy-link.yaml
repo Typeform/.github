@@ -1,0 +1,71 @@
+name: Comment link to deploy into ephemeral environment
+
+on:
+  workflow_call:
+    inputs:
+      base-url:
+        type: string
+        required: true
+      service:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+
+jobs:
+  comment:
+    name: Comment link
+    runs-on: [self-hosted, fear-ephemeral]
+
+    steps:
+      - name: Get deploy link(s)
+        uses: actions/github-script@v6
+        id: set-result
+        with:
+          script: |
+            const getJiraId = (text) => {
+              const jiraMatcher = /((?<!([A-Z]{1,10})-?)[A-Z]+-\d+)/g
+              const matchedText = text.match(jiraMatcher)?.shift() ?? ''
+              const zeroedJiraKeys = Array(10)
+                .fill(1)
+                .map((_, i) => `-${'0'.repeat(i + 1)}`)
+              const noZeroKeyIssue =
+                matchedText &&
+                !zeroedJiraKeys.some((issueKey) => matchedText.includes(issueKey))
+              return !!matchedText && noZeroKeyIssue ? matchedText : undefined
+            }
+            
+            const references = new Set()
+            const prTitle = `${{ github.event.pull_request.title }}`
+            const branchName = `${{ github.head_ref }}`
+            const prTitleJiraId = getJiraId(prTitle)
+            const branchNameJiraId = getJiraId(branchName)
+
+            prTitleJiraId && references.add(prTitleJiraId)
+            branchNameJiraId && references.add(branchNameJiraId)
+            references.add(branchName)
+
+            const service = encodeURIComponent(`${{ inputs.service }}`)
+            const version = encodeURIComponent(`${{ inputs.version }}`)
+            
+            const buildDeployUrl = (reference) => `${{ inputs.base-url }}?SERVICE=${service}&VERSION=${version}&REFERENCE=${encodeURIComponent(reference)}`
+            const linkList = []
+            references.forEach((reference) => {
+              linkList.push(`- [${reference}](${buildDeployUrl(reference)})`)
+            })
+
+            return linkList.join('\n')
+          result-encoding: string
+
+      - name: Comment PR with deploy link(s)
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = `🎉 Version \`${{ inputs.version }}\` created, hooray!\n\n🚀 Deploy this version in an **ephemeral environment** with \`--reference\`:\n${{ steps.set-result.outputs.result }}`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
