@@ -12,6 +12,10 @@ on:
       version:
         type: string
         required: true
+      update-comment:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   comment:
@@ -59,6 +63,7 @@ jobs:
           result-encoding: string
 
       - name: Comment PR with deploy link(s)
+        if: ${{ inputs.update-comment }} == false
         uses: actions/github-script@v6
         with:
           script: |
@@ -69,3 +74,21 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
+      
+      - name: Find previous comment with deploy link(s)
+        if: ${{ inputs.update-comment }} == true
+        uses: peter-evans/find-comment@v1
+        id: previous-ephemeral-deploy-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: Deploy this version in
+      
+      - name: Create or update comment with deploy link(s)
+        if: ${{ inputs.update-comment }} == true
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.previous-ephemeral-deploy-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.number }}
+          edit-mode: replace
+          body: |
+            `🎉 Version \`${{ inputs.version }}\` created, hooray!\n\n🚀 Deploy this version in an **ephemeral environment** with \`--reference\`:\n${{ steps.set-result.outputs.result }}`;
