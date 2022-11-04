@@ -79,7 +79,7 @@ jobs:
         with:
           issue-number: ${{ github.event.number }}
           body: |
-            ## 🎉 Version `${{ inputs.version }}` created, hooray!
+            🎉 Version `${{ inputs.version }}` created, hooray!
             🚀 Deploy this version in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
 
@@ -90,7 +90,7 @@ jobs:
         with:
           issue-number: ${{ github.event.number }}
           body: |
-            ## 🎉 Version `${{ inputs.version }}` created, hooray!
+            🎉 Version `${{ inputs.version }}` created, hooray!
             🚀 Deploy this version in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
