@@ -12,6 +12,10 @@ on:
       version:
         type: string
         required: true
+      update-comment:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   comment:
@@ -58,14 +62,36 @@ jobs:
             return linkList.join('\n')
           result-encoding: string
 
-      - name: Comment PR with deploy link(s)
-        uses: actions/github-script@v6
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v2
+        if:  inputs.update-comment
+        continue-on-error: true
+        id: find-comment
         with:
-          script: |
-            const body = `🎉 Version \`${{ inputs.version }}\` created, hooray!\n\n🚀 Deploy this version in an **ephemeral environment** with \`--reference\`:\n${{ steps.set-result.outputs.result }}`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
+          issue-number: ${{ github.event.number }}
+          body-includes: '🚀 Deploy this version in'
+
+      - name: Create Comment
+        uses: peter-evans/create-or-update-comment@v2
+        if: steps.find-comment.outputs.comment-id == ''
+        continue-on-error: true
+        with:
+          issue-number: ${{ github.event.number }}
+          body: |
+            🎉 Version `${{ inputs.version }}` created, hooray!
+            🚀 Deploy this version in an **ephemeral environment** with `--reference`:
+            ${{ steps.set-result.outputs.result }}
+
+      - name: Update Comment
+        uses: peter-evans/create-or-update-comment@v2
+        if: steps.find-comment.outputs.comment-id != '' && inputs.update-comment
+        continue-on-error: true
+        with:
+          issue-number: ${{ github.event.number }}
+          body: |
+            🎉 Version `${{ inputs.version }}` created, hooray!
+            🚀 Deploy this version in an **ephemeral environment** with `--reference`:
+            ${{ steps.set-result.outputs.result }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
