@@ -1,0 +1,37 @@
+name: 'Trigger Jenkins Job and Return Result'
+description: 'I am used to trigger a Jenkins job and return the success/failure of the job run'
+inputs:
+  jenkins-server:  # URL of the jenkins server
+    description: 'URL of the Jenkins server'
+    required: true
+  jenkins-job: # The name of the jenkins job to run
+    description: 'The name of the jenkins job to run'
+    required: true
+  jenkins-username: # user name for accessing jenkins
+    description: 'User name for accessing Jenkins. Store this in a secret for security'
+    required: true
+  jenkins-pat: # personal Access token for accessing Jenkins
+    description: 'Personal Access Token for accessing Jenkins. Store this in a secret for security'
+    required: true
+  poll-time: # how often to poll the jenkins server for results
+    description: 'How often (seconds) to poll the jenkins server for results'
+    required: true
+    default: 10
+  timeout-value: # How long to poll before timing out the action
+    description: 'How long (seconds) to poll before the action times out'
+    required: true
+    default: 600
+  verbose: # true/false - turns on verbose logging
+    description: 'true/false - turns on verbose logging'
+    required: false
+    default: false
+  
+runs:
+  using: "composite"
+  steps:
+    - id: trigger-jenkins-job-using-api
+      run: ${{ github.action_path }}/deploy.sh        
+      shell: bash
+branding:
+  icon: 'arrow-down-circle'
+  color: 'gray-dark'
