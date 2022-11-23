@@ -2,6 +2,6 @@
 
 cat /github/workspace/
 cd /github/workspace/
-godoc -http=:6060
+godoc -v -http=:6060 & disown
 
 echo "GODOCS FOR $1"
