@@ -1,8 +1,8 @@
 name: 'Godoc to HTML'
 description: 'Gets godoc documentation from your repo in HTML format'
 inputs:
-  repository:  # id of input
-    description: 'Name of the Go repository'
+  path:  # id of input
+    description: 'Path to the Go repository'
     required: true
 outputs:
   docs: # id of output
@@ -11,4 +11,4 @@ runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.repository }}
+    - ${{ inputs.path }}
