@@ -7,8 +7,7 @@ cd /github/workspace/go
 mkdir -p "$GOPATH/src/github.com/$GITHUB_REPOSITORY"
 cp -r * "$GOPATH/src/github.com/$GITHUB_REPOSITORY"
 
-ls -la .
-ls -la /bin
+ls -la $GOPATH
 
 export GO111MODULE=on
 export GOFLAGS="-mod=vendor"
