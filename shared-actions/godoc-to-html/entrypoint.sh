@@ -12,7 +12,7 @@ ls -la $GOPATH
 export GO111MODULE=on
 export GOFLAGS="-mod=vendor"
 
-go env
+go mod vendor
 godoc -v -http=:6060 &
 
 wget -m -r -N -E -p -k -nd -q --include-directories="/lib,/pkg/github.com/Typeform/blocks/go,/src/github.com/Typeform/blocks/go" --exclude-directories="*" --no-host-directories --directory-prefix=godocs http://localhost:6060/pkg/github.com/Typeform/blocks/go
