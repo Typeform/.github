@@ -1,4 +1,4 @@
-#!/bin/sh -l
+#!/bin/sh
 
 REPOSITORY_NAME=blocks/go
 
