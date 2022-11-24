@@ -8,6 +8,11 @@ mkdir -p "$GOPATH/src/github.com/$GITHUB_REPOSITORY"
 cp -r * "$GOPATH/src/github.com/$GITHUB_REPOSITORY"
 
 ls -la .
+ls -la /bin
+
+export GO111MODULE=on
+export GOFLAGS="-mod=vendor"
+
 go env
 godoc -v -http=:6060 &
 
