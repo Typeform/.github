@@ -12,7 +12,7 @@ godoc -v -http=:6060 &
 REPO=$GITHUB_REPOSITORY
 if [ $PATH_GOMOD != "." ]
 then
-  REPO="${GITHUB_REPOSITORY}/{$PATH_GOMOD:1}"
+  REPO="${GITHUB_REPOSITORY}${PATH_GOMOD:1}"
 fi
 
 wget -m -r -N -E -p -k -nd -q --include-directories="/lib,/pkg/github.com/$REPO,/src/github.com/$REPO" --exclude-directories="*" --no-host-directories --directory-prefix=godocs http://localhost:6060/pkg/github.com/$REPO
