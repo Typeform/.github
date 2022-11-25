@@ -7,6 +7,9 @@ cd /github/workspace/go
 mkdir -p "$GOPATH/src/github.com/$GITHUB_REPOSITORY"
 cp -r * "$GOPATH/src/github.com/$GITHUB_REPOSITORY"
 
+export GO111MODULE=on
+export GOFLAGS="-mod=vendor"
+
 go mod vendor
 godoc -v -http=:6060 &
 
