@@ -1,6 +1,8 @@
 #!/bin/sh
 
-cd "$(dirname "$(find . -name 'go.mod' | head -n 1)")" || exit 1
+PATH_GOMOD="$(dirname "$(find . -name 'go.mod' | head -n 1)")" || exit 1
+cd $PATH_GOMOD
+echo $PATH_GOMOD
 
 mkdir -p "$GOPATH/src/github.com/$GITHUB_REPOSITORY"
 cp -r * "$GOPATH/src/github.com/$GITHUB_REPOSITORY"
