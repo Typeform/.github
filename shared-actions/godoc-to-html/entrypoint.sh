@@ -16,3 +16,5 @@ then
 fi
 
 wget -m -r -N -E -p -k -nd -q --include-directories="/lib,/pkg/github.com/$REPO,/src/github.com/$REPO" --exclude-directories="*" --no-host-directories --directory-prefix=godocs http://localhost:6060/pkg/github.com/$REPO
+
+exit 0
