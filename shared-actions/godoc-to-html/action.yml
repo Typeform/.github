@@ -1,8 +1,5 @@
 name: 'Godoc to HTML'
 description: 'Gets godoc documentation from your repo in HTML format'
-outputs:
-  docs: # id of output
-    description: 'Documentation'
 runs:
   using: 'docker'
   image: 'Dockerfile'
