@@ -54,6 +54,7 @@ runs:
         if [[ $verbose == true ]]; then
             echo "Results of Triggering The Job:"
             echo "--------------------------------------"
+            echo "$urlOfJenkinsServer"/job/"$jenkinsJobName"/build
             echo $TRIGGERJOBJSON
             echo "--------------------------------------"
         fi
