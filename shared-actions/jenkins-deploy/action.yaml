@@ -25,6 +25,10 @@ inputs:
     description: 'true/false - turns on verbose logging'
     required: false
     default: false
+  version: # 
+    description: 'version that need to deploy'
+    required: false
+    default: latest
   
 runs:
   using: "composite"
@@ -49,12 +53,13 @@ runs:
 
         #Generate Crumb value
         CRUMB=`curl -s -u "$userName:$password" $urlOfJenkinsServer'/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)'`
-        TRIGGERJOBJSON=$(curl -I -s -X POST -u "$userName:$password"  -H "$CRUMB" "$urlOfJenkinsServer"/job/"$jenkinsJobName"/build)
+        TRIGGERJOBJSON=$(curl -I -s -X POST -u "$userName:$password"  -H "$CRUMB" "$urlOfJenkinsServer"/job/"$jenkinsJobName"/build --data-urlencode 'VERSION=latest' --data-urlencode 'ENVIRONMENT=dev-blue')
 
         if [[ $verbose == true ]]; then
             echo "Results of Triggering The Job:"
             echo "--------------------------------------"
             echo "$urlOfJenkinsServer"/job/"$jenkinsJobName"/build
+            echo "userName:$password"
             echo $TRIGGERJOBJSON
             echo "--------------------------------------"
         fi
