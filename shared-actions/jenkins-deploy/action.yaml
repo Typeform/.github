@@ -54,7 +54,7 @@ runs:
         #Generate Crumb value
         CRUMB=`curl -s -u "$userName:$password" $urlOfJenkinsServer'/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)'`
 
-        echo `--data-urlencode "VERSION=latest" --data-urlencode "ENVIRONMENT=dev-blue"`
+        echo "--data-urlencode 'VERSION=latest' --data-urlencode 'ENVIRONMENT=dev-blue'"
 
 
         TRIGGERJOBJSON=400
