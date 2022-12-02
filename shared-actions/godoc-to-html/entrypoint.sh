@@ -15,9 +15,10 @@ then
   REPO="${GITHUB_REPOSITORY}${PATH_GOMOD:1}"
 fi
 
-wget --reject-regex "(.*)\?(.*)" -m -r -N -E -p -k -nd -q --include-directories="/lib,/pkg/github.com/$REPO,/src/github.com/$REPO" --exclude-directories="*" --no-host-directories --directory-prefix=godocs http://localhost:6060/pkg/github.com/$REPO
+wget -m -r -N -E -p -k -nd -q --include-directories="/lib,/pkg/github.com/$REPO,/src/github.com/$REPO" --exclude-directories="*" --no-host-directories --directory-prefix=godocs http://localhost:6060/pkg/github.com/$REPO
 
 chmod -R 777 godocs
+find godocs -type f -name '*?*' -delete
 mv godocs /github/workspace/
 
 exit 0
