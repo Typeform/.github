@@ -41,7 +41,7 @@ inputs:
     default: 60
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/shihyuho/go-jenkins-trigger:1.0'
+  image: 'Dockerfile'
   args:
     - --jenkins-url=${{ inputs.jenkins-url }}
     - --jenkins-user=${{ inputs.jenkins-user }}
