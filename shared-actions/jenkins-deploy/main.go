@@ -96,7 +96,7 @@ func main() {
 }
 
 func triggerBuild(c config) error {
-	fmt.Printf("Triggering Jenkins build for job: %+v, wait: %+v\n", c.Job, c.Wait)
+	fmt.Printf("THe new version! Triggering Jenkins build for job: %+v, wait: %+v\n", c.Job, c.Wait)
 
 	jenkins, err := c.Jenkins.createClient()
 	if err != nil {
