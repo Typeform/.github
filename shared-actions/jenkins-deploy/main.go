@@ -108,17 +108,13 @@ func triggerBuild(c config) error {
 
 	fmt.Println("getting job ", "/job/"+strings.Join(append(parentIDs, c.Job.Name), "/job/"))
 
-	job := gojenkins.Job{Jenkins: jenkins, Raw: new(gojenkins.JobResponse), Base: "/job/" + strings.Join(append(parentIDs, c.Job.Name), "/job/")}
-
-	fmt.Printf("Got the job %v", job)
-
-	j, err := job.Poll(context.Background())
+	job, err := jenkins.GetJob(context.Background(), c.Job.Name, "deploy-backend")
 	if err != nil {
-		fmt.Println(err, j)
+		fmt.Println("err getting job")
 		return err
 	}
 
-	fmt.Printf("Got the job %s", job.GetName())
+	fmt.Printf("Got the job %v", job)
 
 	queueId, err := job.InvokeSimple(context.Background(), c.Job.Params)
 	if err != nil {
