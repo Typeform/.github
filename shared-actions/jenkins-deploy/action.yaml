@@ -53,7 +53,7 @@ runs:
 
         #Generate Crumb value
         CRUMB=`curl -s -u "$userName:$password" $urlOfJenkinsServer'/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)'`
-        TRIGGERJOBJSON=$(curl -I -s -X POST -u \"$userName:$password\"  -H \"$CRUMB\" \"$urlOfJenkinsServer\"/job/\"$jenkinsJobName\"/buildWithParameters --data-urlencode 'VERSION=latest' --data-urlencode 'ENVIRONMENT=dev-blue')
+        TRIGGERJOBJSON=$(curl -I -s -X POST -u "$userName:$password"  -H "$CRUMB" "$urlOfJenkinsServer"/job/"$jenkinsJobName"/buildWithParameters --data-urlencode 'VERSION=latest' --data-urlencode 'ENVIRONMENT=dev-blue')
 
         echo "$urlOfJenkinsServer"/job/"$jenkinsJobName"/build
         echo "userName:$password"
