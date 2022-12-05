@@ -103,21 +103,13 @@ func triggerBuild(c config) error {
 		return err
 	}
 
-	parentIDs := make([]string, 0)
-	parentIDs = append(parentIDs, "deploy-backend")
-
-	fmt.Println("getting job ", "/job/"+strings.Join(append(parentIDs, c.Job.Name), "/job/"))
-
 	job, err := jenkins.GetJob(context.Background(), c.Job.Name, "deploy-backend")
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Got the job %v", job)
-
 	queueId, err := job.InvokeSimple(context.Background(), c.Job.Params)
 	if err != nil {
-		fmt.Println("could not invokeasd", err, job)
 		return err
 	}
 
