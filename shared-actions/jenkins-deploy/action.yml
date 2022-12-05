@@ -1,0 +1,55 @@
+# action.yml
+name: 'Jenkins Job Trigger in Go'
+description: 'Trigger Jenkins job and wait for the result'
+branding:
+  icon: 'arrow-right-circle'
+  color: 'gray-dark'
+inputs:
+  jenkins-url:
+    description: 'URL of the Jenkins server'
+    required: true
+  jenkins-user:
+    description: 'User for accessing Jenkins. Store this in a secret for security'
+    required: false
+  jenkins-pat:
+    description: 'Personal access token (PAT) for accessing Jenkins. Store this in a secret for security'
+    required: false
+  insecure:
+    description: 'true/false, Allow insecure Jenkins server connections when using SSL'
+    required: false
+    default: false
+  job:
+    description: 'The name of the Jenkins job to run'
+    required: true
+  params:
+    description: 'The parameters of the job in key=value format, can specify multiple or separate parameters with commas, e.g., foo=bar,baz=qux'
+    required: false
+  params-json:
+    description: 'The parameters of the job in JSON format, e.g., {"foo":"bar","baz":"qux"}'
+    required: false
+  wait:
+    description: 'true/false, Wait for the job to complete, and return the results'
+    required: false
+    default: true
+  poll-time:
+    description: 'How often (duration) to poll the jenkins server for results'
+    required: false
+    default: 10s
+  max-attempts:
+    description: 'Max count of polling for results'
+    required: false
+    default: 60
+runs:
+  using: 'docker'
+  image: 'docker://ghcr.io/shihyuho/go-jenkins-trigger:1.0'
+  args:
+    - --jenkins-url=${{ inputs.jenkins-url }}
+    - --jenkins-user=${{ inputs.jenkins-user }}
+    - --jenkins-pat=${{ inputs.jenkins-pat }}
+    - --insecure=${{ inputs.insecure }}
+    - --job=${{ inputs.job }}
+    - --params=${{ inputs.params }}
+    - --params-json=${{ inputs.params-json }}
+    - --wait=${{ inputs.wait }}
+    - --poll-time=${{ inputs.poll-time }}
+    - --max-attempts=${{ inputs.max-attempts }}
