@@ -42,6 +42,7 @@ inputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
+  run: main
   args:
     - --jenkins-url=${{ inputs.jenkins-url }}
     - --jenkins-user=${{ inputs.jenkins-user }}
