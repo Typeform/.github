@@ -104,6 +104,7 @@ func triggerBuild(c config) error {
 	}
 
 	parentIDs := make([]string, 0)
+	parentIDs = append(parentIDs, "deploy-backend")
 
 	fmt.Println("getting job ", "/job/"+strings.Join(append(parentIDs, c.Job.Name), "/job/"))
 
