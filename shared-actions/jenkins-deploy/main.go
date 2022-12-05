@@ -103,7 +103,7 @@ func triggerBuild(c config) error {
 		return err
 	}
 
-	job, err := jenkins.GetJob(context.Background(), c.Job.Name, "debloy-backend")
+	job, err := jenkins.GetJob(context.Background(), c.Job.Name, "deploy-backend")
 	if err != nil {
 		return err
 	}
