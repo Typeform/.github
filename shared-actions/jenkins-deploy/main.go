@@ -110,7 +110,6 @@ func triggerBuild(c config) error {
 
 	job, err := jenkins.GetJob(context.Background(), c.Job.Name, "deploy-backend")
 	if err != nil {
-		fmt.Println("err getting job")
 		return err
 	}
 
@@ -118,6 +117,7 @@ func triggerBuild(c config) error {
 
 	queueId, err := job.InvokeSimple(context.Background(), c.Job.Params)
 	if err != nil {
+		fmt.Println("could not invokeasd", err, job)
 		return err
 	}
 
