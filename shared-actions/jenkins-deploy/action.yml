@@ -42,7 +42,6 @@ inputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  run: main
   args:
     - --jenkins-url=${{ inputs.jenkins-url }}
     - --jenkins-user=${{ inputs.jenkins-user }}
@@ -54,3 +53,4 @@ runs:
     - --wait=${{ inputs.wait }}
     - --poll-time=${{ inputs.poll-time }}
     - --max-attempts=${{ inputs.max-attempts }}
+  entrypoint: 'main'
