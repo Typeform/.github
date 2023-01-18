@@ -16,11 +16,17 @@ on:
         type: boolean
         required: false
         default: false
+      runs-on:
+        type: string
+        required: false
+        default: fear-ephemeral
 
 jobs:
   comment:
     name: Comment link
-    runs-on: [self-hosted, fear-ephemeral]
+    runs-on:
+      - self-hosted
+      - ${{ inputs.runs-on }}
 
     steps:
       - name: Get deploy link(s)
