@@ -32,14 +32,14 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Parse Repository Name
         id: repo-name
-        run: echo "::set-output name=value::$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')"
+        run: echo "name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_OUTPUT
 
       - name: Check out repository containing linter config
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: Typeform/golang-builder
           ref: main
@@ -50,7 +50,7 @@ jobs:
         uses: jacobtomlinson/gha-find-replace@v2
         with:
           find: "<repository>"
-          replace: ${{ steps.repo-name.outputs.value }}
+          replace: ${{ steps.repo-name.outputs.name }}
           regex: false
           include: "lint-config/config/golangci.yaml"
 
@@ -62,17 +62,16 @@ jobs:
           export GOPRIVATE=github.com/Typeform/*
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ inputs.go-version }}
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         id: golangci-lint
         with:
           version: ${{ inputs.golangci-lint-version }}
           only-new-issues: ${{ inputs.only-new-issues }}
-          skip-go-installation: true
           working-directory: ${{ inputs.working-directory }}
           args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --issues-exit-code=1
 
@@ -81,14 +80,14 @@ jobs:
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
         run: |
           if [[ "${{ steps.golangci-lint.conclusion }}" == "success" ]]; then
-            echo "::set-output name=results::$(echo ":tada::tada: **Congratulations! Your code seems to be really nice!** :tada::tada:")"
+            echo "results=$(echo ":tada::tada: **Congratulations! Your code seems to be really nice!** :tada::tada:")" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=results::$(echo ":rotating_light::rotating_light: **There are linting issues, check the \`Files changed\` tab for more info** :rotating_light::rotating_light:")"
+            echo "results=$(echo ":rotating_light::rotating_light: **There are linting issues, check the \`Files changed\` tab for more info** :rotating_light::rotating_light:")" >> $GITHUB_OUTPUT
           fi
 
       - name: Find previous lint comment
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
-        uses: peter-evans/find-comment@v1
+        uses: peter-evans/find-comment@v2
         id: previous-lint-comment
         with:
           issue-number: ${{ github.event.number }}
@@ -96,7 +95,7 @@ jobs:
 
       - name: Publish lint comment
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@v2
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
         with:
