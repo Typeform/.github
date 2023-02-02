@@ -22,7 +22,7 @@ on:
       golangci-lint-version:
         type: string
         required: false
-        default: "v1.45.2"
+        default: "v1.50.1"
 
 jobs:
   lint:
