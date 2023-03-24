@@ -1,0 +1,5 @@
+{
+  "name": "Combine PRs",
+  "description": "Merge multiple PRs into one. Convenient for merging multiple Dependabot PRs.",
+  "iconName": "combine-prs"
+}
