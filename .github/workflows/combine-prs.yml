@@ -34,7 +34,6 @@ on:
         description: 'Machine to run the workflow on.'
         required: false
         type: string
-        default: '["self-hosted", "fear-ephemeral"]'
     secrets:
       githubToken:
         required: true
