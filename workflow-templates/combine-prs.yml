@@ -1,0 +1,41 @@
+name: 'Combine PRs'
+
+# Run workflow with default values:
+on: workflow_dispatch
+
+# Customize the defaults on each run:
+#on: 
+#  workflow_dispatch:
+#    inputs:
+#      branchPrefix:
+#        description: 'Branch prefix to find combinable PRs based on'
+#        required: false
+#        default: 'dependabot'
+#      mustBeGreen:
+#        description: 'Only combine PRs that are green (status is success)'
+#        required: false
+#        default: true
+#      combineBranchName:
+#        description: 'Name of the branch to combine PRs into'
+#        required: false
+#        default: 'combine-prs-branch'
+#      ignoreLabel:
+#        description: 'Exclude PRs with this label'
+#        required: false
+#        default: 'nocombine'
+
+
+jobs:
+  combine-prs:
+    uses: Typeform/.github/.github/workflows/combine-prs.yml@v1
+    # Provide Github token. Note that the default ${{ secrets.GITHUB_TOKEN }} does not trigger automated PR checks.
+    secrets:
+      githubToken: ${{ secrets.GH_TOKEN }}
+#    with:
+#      # For public repos run on Github-hosted machine:
+#      runsOn: '["ubuntu-latest"]''
+#      # Pass custom values to the actions:
+#      branchPrefix: ${{ inputs.branchPrefix }}
+#      mustBeGreen: ${{ inputs.mustBeGreen == 'true' }}
+#      combineBranchName: ${{ inputs.combineBranchName }}
+#      ignoreLabel: ${{ inputs.ignoreLabel }}
