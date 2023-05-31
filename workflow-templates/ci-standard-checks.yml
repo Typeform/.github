@@ -11,14 +11,14 @@ on:
 
 jobs:
   ci-standard-checks:
-    # for private repositories
-    runs-on: [self-hosted, automated-checks]
-    # for public repositories
-    # runs-on: [ubuntu-latest]
+     # for private repositories use private runners
+     # runs-on: [self-hosted, automated-checks]
+     # for public repositories use public runners
+    runs-on: [ubuntu-latest]
 
     steps:
       - name: Check Out Source Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -26,5 +26,4 @@ jobs:
         uses: Typeform/ci-standard-checks@v1
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-          dockerUsername: ${{ secrets.DOCKER_USERNAME }}
-          dockerPassword: ${{ secrets.DOCKER_PASSWORD }}
+    
