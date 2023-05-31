@@ -11,10 +11,7 @@ on:
 
 jobs:
   ci-standard-checks:
-    # for private repositories
-    runs-on: [self-hosted, automated-checks]
-    # for public repositories
-    # runs-on: [ubuntu-latest]
+    runs-on: [ubuntu-latest]
 
     steps:
       - name: Check Out Source Code
