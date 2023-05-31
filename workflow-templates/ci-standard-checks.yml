@@ -11,6 +11,9 @@ on:
 
 jobs:
   ci-standard-checks:
+     # for private repositories use private runners
+     # runs-on: [self-hosted, automated-checks]
+     # for public repositories use public runners
     runs-on: [ubuntu-latest]
 
     steps:
