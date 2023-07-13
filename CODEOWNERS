@@ -5,9 +5,9 @@ shared-actions/send-deployment-event                        @Typeform/engineerin
 workflow-templates/send-deployment-event.properties.json    @Typeform/engineering-intelligence
 workflow-templates/send-deployment-event.svg                @Typeform/engineering-intelligence
 workflow-templates/send-deployment-event.yml                @Typeform/engineering-intelligence
-workflow-templates/ci-standard-checks.yml                   @Typeform/devtools
-workflow-templates/ci-standard-checks.svg                   @Typeform/devtools
-workflow-templates/ci-standard-checks.properties.json       @Typeform/devtools
+workflow-templates/ci-standard-checks.yml                   @Typeform/product-infrastructure
+workflow-templates/ci-standard-checks.svg                   @Typeform/product-infrastructure
+workflow-templates/ci-standard-checks.properties.json       @Typeform/product-infrastructure
 workflow-templates/frontend-canary-cleanup.yml              @Typeform/frontend-architecture
 workflow-templates/frontend-canary-cleanup.svg              @Typeform/frontend-architecture
 workflow-templates/frontend-canary-cleanup.properties.json  @Typeform/frontend-architecture
