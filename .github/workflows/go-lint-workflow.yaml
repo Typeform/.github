@@ -18,7 +18,7 @@ on:
       go-version:
         type: string
         required: false
-        default: "1.19.11"
+        default: "1.19.12"
       golangci-lint-version:
         type: string
         required: false
