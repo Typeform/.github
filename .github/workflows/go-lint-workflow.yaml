@@ -18,11 +18,11 @@ on:
       go-version:
         type: string
         required: false
-        default: "1.17.9"
+        default: "1.19.12"
       golangci-lint-version:
         type: string
         required: false
-        default: "v1.51.0"
+        default: "v1.53.3"
 
 jobs:
   lint:
