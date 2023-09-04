@@ -32,6 +32,9 @@ jobs:
       - name: Get deploy link(s)
         uses: actions/github-script@v6
         id: set-result
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BRANCH_NAME: ${{ github.head_ref }}
         with:
           script: |
             const getJiraId = (text) => {
@@ -47,8 +50,8 @@ jobs:
             }
             
             const references = new Set()
-            const prTitle = `${{ github.event.pull_request.title }}`
-            const branchName = `${{ github.head_ref }}`
+            const prTitle = process.env.PR_TITLE
+            const branchName = process.env.BRANCH_NAME
             const prTitleJiraId = getJiraId(prTitle)
             const branchNameJiraId = getJiraId(branchName)
 
