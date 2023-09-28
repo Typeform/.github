@@ -47,7 +47,7 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set local imports
-        uses: jacobtomlinson/gha-find-replace@v2
+        uses: jacobtomlinson/gha-find-replace@v3
         with:
           find: "<repository>"
           replace: ${{ steps.repo-name.outputs.name }}
