@@ -8,12 +8,12 @@ on:
     inputs:
       skipChecks:
         type: string
-        required: true
+        required: false
         default: ''
         description: 'Checks to be skipped'
       enableChecks:
         type: string
-        required: true
+        required: false
         default: ''
         description: 'Optional checks to enable'
 
