@@ -1,0 +1,33 @@
+name: CI Standard Checks Workflow
+
+on:
+  workflow_call:
+    inputs:
+      skipChecks:
+        required: true
+        default: ''
+        description: 'Checks to be skipped'
+      enableChecks:
+        required: true
+        default: ''
+        description: 'Optional checks to enable'
+      githubToken:
+        required: true
+        description: 'The github token to get PR info when checking for Jira Issue key'
+
+jobs:
+  ci-standard-checks:
+    runs-on:
+      - ubuntu-latest
+    steps:
+      - name: Check Out Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: CI Standard Checks
+        uses: Typeform/ci-standard-checks@v1
+        with:
+          githubToken: ${{ inputs.githubToken }}
+          skipChecks: ${{ inputs.skipChecks }}
+          enableChecks: ${{ inputs.enableChecks }}
+
