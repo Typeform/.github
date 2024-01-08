@@ -7,10 +7,12 @@ on:
         required: true
     inputs:
       skipChecks:
+        type: string
         required: true
         default: ''
         description: 'Checks to be skipped'
       enableChecks:
+        type: string
         required: true
         default: ''
         description: 'Optional checks to enable'
