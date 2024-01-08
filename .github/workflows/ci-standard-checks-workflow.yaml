@@ -32,4 +32,3 @@ jobs:
           githubToken: ${{ secrets.GH_TOKEN }}
           skipChecks: ${{ inputs.skipChecks }}
           enableChecks: ${{ inputs.enableChecks }}
-
