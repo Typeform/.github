@@ -16,6 +16,10 @@ on:
         type: boolean
         required: false
         default: false
+      runs-on:
+        type: string
+        required: false
+        default: fear-ephemeral
 
 jobs:
   comment:
