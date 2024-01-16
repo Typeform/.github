@@ -65,6 +65,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
+          cache: false
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
