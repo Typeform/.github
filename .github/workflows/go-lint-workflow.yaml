@@ -111,5 +111,5 @@ jobs:
             docker run --rm \
               -v $PWD:/app:ro \
               -w /app \
-                ${{env.ECR_REGISTRY}}/golang-builder:latest lint-repository ${{ steps.repo-name.outputs.value }}
+                ${{env.ECR_REGISTRY}}/golang-builder:latest lint-repository ${{ steps.repo-name.outputs.name }}
             ```
