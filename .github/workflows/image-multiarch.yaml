@@ -31,8 +31,7 @@ on:
 jobs:
   build:
     name: Build and push image
-    runs-on: [ self-hosted, automated-checks-ephemeral ]
-
+    runs-on: [ self-hosted, bear-ephemeral ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
