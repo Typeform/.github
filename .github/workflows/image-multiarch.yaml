@@ -3,11 +3,16 @@ name: Build & push multi-arch image
 on:
   workflow_call:
     secrets:
-      ECR_REGISTRY:
-        required: true
+      build-args:
+        description: "Build args"
+        required: false
     inputs:
       service:
         description: "A name to tag the image"
+        type: string
+        required: true
+      repository:
+        description: "Image repository"
         type: string
         required: true
       context:
@@ -15,10 +20,6 @@ on:
         type: string
         required: false
         default: "."
-      build-args:
-        description: "Build args"
-        type: string
-        required: false
       labels:
         description: "Image labels"
         type: string
@@ -51,7 +52,7 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.ECR_REGISTRY }}/${{ inputs.service }}:${{ github.run_id }}
+          tags: ${{ inputs.repository }}/${{ inputs.service }}:${{ github.run_id }}
       - name: Push latest image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v5
@@ -61,4 +62,4 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.ECR_REGISTRY }}/${{ inputs.service }}:latest
+          tags: ${{ inputs.repository }}/${{ inputs.service }}:latest
