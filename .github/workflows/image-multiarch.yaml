@@ -51,7 +51,7 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ inputs.repository }}/${{ inputs.service }}:${{ github.run_id }}
+          tags: ${{ secrets.repository }}/${{ inputs.service }}:${{ github.run_id }}
       - name: Push latest image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v5
@@ -61,4 +61,4 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ inputs.repository }}/${{ inputs.service }}:latest
+          tags: ${{ secrets.repository }}/${{ inputs.service }}:latest
