@@ -6,13 +6,12 @@ on:
       build-args:
         description: "Build args"
         required: false
+      repository:
+        description: "Image repository"
+        required: true
     inputs:
       service:
         description: "A name to tag the image"
-        type: string
-        required: true
-      repository:
-        description: "Image repository"
         type: string
         required: true
       context:
