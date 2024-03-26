@@ -4,14 +4,14 @@ on:
   workflow_call:
     secrets:
       GH_TOKEN:
-        description: "GitHub token to download dependencies"
+        description: "GitHub token"
         required: true
       ECR_REGISTRY:
-        description: "Image repository"
+        description: "Repository to push the image"
         required: true
     inputs:
       service:
-        description: "A name to tag the image"
+        description: "Name to tag the image"
         type: string
         required: true
       build-args:
@@ -27,11 +27,6 @@ on:
         description: "Image labels"
         type: string
         required: false
-        default: |
-          com.typeform.service=${{ inputs.service }}
-          com.typeform.${{ inputs.service }}.version=${{ github.run_id }}
-          com.typeform.${{ inputs.service }}.git_commit=${{ github.sha }}
-
 jobs:
   build:
     name: Build and push image
