@@ -57,7 +57,7 @@ jobs:
           push: true
           tags: ${{ secrets.ECR_REGISTRY }}/${{ inputs.service }}:${{ github.run_id }}
           secrets: |
-            "github_token=${{ secrets.GITHUB_TOKEN }}"
+            "github_token=${{ secrets.GH_TOKEN }}"
       - name: Push latest image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v5
@@ -68,5 +68,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           secrets: |
-            "github_token=${{ secrets.GITHUB_TOKEN }}"
+            "github_token=${{ secrets.GH_TOKEN }}"
           tags: ${{ secrets.ECR_REGISTRY }}/${{ inputs.service }}:latest
