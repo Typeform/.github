@@ -3,10 +3,10 @@ name: Build & push multi-arch image
 on:
   workflow_call:
     secrets:
-      build-args:
-        description: "Build args"
-        required: false
-      repository:
+      GITHUB_TOKEN:
+        description: "GitHub token to download dependencies"
+        required: true
+      ECR_REGISTRY:
         description: "Image repository"
         required: true
     inputs:
@@ -14,6 +14,10 @@ on:
         description: "A name to tag the image"
         type: string
         required: true
+      build-args:
+        description: "Build args"
+        type: "string"
+        required: false
       context:
         description: "Build context"
         type: string
@@ -46,19 +50,23 @@ jobs:
       - name: Build and push images
         uses: docker/build-push-action@v5
         with:
-          build-args: ${{ secrets.build-args }}
+          build-args: ${{ inputs.build-args }}
           context: ${{ inputs.context }}
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.repository }}/${{ inputs.service }}:${{ github.run_id }}
+          tags: ${{ secrets.ECR_REGISTRY }}/${{ inputs.service }}:${{ github.run_id }}
+          secrets: |
+            "github_token=${{ secrets.GITHUB_TOKEN }}"
       - name: Push latest image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v5
         with:
-          build-args: ${{ secrets.build-args }}
+          build-args: ${{ inputs.build-args }}
           context: ${{ inputs.context }}
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.repository }}/${{ inputs.service }}:latest
+          secrets: |
+            "github_token=${{ secrets.GITHUB_TOKEN }}"
+          tags: ${{ secrets.ECR_REGISTRY }}/${{ inputs.service }}:latest
