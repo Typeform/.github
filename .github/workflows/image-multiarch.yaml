@@ -3,7 +3,7 @@ name: Build & push multi-arch image
 on:
   workflow_call:
     secrets:
-      GITHUB_TOKEN:
+      GH_TOKEN:
         description: "GitHub token to download dependencies"
         required: true
       ECR_REGISTRY:
