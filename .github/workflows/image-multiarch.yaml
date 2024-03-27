@@ -6,9 +6,6 @@ on:
       GH_TOKEN:
         description: "GitHub token"
         required: true
-      ECR_REGISTRY:
-        description: "Repository to push the image"
-        required: true
     inputs:
       service:
         description: "Name to tag the image"
@@ -50,7 +47,7 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.ECR_REGISTRY }}/${{ inputs.service }}:${{ github.run_id }}
+          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ github.run_id }}
           secrets: |
             "github_token=${{ secrets.GH_TOKEN }}"
       - name: Push latest image
@@ -64,4 +61,4 @@ jobs:
           push: true
           secrets: |
             "github_token=${{ secrets.GH_TOKEN }}"
-          tags: ${{ secrets.ECR_REGISTRY }}/${{ inputs.service }}:latest
+          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:latest
