@@ -3,9 +3,9 @@ name: Build & push multi-arch image
 on:
   workflow_call:
     secrets:
-      GH_TOKEN:
-        description: "GitHub token"
-        required: true
+      build-secrets:
+        description: "Build secrets"
+        required: false
     inputs:
       service:
         description: "Name to tag the image"
@@ -48,8 +48,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ github.run_id }}
-          secrets: |
-            "github_token=${{ secrets.GH_TOKEN }}"
+          secrets: ${{ secrets.build-secrets }}
       - name: Push latest image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v5
@@ -59,6 +58,5 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          secrets: |
-            "github_token=${{ secrets.GH_TOKEN }}"
+          secrets: ${{ secrets.build-secrets }}
           tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:latest
