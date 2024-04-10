@@ -31,7 +31,7 @@ on:
 jobs:
   build:
     name: Build and push image
-    runs-on: [ self-hosted, bear-graviton ]
+    runs-on: [ self-hosted, ci-basej
     steps:
       - name: Checkout
         uses: actions/checkout@v4
