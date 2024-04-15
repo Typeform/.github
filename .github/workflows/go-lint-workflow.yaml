@@ -74,7 +74,7 @@ jobs:
           version: ${{ inputs.golangci-lint-version }}
           only-new-issues: ${{ inputs.only-new-issues }}
           working-directory: ${{ inputs.working-directory }}
-          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --skip-dirs="(^|/)vendor($|/)" --issues-exit-code=1
+          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --exclude-dirs="(^|/)vendor($|/)" --issues-exit-code=1
 
       - name: Comment body
         id: comment-body-content
