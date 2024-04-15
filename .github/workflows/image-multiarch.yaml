@@ -7,6 +7,10 @@ on:
         description: "Build secrets"
         required: false
     inputs:
+      dev-prefix:
+        type: boolean
+        description: "Include 'dev-' prefix on image tag, when pushing on non-main branches"
+        default: true
       service:
         description: "Name to tag the image"
         type: string
@@ -46,7 +50,7 @@ jobs:
         with:
           endpoint: builders
       - name: Set env
-        if: "!contains(github.ref, 'refs/heads/main')"
+        if: ${{ (inputs.dev-prefix) && (github.ref == 'refs/heads/main') }}
         run: echo "VERSION=$(echo dev-$VERSION)" >> $GITHUB_ENV
       - name: Build and push images
         uses: docker/build-push-action@v5
