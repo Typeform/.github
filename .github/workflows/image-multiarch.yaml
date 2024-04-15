@@ -7,6 +7,15 @@ on:
         description: "Build secrets"
         required: false
     inputs:
+      dev-prefix:
+        type: boolean
+        description: "Include 'dev-' prefix on image tag, when pushing on non-main branches"
+        default: true
+      prefix:
+        type: string
+        description: "Include a prefix on the image tag"
+        required: false
+        default: ""
       service:
         description: "Name to tag the image"
         type: string
@@ -28,6 +37,8 @@ on:
         description: "Image labels"
         type: string
         required: false
+env:
+  VERSION: ${{ inputs.version }}
 jobs:
   build:
     name: Build and push image
@@ -43,6 +54,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           endpoint: builders
+      - name: Set dev prefix on tag
+        if: ${{ (inputs.dev-prefix) && (github.ref != 'refs/heads/main') }}
+        run: echo "VERSION=$(echo dev-$VERSION)" >> $GITHUB_ENV
+      - name: Set configured prefix on tag
+        if: ${{ inputs.prefix != '' }}
+        run: echo "VERSION=$(echo ${{inputs.prefix}}-$VERSION)" >> $GITHUB_ENV
       - name: Build and push images
         uses: docker/build-push-action@v5
         with:
@@ -51,7 +68,7 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ inputs.version }}
+          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION }}
           secrets: ${{ secrets.build-secrets }}
       - name: Push latest image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
