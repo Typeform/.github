@@ -43,6 +43,7 @@ on:
         required: false
 env:
   VERSION: ${{ inputs.version }}
+  LATESTVERSION: latest
 jobs:
   build:
     name: Build and push image
@@ -74,6 +75,9 @@ jobs:
           push: true
           tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION }}
           secrets: ${{ secrets.build-secrets }}
+      - name: Set configured prefix on latest tag
+        if: ${{ inputs.prefix != '' }}
+        run: echo "LATESTVERSION=$(echo ${{inputs.prefix}}-latest)" >> $GITHUB_ENV
       - name: Push latest image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v5
@@ -84,4 +88,4 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: true
           secrets: ${{ secrets.build-secrets }}
-          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:latest
+          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{env.LATESTVERSION}}
