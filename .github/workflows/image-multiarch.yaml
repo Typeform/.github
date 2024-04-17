@@ -48,6 +48,8 @@ jobs:
   build:
     name: Build and push image
     runs-on: [ self-hosted, ci-base]
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
