@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 20
       - name: CI Standard Checks
-        uses: Typeform/ci-standard-checks@PROS-505-fix-openapi-validate
+        uses: Typeform/ci-standard-checks@NOJIRA-1234-bump-redocli
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           skipChecks: ${{ inputs.skipChecks }}
