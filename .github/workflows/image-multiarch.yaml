@@ -20,6 +20,10 @@ on:
         description: "Include a prefix on the image tag"
         required: false
         default: ""
+      file:
+        type: string
+        description: "Path to the Dockerfile"
+        required: false
       service:
         description: "Name to tag the image"
         type: string
@@ -75,6 +79,7 @@ jobs:
           push: true
           tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION }}
           secrets: ${{ secrets.build-secrets }}
+          file: ${{ inputs.file }}
       - name: Set configured prefix on latest tag
         if: ${{ inputs.prefix != '' }}
         run: echo "VERSION_LATEST=$(echo ${{inputs.prefix}}-$VERSION_LATEST)" >> $GITHUB_ENV
@@ -87,5 +92,6 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: ${{ inputs.platforms }}
           push: true
-          secrets: ${{ secrets.build-secrets }}
           tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION_LATEST }}
+          secrets: ${{ secrets.build-secrets }}
+          file: ${{ inputs.file }}
