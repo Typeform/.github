@@ -11,4 +11,4 @@ updates:
       patterns:
         - "*"
   commit-message:
-    prefix: chore(bot)
+    prefix: fix(bot)
