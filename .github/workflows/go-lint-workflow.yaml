@@ -23,6 +23,10 @@ on:
         type: string
         required: false
         default: "v1.54.2"
+      skip-cache:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   lint:
@@ -74,6 +78,7 @@ jobs:
           version: ${{ inputs.golangci-lint-version }}
           only-new-issues: ${{ inputs.only-new-issues }}
           working-directory: ${{ inputs.working-directory }}
+          skip-cache: ${{ inputs.skip-cache }}
           args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --skip-dirs="(^|/)vendor($|/)" --issues-exit-code=1 --timeout=3m
 
       - name: Comment body
