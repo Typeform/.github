@@ -8,6 +8,10 @@ on:
       ECR_REGISTRY:
         required: true
     inputs:
+      timeout:
+        type: string
+        default: "3m"
+        required: false
       working-directory:
         type: string
         required: false
@@ -74,7 +78,7 @@ jobs:
           version: ${{ inputs.golangci-lint-version }}
           only-new-issues: ${{ inputs.only-new-issues }}
           working-directory: ${{ inputs.working-directory }}
-          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --skip-dirs="(^|/)vendor($|/)" --issues-exit-code=1 --timeout=3m
+          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --skip-dirs="(^|/)vendor($|/)" --issues-exit-code=1 --timeout=${{ inputs.timeout }}
 
       - name: Comment body
         id: comment-body-content
