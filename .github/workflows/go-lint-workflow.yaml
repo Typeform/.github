@@ -72,7 +72,7 @@ jobs:
           cache: false
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v5
+        uses: golangci/golangci-lint-action@v6
         id: golangci-lint
         with:
           version: ${{ inputs.golangci-lint-version }}
