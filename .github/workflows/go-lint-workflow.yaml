@@ -8,6 +8,10 @@ on:
       ECR_REGISTRY:
         required: true
     inputs:
+      timeout:
+        type: string
+        default: "3m"
+        required: false
       working-directory:
         type: string
         required: false
@@ -28,7 +32,7 @@ jobs:
   lint:
     if: ${{ !contains('Bot', github.event.pull_request.user.type) }}
     name: Run linter
-    runs-on: [self-hosted, automated-checks-ephemeral]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out Git repository
@@ -68,13 +72,13 @@ jobs:
           cache: false
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v5
         id: golangci-lint
         with:
           version: ${{ inputs.golangci-lint-version }}
           only-new-issues: ${{ inputs.only-new-issues }}
           working-directory: ${{ inputs.working-directory }}
-          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --skip-dirs="(^|/)vendor($|/)" --issues-exit-code=1 --timeout=3m
+          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --skip-dirs="(^|/)vendor($|/)" --issues-exit-code=1 --timeout=${{ inputs.timeout }}
 
       - name: Comment body
         id: comment-body-content
@@ -88,7 +92,7 @@ jobs:
 
       - name: Find previous lint comment
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v3
         id: previous-lint-comment
         with:
           issue-number: ${{ github.event.number }}
@@ -96,7 +100,7 @@ jobs:
 
       - name: Publish lint comment
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
-        uses: peter-evans/create-or-update-comment@v2
+        uses: peter-evans/create-or-update-comment@v4
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
         with:
