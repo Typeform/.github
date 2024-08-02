@@ -77,7 +77,9 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: ${{ inputs.platforms }}
           push: true
-          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION }}
+          tags: 
+            - ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION }}
+            - ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ github.sha }}
           secrets: ${{ secrets.build-secrets }}
           file: ${{ inputs.file }}
       - name: Set configured prefix on latest tag
@@ -92,6 +94,8 @@ jobs:
           labels: ${{ inputs.labels }}
           platforms: ${{ inputs.platforms }}
           push: true
-          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION_LATEST }}
+          tags: 
+            - ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION_LATEST }}
+            - ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ github.sha }}
           secrets: ${{ secrets.build-secrets }}
           file: ${{ inputs.file }}
