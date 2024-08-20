@@ -86,7 +86,6 @@ jobs:
         if: ${{ inputs.prefix != '' }}
         run: echo "VERSION_LATEST=$(echo ${{inputs.prefix}}-$VERSION_LATEST)" >> $GITHUB_ENV
       - name: Push latest image
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v5
         with:
           build-args: ${{ inputs.build-args }}
