@@ -96,6 +96,5 @@ jobs:
           push: true
           tags: |
             ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION_LATEST }}
-            ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ github.sha }}
           secrets: ${{ secrets.build-secrets }}
           file: ${{ inputs.file }}
