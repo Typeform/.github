@@ -22,7 +22,7 @@ on:
       go-version:
         type: string
         required: false
-        default: "1.23.0"
+        default: "1.22.5"
       golangci-lint-version:
         type: string
         required: false
