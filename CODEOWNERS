@@ -1,4 +1,4 @@
-* @Typeform/security
+* @Typeform/platform-infra
 .github/workflows/go-lint-workflow.yaml                     @Typeform/app-infra
 .github/workflows/image-multiarch.yaml                      @Typeform/platform-infra
 reusable-workflows/go-lint                                  @Typeform/app-infra
