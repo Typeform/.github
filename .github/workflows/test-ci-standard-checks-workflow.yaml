@@ -5,5 +5,5 @@ on:
     branches:
       - main
 jobs:
-  ci-standard-checks:
+  test-ci-standard-checks:
     uses: ./.github/workflows/ci-standard-checks-workflow.yaml
