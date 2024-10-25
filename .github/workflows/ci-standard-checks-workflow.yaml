@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: 20
       - name: CI Standard Checks
-        if: !inputs.useBeta
+        if: ${{ inputs.useBeta == false }}
         uses: Typeform/ci-standard-checks@v1
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
