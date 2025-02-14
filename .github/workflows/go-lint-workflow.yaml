@@ -22,11 +22,11 @@ on:
       go-version:
         type: string
         required: false
-        default: "1.23.1"
+        default: "1.23.5"
       golangci-lint-version:
         type: string
         required: false
-        default: "v1.61.0"
+        default: "v1.63.4"
 
 jobs:
   lint:
@@ -38,10 +38,6 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Parse Repository Name
-        id: repo-name
-        run: echo "name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_OUTPUT
-
       - name: Check out repository containing linter config
         uses: actions/checkout@v4
         with:
@@ -49,14 +45,6 @@ jobs:
           ref: main
           path: lint-config
           token: ${{ secrets.GH_TOKEN }}
-
-      - name: Set local imports
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "<repository>"
-          replace: ${{ steps.repo-name.outputs.name }}
-          regex: false
-          include: "lint-config/config/golangci.yaml"
 
       - name: Configure git for private modules
         env:
@@ -115,5 +103,5 @@ jobs:
             docker run --rm \
               -v $PWD:/app:ro \
               -w /app \
-                ${{env.ECR_REGISTRY}}/golang-builder:latest lint-repository ${{ steps.repo-name.outputs.name }}
+                ${{env.ECR_REGISTRY}}/golang-builder:latest lint-repository
             ```
