@@ -22,11 +22,11 @@ on:
       go-version:
         type: string
         required: false
-        default: "1.23.5"
+        default: "1.24.0"
       golangci-lint-version:
         type: string
         required: false
-        default: "v1.63.4"
+        default: "v1.64.4"
 
 jobs:
   lint:
