@@ -66,6 +66,7 @@ jobs:
           version: ${{ inputs.golangci-lint-version }}
           only-new-issues: ${{ inputs.only-new-issues }}
           working-directory: ${{ inputs.working-directory }}
+          verify: false # no need to verify, we know golang-builder has a valid config
           args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --skip-dirs="(^|/)vendor($|/)" --issues-exit-code=1 --timeout=${{ inputs.timeout }}
 
       - name: Comment body
