@@ -24,7 +24,7 @@ jobs:
 
       - name: Extract app name from package.json
         run: |
-          echo "APP_NAME=$(grep '"name":' package.json | sed 's/.*"@typeform\/\(.*\)",/\1/')" >> $GITHUB_ENV
+          echo "APP_NAME=$(jq -r '.name' package.json | sed 's/@typeform\///')" >> $GITHUB_ENV
 
       - name: Print extracted app name
         run: echo "Extracted APP_NAME is ${{ env.APP_NAME }}"
