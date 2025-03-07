@@ -1,7 +1,7 @@
 name: Deep Purple E2E Test Runner (Frontend Apps Only)
 
 on:
-  workflow_call: # Allows this workflow to be called from other workflows
+  workflow_call:
 
 jobs:
   run-deep-purple-tests:
@@ -9,7 +9,7 @@ jobs:
     runs-on: [self-hosted, ci-universal]
 
     env:
-      DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple:dev-13682498004
+      DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple
 
     steps:
       - name: Check out Git repository
@@ -22,9 +22,6 @@ jobs:
       - name: Print extracted app name
         run: echo "Extracted APP_NAME is ${{ env.APP_NAME }}"
 
-      - name: Pull docker image
-        run: docker pull ${{ env.DOCKER_IMAGE }}
-
       - name: Create test-results directory
         run: mkdir -p ${{ github.workspace }}/test-results
 
@@ -32,23 +29,12 @@ jobs:
         run: |
           docker run --name deep-purple-container \
             -v ${{ github.workspace }}/test-results:/home/pwuser/test-results \
-            -a stdin -a stdout \
-            -e TERM=xterm-256color \
-            -e FORCE_COLOR=1 \
-            -e CLOUDFLARE_BYPASS_TOKEN="${{ secrets.CLOUDFLARE_BYPASS_TOKEN }}" \
-            -e PROD_BASIC_PASSWORD="${{ secrets.PROD_BASIC_PASSWORD }}" \
-            -e PROD_PAID_PASSWORD="${{ secrets.PROD_PAID_PASSWORD }}" \
-            -e PREVIEW_APP_NAME="${{ env.APP_NAME }}" \
-            -e PREVIEW_APP_VERSION="${{ github.sha }}" \
-            -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
-            -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-            -e AWS_REGION="us-east-1" \
-            -e S3_BUCKET_NAME="deep-purple-us-results" \
-            -e NO_AUTH=true \
-            -e SEND_NOTIFICATIONS=false \
-            -e GLOBAL_TEARDOWN=false \
+            -e CLOUDFLARE_BYPASS_TOKEN=${{ secrets.CLOUDFLARE_BYPASS_TOKEN }} \
+            -e PROD_BASIC_PASSWORD=${{ secrets.PROD_BASIC_PASSWORD }} \
+            -e PROD_PAID_PASSWORD=${{ secrets.PROD_PAID_PASSWORD }} \
+            -e SKIP_SEND_NOTIFICATIONS=true \
             ${{ env.DOCKER_IMAGE }} \
-            npx playwright test test/demo_page.test.ts
+            yarn test:all            
           sleep 5  # Give container some time to start
 
       - name: Post test report to PR comments
