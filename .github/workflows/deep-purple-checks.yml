@@ -56,7 +56,7 @@ jobs:
           ai-report: false
           update-comment: false
           overwrite-comment: true
-          exit-on-fail: false
+          exit-on-fail: true
           title: "Deep Purple Results"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
