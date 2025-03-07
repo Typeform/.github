@@ -41,6 +41,7 @@ jobs:
             -e PROD_PAID_PASSWORD=${{ secrets.PROD_PAID_PASSWORD }} \
             -e PREVIEW_APP_NAME="${{ env.APP_NAME }}" \
             -e PREVIEW_APP_VERSION="${{ github.sha }}" \
+            -e MANUAL_BUILD=true \
             -e SKIP_SEND_NOTIFICATIONS=true \
             ${{ env.DOCKER_IMAGE }} \
             yarn test:all            
