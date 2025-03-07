@@ -2,6 +2,13 @@ name: Deep Purple E2E Test Runner (Frontend Apps Only)
 
 on:
   workflow_call:
+    secrets:
+      CLOUDFLARE_BYPASS_TOKEN:
+        required: true
+      PROD_BASIC_PASSWORD:
+        required: true
+      PROD_PAID_PASSWORD:
+        required: true
 
 jobs:
   run-deep-purple-tests:
