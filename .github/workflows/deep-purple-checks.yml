@@ -9,6 +9,8 @@ on:
         required: true
       PROD_PAID_PASSWORD:
         required: true
+      GITHUB_TOKEN:
+        required: true
 
 jobs:
   run-deep-purple-tests:
