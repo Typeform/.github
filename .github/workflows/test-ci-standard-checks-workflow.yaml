@@ -1,0 +1,9 @@
+name: Test CI Standard Checks (this PR)
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  test-ci-standard-checks:
+    uses: ./.github/workflows/ci-standard-checks-workflow.yaml

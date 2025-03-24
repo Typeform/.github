@@ -1,0 +1,60 @@
+# This GitHub workflow updates *.svg diagrams from PlantUML files (*.puml).
+# To prevent accidental / unwanted files committed to the repository, it will only
+# update already committed *.svg files. If you want to add a new diagram and
+# use this workflow to generate the *.svg, you can commit an empty *.svg file
+# with the same file name as the PlantUML (*.puml) file.
+# Read more about PlantUML at https://plantuml.com/.
+name: Generate PlantUML Diagrams
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_call:
+
+env:
+  CI_COMMIT_AUTHOR: Continuous Integration
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Checkout the Pull Request branch, so that we are not in a detached head state.
+          # and can push the re-generated diagrams to the HEAD of the same branch.
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Set environment variable "commit-author"
+        run: echo "commit-author=$(git log -1 --pretty=format:'%an')" >> $GITHUB_ENV
+      - name: Display environment variable "commit-author"
+        run: echo "commit-author=${{ env.commit-author }}"
+
+      - name: Set environment variable "is-auto-commit"
+        if: env.commit-author == env.CI_COMMIT_AUTHOR
+        run: echo "is-auto-commit=true" >> $GITHUB_ENV
+      - name: Display environment variable "is-auto-commit"
+        run: echo "is-auto-commit=${{ env.is-auto-commit }}"
+
+      - name: Generate PlantUML diagrams
+        if: env.is-auto-commit == false
+        uses: rotaract/plantuml-action@v1
+        with:
+          format: svg
+          pattern: "**.puml"
+
+      - name: Set environment variable "changed-diagrams-count"
+        if: env.is-auto-commit == false
+        run: |
+          git status --porcelain
+          echo "changed-diagrams-count=$(git status --porcelain | grep -e '[M|R].*\.svg' | wc -l)" >> $GITHUB_ENV
+      - name: Display environment variable "changed-diagrams-count"
+        run: echo "changed-diagrams-count=${{ env.changed-diagrams-count }}"
+
+      - name: GIT commit PlantUML diagrams
+        if: env.is-auto-commit == false && env.changed-diagrams-count > 0
+        run: |
+          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+          git config --global user.email "no-reply@typeform.com"
+          git commit -a -m "docs(ci): re-generate PlantUML diagrams"
+          git push
