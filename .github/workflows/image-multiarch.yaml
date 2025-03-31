@@ -10,7 +10,7 @@ on:
       platforms:
         type: string
         description: "Specify the target platform for the build output"
-        default: "linux/amd64,linux/arm64"
+        default: "linux/arm64"
       dev-prefix:
         type: boolean
         description: "Include 'dev-' prefix on image tag, when pushing on non-main branches"
@@ -46,7 +46,7 @@ on:
         type: string
         required: false
 env:
-  VERSION: ${{ inputs.version }}
+  VERSION_PREFIX: ''
   VERSION_LATEST: latest
 jobs:
   build:
@@ -65,19 +65,21 @@ jobs:
           endpoint: builders
       - name: Set dev prefix on tag
         if: ${{ (inputs.dev-prefix) && (github.ref != 'refs/heads/main') }}
-        run: echo "VERSION=$(echo dev-$VERSION)" >> $GITHUB_ENV
+        run: echo "VERSION_PREFIX=$(echo dev-)" >> $GITHUB_ENV
       - name: Set configured prefix on tag
         if: ${{ inputs.prefix != '' }}
-        run: echo "VERSION=$(echo ${{inputs.prefix}}-$VERSION)" >> $GITHUB_ENV
+        run: echo "VERSION_PREFIX=$(echo ${{inputs.prefix}}-$VERSION_PREFIX)" >> $GITHUB_ENV
       - name: Build and push images
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: ${{ inputs.build-args }}
           context: ${{ inputs.context }}
           labels: ${{ inputs.labels }}
           platforms: ${{ inputs.platforms }}
           push: true
-          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION }}
+          tags: |
+            ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{env.VERSION_PREFIX}}${{ inputs.version }}
+            ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{env.VERSION_PREFIX}}${{ github.sha }}
           secrets: ${{ secrets.build-secrets }}
           file: ${{ inputs.file }}
       - name: Set configured prefix on latest tag
@@ -85,13 +87,14 @@ jobs:
         run: echo "VERSION_LATEST=$(echo ${{inputs.prefix}}-$VERSION_LATEST)" >> $GITHUB_ENV
       - name: Push latest image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: ${{ inputs.build-args }}
           context: ${{ inputs.context }}
           labels: ${{ inputs.labels }}
           platforms: ${{ inputs.platforms }}
           push: true
-          tags: ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION_LATEST }}
+          tags: |
+            ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION_LATEST }}
           secrets: ${{ secrets.build-secrets }}
           file: ${{ inputs.file }}

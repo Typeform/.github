@@ -22,11 +22,11 @@ on:
       go-version:
         type: string
         required: false
-        default: "1.21.6"
+        default: "1.24.0"
       golangci-lint-version:
         type: string
         required: false
-        default: "v1.54.2"
+        default: "v1.64.4"
 
 jobs:
   lint:
@@ -38,10 +38,6 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Parse Repository Name
-        id: repo-name
-        run: echo "name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_OUTPUT
-
       - name: Check out repository containing linter config
         uses: actions/checkout@v4
         with:
@@ -49,14 +45,6 @@ jobs:
           ref: main
           path: lint-config
           token: ${{ secrets.GH_TOKEN }}
-
-      - name: Set local imports
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "<repository>"
-          replace: ${{ steps.repo-name.outputs.name }}
-          regex: false
-          include: "lint-config/config/golangci.yaml"
 
       - name: Configure git for private modules
         env:
@@ -72,13 +60,14 @@ jobs:
           cache: false
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v5
+        uses: golangci/golangci-lint-action@v6
         id: golangci-lint
         with:
           version: ${{ inputs.golangci-lint-version }}
           only-new-issues: ${{ inputs.only-new-issues }}
           working-directory: ${{ inputs.working-directory }}
-          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --skip-dirs="(^|/)vendor($|/)" --issues-exit-code=1 --timeout=${{ inputs.timeout }}
+          verify: false # no need to verify, we know golang-builder has a valid config
+          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --timeout=${{ inputs.timeout }}
 
       - name: Comment body
         id: comment-body-content
@@ -115,5 +104,5 @@ jobs:
             docker run --rm \
               -v $PWD:/app:ro \
               -w /app \
-                ${{env.ECR_REGISTRY}}/golang-builder:latest lint-repository ${{ steps.repo-name.outputs.name }}
+                ${{env.ECR_REGISTRY}}/golang-builder:latest lint-repository
             ```
