@@ -45,12 +45,12 @@ jobs:
             -e SKIP_SEND_NOTIFICATIONS=true \
             -e DOMAIN=staging.tfdev.typeform.com \
             ${{ env.DOCKER_IMAGE }} \
-            yarn test:all
+            yarn test:ci:all
 
       - name: Post test report to PR comments
         uses: ctrf-io/github-test-reporter@v1
         with:
-          report-path: "${{ github.workspace }}/test-results/*.json"
+          report-path: "${{ github.workspace }}/test-results/ctrf/*.json"
           pull-request-report: true
           overwrite-comment: true
           exit-on-fail: true
