@@ -7,7 +7,7 @@ on:
         required: true
       STAGING_BASIC_PASSWORD:
         required: true
-      STAGING_PAID_PASSWORD:
+      STAGING_PERSONAL_ACCESS_TOKEN:
         required: true
 
 jobs:
@@ -38,11 +38,10 @@ jobs:
             -v ${{ github.workspace }}/test-results:/home/pwuser/test-results \
             -e CLOUDFLARE_BYPASS_TOKEN=${{ secrets.CLOUDFLARE_BYPASS_TOKEN }} \
             -e STAGING_BASIC_PASSWORD=${{ secrets.STAGING_BASIC_PASSWORD }} \
-            -e STAGING_PAID_PASSWORD=${{ secrets.STAGING_PAID_PASSWORD }} \
+            -e STAGING_PERSONAL_ACCESS_TOKEN=${{ secrets.STAGING_PERSONAL_ACCESS_TOKEN }} \
             -e PREVIEW_APP_NAME="${{ env.APP_NAME }}" \
             -e PREVIEW_APP_VERSION="${{ github.sha }}" \
             -e MANUAL_BUILD=true \
-            -e SKIP_SEND_NOTIFICATIONS=true \
             -e DOMAIN=staging.tfdev.typeform.com \
             ${{ env.DOCKER_IMAGE }} \
             yarn test:ci:all
