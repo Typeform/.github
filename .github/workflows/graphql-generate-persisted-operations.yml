@@ -28,7 +28,7 @@ jobs:
         run: yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
 
       # - name: Generate Persisted Operations
-      #   run: node node_modules/@typeform/generate-persisted-operations-manifest/index.js
+      #   run: node node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
 
       # - name: List generated files
       #   run: |
@@ -43,4 +43,4 @@ jobs:
       - name: List installed files of @typeform/generate-persisted-operations-manifest
         run: |
           echo "Contents of the package directory:"
-          ls -lR node_modules/@typeform/generate-persisted-operations-manifest
+          ls -lR node_modules/@typeform/generate-persisted-operations-manifest/dist
