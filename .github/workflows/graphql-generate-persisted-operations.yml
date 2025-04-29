@@ -1,0 +1,32 @@
+name: Generate Persisted Operations
+
+on: workflow_call
+
+jobs:
+  generate-persisted-operations:
+    name: Generate Persisted Operations
+    runs-on: [self-hosted, ci-universal]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install client tools
+        run: npm install @typeform/generate-persisted-operations-manifest
+
+      - name: Generate Persisted Operations
+        run: |
+          node node_modules/@typeform/generate-persisted-operations-manifest/index.js
