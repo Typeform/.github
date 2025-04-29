@@ -1,6 +1,13 @@
 name: Generate Persisted Operations
 
-on: workflow_call
+on:
+  workflow_call:
+    secrets:
+      GH_TOKEN:
+        required: true
+
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
 jobs:
   generate-persisted-operations:
@@ -28,8 +35,6 @@ jobs:
         run: |
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" > ~/.npmrc
           echo "@typeform:registry=https://npm.pkg.github.com/" >> ~/.npmrc
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Install client tools
         run: npm install @typeform/generate-persisted-operations-manifest
