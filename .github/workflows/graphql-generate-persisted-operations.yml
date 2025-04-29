@@ -1,4 +1,4 @@
-name: Generate Persisted Operations
+name: "Generate persisted operations"
 
 on:
   workflow_call:
@@ -6,45 +6,29 @@ on:
       GH_TOKEN:
         required: true
 
-env:
-  GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
 jobs:
-  generate-persisted-operations:
-    name: Generate Persisted Operations
-    runs-on: [self-hosted, ci-universal]
+  generate:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Check out Git repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: 20
 
-      # - name: Cache node modules
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: node_modules
-      #     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-node-
+      - name: Set GitHub packages registry
+        run: |
+          npm config set '//npm.pkg.github.com/:_authToken' ${{ secrets.GH_TOKEN }}
+          npm config set @typeform:registry https://npm.pkg.github.com/
 
-      # - name: Set up npm authentication
-      #   run: |
-      #     echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" > ~/.npmrc
-      #     echo "@typeform:registry=https://npm.pkg.github.com/" >> ~/.npmrc
-
-      # - name: Install client tools
-      #   run: npm install @typeform/generate-persisted-operations-manifest
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Install only @typeform/generate-persisted-operations-manifest
+        run: yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
 
       - name: Generate Persisted Operations
-        run: |
-          node node_modules/@typeform/generate-persisted-operations-manifest/index.js
+        run: node node_modules/@typeform/generate-persisted-operations-manifest/index.js
 
       - name: List generated files
         run: |
