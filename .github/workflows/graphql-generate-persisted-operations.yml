@@ -27,18 +27,18 @@ jobs:
       - name: Install only @typeform/generate-persisted-operations-manifest
         run: yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
 
-      - name: Generate Persisted Operations
-        run: node node_modules/@typeform/generate-persisted-operations-manifest/index.js
+      # - name: Generate Persisted Operations
+      #   run: node node_modules/@typeform/generate-persisted-operations-manifest/index.js
 
-      - name: List generated files
-        run: |
-          echo "Listing contents of ./generated directory:"
-          ls -la generated
+      # - name: List generated files
+      #   run: |
+      #     echo "Listing contents of ./generated directory:"
+      #     ls -la generated
 
-      - name: Display persisted-query-manifest.json
-        run: |
-          echo "Contents of generated/persisted-query-manifest.json:"
-          cat generated/persisted-query-manifest.json
+      # - name: Display persisted-query-manifest.json
+      #   run: |
+      #     echo "Contents of generated/persisted-query-manifest.json:"
+      #     cat generated/persisted-query-manifest.json
 
       - name: List installed files of @typeform/generate-persisted-operations-manifest
         run: |
