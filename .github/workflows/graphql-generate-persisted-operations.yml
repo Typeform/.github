@@ -39,6 +39,9 @@ jobs:
       # - name: Install client tools
       #   run: npm install @typeform/generate-persisted-operations-manifest
 
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
       - name: Generate Persisted Operations
         run: |
           node node_modules/@typeform/generate-persisted-operations-manifest/index.js
