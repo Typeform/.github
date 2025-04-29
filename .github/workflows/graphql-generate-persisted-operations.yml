@@ -30,3 +30,13 @@ jobs:
       - name: Generate Persisted Operations
         run: |
           node node_modules/@typeform/generate-persisted-operations-manifest/index.js
+
+      - name: List generated files
+        run: |
+          echo "Listing contents of ./generated directory:"
+          ls -la generated
+
+      - name: Display persisted-query-manifest.json
+        run: |
+          echo "Contents of generated/persisted-query-manifest.json:"
+          cat generated/persisted-query-manifest.json
