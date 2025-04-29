@@ -39,3 +39,8 @@ jobs:
         run: |
           echo "Contents of generated/persisted-query-manifest.json:"
           cat generated/persisted-query-manifest.json
+
+      - name: List installed files of @typeform/generate-persisted-operations-manifest
+        run: |
+          echo "Contents of the package directory:"
+          ls -lR node_modules/@typeform/generate-persisted-operations-manifest
