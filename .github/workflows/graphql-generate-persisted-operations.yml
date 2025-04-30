@@ -42,7 +42,7 @@ jobs:
 
       - name: Upload manifest to internal allow list
         run: |
-          curl --verbose --max-time 30 -X PATCH https://api.chubby-artichoke.tfdev.typeform.com/gql/internal/operation-allow-list \
+          curl --trace --max-time 30 -X PATCH https://api.chubby-artichoke.tfdev.typeform.com/gql/internal/operation-allow-list \
             -H "Content-Type: application/json" \
             --data-binary "@generated/persisted-query-manifest.json"
 
