@@ -44,7 +44,7 @@ jobs:
         run: |
           curl -X POST https://api.chubby-artichoke.tfdev.typeform.com/gql/internal/operation-allow-list \
             -H "Content-Type: application/json" \
-            --data-binary "generated/persisted-query-manifest.json"
+            --data-binary "@generated/persisted-query-manifest.json"
 
       # - name: List installed files of @typeform/generate-persisted-operations-manifest
       #   run: |
