@@ -40,6 +40,18 @@ jobs:
           echo "Contents of generated/persisted-query-manifest.json:"
           cat generated/persisted-query-manifest.json
 
+      - name: Check if GraphQL endpoints are reachable
+        run: |
+          ENDPOINTS=(
+            "https://graphqlbff.tfprod.internal.typeform.tf"
+            "https://graphqlbff.tfprod.internal.eu.typeform.tf"
+            "https://graphqlbff.tfprod.internal.eu-central-1.typeform.tf"
+          )
+          for url in "${ENDPOINTS[@]}"; do
+            echo "Pinging $url..."
+            curl -v --max-time 10 "$url" || echo ":x: $url is not reachable"
+          done
+
       - name: Upload manifest to internal allow list
         run: |
           curl --trace --max-time 30 -X PATCH https://graphqlbff.tfprod.internal.typeform.tf/internal/operation-allow-list \
