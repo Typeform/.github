@@ -8,7 +8,7 @@ on:
 
 jobs:
   generate:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ci-universal]
 
     steps:
       - name: Checkout code
