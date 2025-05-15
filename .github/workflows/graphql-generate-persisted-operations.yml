@@ -47,7 +47,7 @@ jobs:
 
       - name: Check if GraphQL endpoints are reachable
         run: |
-          IFS=$'\n' read -rd '' -a ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
+          mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
           for url in "${ENDPOINTS[@]}"; do
             echo "Pinging $url..."
             curl -v --max-time 10 "$url" || echo ":x: $url is not reachable"
@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload manifest to internal allow list for all endpoints
         run: |
-          IFS=$'\n' read -rd '' -a ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
+          mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
           for url in "${ENDPOINTS[@]}"; do
             echo "Uploading manifest to $url/internal/operation-allow-list..."
             curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list" \
