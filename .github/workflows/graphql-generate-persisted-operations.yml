@@ -1,0 +1,72 @@
+name: "Generate persisted operations"
+
+on:
+  workflow_call:
+    secrets:
+      GH_TOKEN:
+        required: true
+
+jobs:
+  generate:
+    runs-on: [self-hosted, ci-universal]
+    env:
+      GRAPHQL_ENDPOINTS: |
+        https://graphqlbff.tfprod.internal.typeform.tf
+        https://graphqlbff.tfprod.internal.eu.typeform.tf
+        https://graphqlbff.tfprod.internal.eu-central-1.typeform.tf
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set GitHub packages registry
+        run: |
+          npm config set '//npm.pkg.github.com/:_authToken' ${{ secrets.GH_TOKEN }}
+          npm config set @typeform:registry https://npm.pkg.github.com/
+
+      - name: Install only @typeform/generate-persisted-operations-manifest
+        run: yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
+
+      - name: Generate Persisted Operations
+        run: node node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
+
+      - name: List generated files
+        run: |
+          echo "Listing contents of ./generated directory:"
+          ls -la generated
+
+      - name: Display persisted-query-manifest.json
+        run: |
+          echo "Contents of generated/persisted-query-manifest.json:"
+          cat generated/persisted-query-manifest.json
+
+      - name: Check if GraphQL endpoints are reachable
+        run: |
+          mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
+          for url in "${ENDPOINTS[@]}"; do
+            echo "Pinging $url..."
+            curl -v --max-time 10 "$url" || echo ":x: $url is not reachable"
+          done
+
+      - name: Upload manifest to internal allow list
+        run: |
+          curl --trace-ascii --max-time 30 -X PATCH https://graphqlbff.tfprod.internal.typeform.tf/internal/operation-allow-list \
+            -H "Content-Type: application/json" \
+            --data-binary "@generated/persisted-query-manifest.json"
+
+      - name: Upload manifest to internal allow list for all endpoints
+        run: |
+          mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
+          for url in "${ENDPOINTS[@]}"; do
+            echo "Uploading manifest to $url/internal/operation-allow-list..."
+            curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list" \
+              -H "Content-Type: application/json" \
+              --data-binary "@generated/persisted-query-manifest.json" \
+              && echo "✅ Successfully uploaded to $url" \
+              || echo "❌ Failed to upload to $url"
+          done
