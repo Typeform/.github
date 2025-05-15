@@ -9,6 +9,11 @@ on:
 jobs:
   generate:
     runs-on: [self-hosted, ci-universal]
+    env:
+      GRAPHQL_ENDPOINTS: |
+        https://graphqlbff.tfprod.internal.typeform.tf
+        https://graphqlbff.tfprod.internal.eu.typeform.tf
+        https://graphqlbff.tfprod.internal.eu-central-1.typeform.tf
 
     steps:
       - name: Checkout code
@@ -42,11 +47,7 @@ jobs:
 
       - name: Check if GraphQL endpoints are reachable
         run: |
-          ENDPOINTS=(
-            "https://graphqlbff.tfprod.internal.typeform.tf"
-            "https://graphqlbff.tfprod.internal.eu.typeform.tf"
-            "https://graphqlbff.tfprod.internal.eu-central-1.typeform.tf"
-          )
+          IFS=$'\n' read -rd '' -a ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
           for url in "${ENDPOINTS[@]}"; do
             echo "Pinging $url..."
             curl -v --max-time 10 "$url" || echo ":x: $url is not reachable"
@@ -58,13 +59,14 @@ jobs:
             -H "Content-Type: application/json" \
             --data-binary "@generated/persisted-query-manifest.json"
 
-      # - name: Upload manifest to internal allow list
-      #   run: |
-      #     curl --trace --max-time 30 -X PATCH https://api.chubby-artichoke.tfdev.typeform.com/gql/internal/operation-allow-list \
-      #       -H "Content-Type: application/json" \
-      #       --data-binary "@generated/persisted-query-manifest.json"
-
-      # - name: List installed files of @typeform/generate-persisted-operations-manifest
-      #   run: |
-      #     echo "Contents of the package directory:"
-      #     ls -lR node_modules/@typeform/generate-persisted-operations-manifest/dist
+      - name: Upload manifest to internal allow list for all endpoints
+        run: |
+          IFS=$'\n' read -rd '' -a ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
+          for url in "${ENDPOINTS[@]}"; do
+            echo "Uploading manifest to $url/internal/operation-allow-list..."
+            curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list" \
+              -H "Content-Type: application/json" \
+              --data-binary "@generated/persisted-query-manifest.json" \
+              && echo "✅ Successfully uploaded to $url" \
+              || echo "❌ Failed to upload to $url"
+          done
