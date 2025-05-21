@@ -22,7 +22,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Set GitHub packages registry
         run: |
@@ -50,21 +50,22 @@ jobs:
           mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
           for url in "${ENDPOINTS[@]}"; do
             echo "Pinging $url..."
-            curl -v --max-time 10 "$url" || echo ":x: $url is not reachable"
+            curl -v --max-time 10 "$url?runNumber=$GITHUB_RUN_NUMBER" || echo ":x: $url is not reachable"
           done
 
-      - name: Upload manifest to internal allow list
+      - name: Extract app name from package.json
         run: |
-          curl --trace-ascii --max-time 30 -X PATCH https://graphqlbff.tfprod.internal.typeform.tf/internal/operation-allow-list \
-            -H "Content-Type: application/json" \
-            --data-binary "@generated/persisted-query-manifest.json"
+          echo "APP_NAME=$(jq -r '.name' package.json | sed 's/@typeform\///')" >> $GITHUB_ENV
+
+      - name: Print extracted app name
+        run: echo "Extracted APP_NAME is ${{ env.APP_NAME }}"
 
       - name: Upload manifest to internal allow list for all endpoints
         run: |
           mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
           for url in "${ENDPOINTS[@]}"; do
             echo "Uploading manifest to $url/internal/operation-allow-list..."
-            curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list" \
+            curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?runNumber=$GITHUB_RUN_NUMBER&appName=${{env.APP_NAME}}" \
               -H "Content-Type: application/json" \
               --data-binary "@generated/persisted-query-manifest.json" \
               && echo "✅ Successfully uploaded to $url" \
