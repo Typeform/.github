@@ -65,7 +65,7 @@ jobs:
         run: |
           mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
           for url in "${ENDPOINTS[@]}"; do
-            echo "Uploading manifest to $url/internal/operation-allow-list..."
+            echo "Uploading manifest to $url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${{env.APP_NAME}}"
             curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${{env.APP_NAME}}" \
               -H "Content-Type: application/json" \
               --data-binary "@generated/persisted-query-manifest.json" \
