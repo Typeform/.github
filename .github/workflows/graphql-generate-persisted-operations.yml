@@ -51,7 +51,12 @@ jobs:
           mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
           for url in "${ENDPOINTS[@]}"; do
             echo "Pinging $url..."
-            curl -v --max-time 10 "$url?runNumber=$GITHUB_RUN_NUMBER" || echo ":x: $url is not reachable"
+            curl_exit_code=0
+            curl -v --max-time 10 "$url?runNumber=$GITHUB_RUN_NUMBER" || curl_exit_code=$?
+            if [ $curl_exit_code -ne 0 ]; then
+              echo "❌ Curl command failed with exit code $curl_exit_code"
+              exit $curl_exit_code
+            fi
           done
 
       - name: Extract app name from package.json
@@ -69,6 +74,15 @@ jobs:
             curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${{env.APP_NAME}}" \
               -H "Content-Type: application/json" \
               --data-binary "@generated/persisted-query-manifest.json" \
-              && echo "✅ Successfully uploaded to $url" \
-              || echo "❌ Failed to upload to $url"
+            if [ $curl_exit_code -ne 0 ]; then
+              echo "❌ Failed to upload manifest to $url with exit code $curl_exit_code"
+            else
+              echo "✅ Successfully uploaded to $url"
+            fi
+          done
+
+          if [ $curl_exit_code -ne 0 ]; then
+            echo "❌ One or more uploads failed, failing workflow"
+            exit $curl_exit_code
+          fi
           done
