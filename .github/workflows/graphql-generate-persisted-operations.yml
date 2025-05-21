@@ -74,7 +74,7 @@ jobs:
             curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${{env.APP_NAME}}" \
               -H "Content-Type: application/json" \
               --data-binary "@generated/persisted-query-manifest.json" \
-            if [ $curl_exit_code -ne 0 ]; then
+            if [ $? -ne 0 ]; then
               echo "❌ Failed to upload manifest to $url with exit code $curl_exit_code"
             else
               echo "✅ Successfully uploaded to $url"
