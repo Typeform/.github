@@ -7,7 +7,7 @@ on:
         required: true
 
 jobs:
-  generate:
+  update-allow-list:
     runs-on: [self-hosted, ci-universal]
     env:
       GRAPHQL_ENDPOINTS: |
@@ -30,6 +30,20 @@ jobs:
           npm config set '//npm.pkg.github.com/:_authToken' ${{ secrets.GH_TOKEN }}
           npm config set @typeform:registry https://npm.pkg.github.com/
 
+      - name: Check if GraphQL endpoints are reachable
+        run: |
+          readarray -t ENDPOINTS <<< "$GRAPHQL_ENDPOINTS"
+          for url in "${ENDPOINTS[@]}"; do
+            [[ -z "$url" ]] && continue  # skip empty lines
+            echo "Pinging $url..."
+            curl_exit_code=0
+            curl --max-time 10 "$url?runNumber=$GITHUB_RUN_NUMBER" || curl_exit_code=$?
+            if [ $curl_exit_code -ne 0 ]; then
+              echo "❌ Curl command failed with exit code $curl_exit_code"
+              exit $curl_exit_code
+            fi
+          done
+
       - name: Install only @typeform/generate-persisted-operations-manifest
         run: yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
 
@@ -46,14 +60,6 @@ jobs:
           echo "Contents of generated/persisted-query-manifest.json:"
           cat generated/persisted-query-manifest.json
 
-      - name: Check if GraphQL endpoints are reachable
-        run: |
-          mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
-          for url in "${ENDPOINTS[@]}"; do
-            echo "Pinging $url..."
-            curl -v --max-time 10 "$url?runNumber=$GITHUB_RUN_NUMBER" || echo ":x: $url is not reachable"
-          done
-
       - name: Extract app name from package.json
         run: |
           echo "APP_NAME=$(jq -r '.name' package.json | sed 's/@typeform\///')" >> $GITHUB_ENV
@@ -64,11 +70,23 @@ jobs:
       - name: Upload manifest to internal allow list for all endpoints
         run: |
           mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
+          curl_exit_code=0
           for url in "${ENDPOINTS[@]}"; do
-            echo "Uploading manifest to $url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${{env.APP_NAME}}"
-            curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${{env.APP_NAME}}" \
+            [[ -z "$url" ]] && continue  # skip empty lines
+            echo "Uploading manifest to $url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}"
+            curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}" \
               -H "Content-Type: application/json" \
-              --data-binary "@generated/persisted-query-manifest.json" \
-              && echo "✅ Successfully uploaded to $url" \
-              || echo "❌ Failed to upload to $url"
+              --data-binary "@generated/persisted-query-manifest.json"
+
+            if [ $? -ne 0 ]; then
+              echo "❌ Failed to upload manifest to $url"
+              curl_exit_code=1
+            else
+              echo "✅ Successfully uploaded to $url"
+            fi
           done
+
+          if [ $curl_exit_code -ne 0 ]; then
+            echo "❌ One or more uploads failed, failing workflow"
+            exit $curl_exit_code
+          fi
