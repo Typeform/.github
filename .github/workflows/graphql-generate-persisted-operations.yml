@@ -58,7 +58,8 @@ jobs:
 
       - name: Generate Persisted Operations
         run: |
-          node temp-install/node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
+          cd src
+          node ../temp-install/node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
 
       - name: List generated files 1
         run: |
