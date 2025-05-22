@@ -44,11 +44,17 @@ jobs:
             fi
           done
 
-      - name: Install only @typeform/generate-persisted-operations-manifest
-        run: yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
+      - name: Install only @typeform/generate-persisted-operations-manifest in isolated temp directory
+        run: |
+          mkdir temp-install
+          cd temp-install
+          yarn init -y
+          yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
+          cd ..
 
       - name: Generate Persisted Operations
-        run: node node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
+        run: |
+          node temp-install/node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
 
       - name: List generated files
         run: |
