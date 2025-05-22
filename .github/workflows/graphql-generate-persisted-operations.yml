@@ -49,7 +49,7 @@ jobs:
           mkdir temp-install
           cd temp-install
           yarn init -y
-          yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
+          yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest @apollo/generate-persisted-query-manifest@^1.2.2
           cd ..
 
       - name: Generate Persisted Operations
