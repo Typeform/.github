@@ -35,7 +35,6 @@ jobs:
           readarray -t ENDPOINTS <<< "$GRAPHQL_ENDPOINTS"
           for url in "${ENDPOINTS[@]}"; do
             [[ -z "$url" ]] && continue  # skip empty lines
-
             echo "Pinging $url..."
             curl_exit_code=0
             curl --max-time 10 "$url?runNumber=$GITHUB_RUN_NUMBER" || curl_exit_code=$?
@@ -73,6 +72,7 @@ jobs:
           mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
           curl_exit_code=0
           for url in "${ENDPOINTS[@]}"; do
+            [[ -z "$url" ]] && continue  # skip empty lines
             echo "Uploading manifest to $url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}"
             curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}" \
               -H "Content-Type: application/json" \
