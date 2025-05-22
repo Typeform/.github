@@ -64,7 +64,7 @@ jobs:
       - name: List generated files 1
         run: |
           echo "Listing contents of ./generated directory:"
-          ls -la temp-install/generated
+          ls -la src/generated
 
       - name: List generated files 2
         run: |
