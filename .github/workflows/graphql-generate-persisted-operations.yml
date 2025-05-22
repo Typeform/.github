@@ -67,12 +67,12 @@ jobs:
       - name: List generated files
         run: |
           echo "Listing contents of ./generated directory:"
-          ls -la src/generated
+          ls -la generated
 
       - name: Display persisted-query-manifest.json
         run: |
           echo "Contents of generated/persisted-query-manifest.json:"
-          cat src/generated/persisted-query-manifest.json
+          cat generated/persisted-query-manifest.json
 
       - name: Extract app name from package.json
         run: |
@@ -90,7 +90,7 @@ jobs:
             echo "Uploading manifest to $url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}"
             curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}" \
               -H "Content-Type: application/json" \
-              --data-binary "@src/generated/persisted-query-manifest.json"
+              --data-binary "@generated/persisted-query-manifest.json"
 
             if [ $? -ne 0 ]; then
               echo "❌ Failed to upload manifest to $url"
