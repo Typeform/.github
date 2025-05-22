@@ -58,13 +58,17 @@ jobs:
 
       - name: Generate Persisted Operations
         run: |
-          cd temp-install
-          node node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
+          node temp-install/node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
 
-      - name: List generated files
+      - name: List generated files 1
         run: |
           echo "Listing contents of ./generated directory:"
           ls -la temp-install/generated
+
+      - name: List generated files 2
+        run: |
+          echo "Listing contents of ./generated directory:"
+          ls -la generated
 
       - name: Display persisted-query-manifest.json
         run: |
