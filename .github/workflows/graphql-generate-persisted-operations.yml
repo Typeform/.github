@@ -55,6 +55,9 @@ jobs:
             @apollo/client@^3.7.0 \
             graphql@^16.0.0
           cd ..
+        env:
+          GQL_MANIFEST_DOCUMENTS: '["**/*.{js,ts,tsx,graphql}","!**/*.d.ts","!**/*.spec.{ts,tsx}","!**/*.test.{ts,tsx}","!node_modules/**"]'
+          GQL_MANIFEST_OUTPUT: "generated/persisted-query-manifest.json"
 
       - name: Generate Persisted Operations
         run: |
