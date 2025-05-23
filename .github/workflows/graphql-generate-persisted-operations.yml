@@ -45,10 +45,23 @@ jobs:
           done
 
       - name: Install only @typeform/generate-persisted-operations-manifest
-        run: yarn add --no-lockfile --non-interactive --dev @typeform/generate-persisted-operations-manifest
+        run: |
+          mkdir persisted-ops-generator
+          cd persisted-ops-generator
+          yarn init -y
+          yarn add --no-lockfile --non-interactive --dev \
+            @typeform/generate-persisted-operations-manifest \
+            @apollo/generate-persisted-query-manifest@^1.2.2 \
+            @apollo/client@^3.7.0 \
+            graphql@^16.0.0
+          cd ..
 
       - name: Generate Persisted Operations
-        run: node node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
+        run: |
+          node persisted-ops-generator/node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
+        env:
+          GQL_MANIFEST_DOCUMENTS: '["**/*.{js,ts,tsx,graphql}","!**/*.d.ts","!**/*.spec.{ts,tsx}","!**/*.test.{ts,tsx}","!node_modules/**","!persisted-ops-generator/**"]'
+          GQL_MANIFEST_OUTPUT: "generated/persisted-query-manifest.json"
 
       - name: List generated files
         run: |
