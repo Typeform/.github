@@ -58,8 +58,7 @@ jobs:
 
       - name: Generate Persisted Operations
         run: |
-          cd src
-          node ../temp-install/node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
+          node temp-install/node_modules/@typeform/generate-persisted-operations-manifest/dist/index.js
         env:
           GQL_MANIFEST_DOCUMENTS: '["**/*.{js,ts,tsx,graphql}","!**/*.d.ts","!**/*.spec.{ts,tsx}","!**/*.test.{ts,tsx}","!node_modules/**"]'
           GQL_MANIFEST_OUTPUT: "../generated/persisted-query-manifest.json"
