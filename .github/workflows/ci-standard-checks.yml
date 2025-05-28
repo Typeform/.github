@@ -12,6 +12,8 @@ on:
       - ready_for_review
     branches:
       - main
+  merge_group:
+    types: [ checks_requested ]
 jobs:
   ci-standard-checks:
     uses: Typeform/.github/.github/workflows/ci-standard-checks-workflow.yaml@v1
