@@ -1,0 +1,144 @@
+name: "Docs Action"
+description: "Upload and deploy documentation for projects to Typeform internal Docs Hub"
+author: "Typeform"
+
+inputs:
+  path:
+    description: "Path to the pre-built documentation directory"
+    required: true
+    default: "docs"
+  target:
+    description: "Deployment target: 's3' for S3 bucket or 'github' for GitHub Pages"
+    required: false
+    default: "s3"
+  bucket:
+    description: "S3 bucket to upload the docs (optional, internal shared bucket is used by default)"
+    required: false
+    default: "typeform-design-docs-vblxnu"
+  prefix:
+    description: "S3 prefix to upload the docs (optional, defaults to the repository name)"
+    required: false
+    default: ""
+  aws-region:
+    description: "AWS region for S3 deployment"
+    required: false
+    default: "us-east-1"
+
+outputs:
+  docs-url:
+    description: "URL where the documentation was deployed"
+    value: ${{ steps.deploy.outputs.docs-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Verify documentation directory
+      shell: bash
+      run: |
+        if [ ! -d "${{ inputs.path }}" ]; then
+          echo "Error: Documentation directory '${{ inputs.path }}' does not exist"
+          exit 1
+        fi
+        if [ ! "$(ls -A "${{ inputs.path }}")" ]; then
+          echo "Error: Documentation directory '${{ inputs.path }}' is empty"
+          exit 1
+        fi
+        echo "Documentation directory verified: ${{ inputs.path }}"
+        ls -la ${{ inputs.path }}
+
+    - name: Install AWS CLI
+      if: inputs.target == 's3'
+      shell: bash
+      run: |
+        if ! command -v aws &> /dev/null; then
+          echo "Installing AWS CLI..."
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+        fi
+
+    - name: Get Tools AWS account ID
+      if: inputs.target == 's3'
+      id: tools_aws_account_id
+      shell: bash
+      run: echo "id=$(aws --region=us-east-1 ssm get-parameter --with-decryption --name /account/aws/tools/id --query Parameter.Value --output text)" >> $GITHUB_OUTPUT
+
+    - name: Build Tools IAM role ARN
+      if: inputs.target == 's3'
+      id: tools_aws_role_arn
+      shell: bash
+      run: echo "arn=arn:aws:iam::${{ steps.tools_aws_account_id.outputs.id }}:role/gha.docs-action.us-east-1" >> $GITHUB_OUTPUT
+
+    - name: Configure AWS credentials
+      if: inputs.target == 's3'
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ steps.tools_aws_role_arn.outputs.arn }}
+        role-session-name: docs-action-${{ github.run_id }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Deploy to S3
+      if: inputs.target == 's3'
+      id: deploy-s3
+      shell: bash
+      run: |
+        # Determine S3 prefix
+        if [ -n "${{ inputs.prefix }}" ]; then
+          S3_PREFIX="${{ inputs.prefix }}"
+        else
+          S3_PREFIX="${{ github.event.repository.name }}"
+        fi
+
+        S3_PATH="s3://${{ inputs.bucket }}/${S3_PREFIX}/"
+
+        echo "Deploying to S3..."
+        echo "S3 Bucket: ${{ inputs.bucket }}"
+        echo "S3 Prefix: ${S3_PREFIX}"
+        echo "Full S3 Path: ${S3_PATH}"
+
+        echo "Using AWS CLI for S3 deployment..."
+
+        # Sync to S3
+        aws s3 sync "${{ inputs.path }}/" "${S3_PATH}" --delete --region "${{ inputs.aws-region }}"
+
+        # Generate the documentation URL
+        DOCS_URL="https://${{ inputs.bucket }}.s3.amazonaws.com/${S3_PREFIX}/index.html"
+        echo "Documentation deployed successfully!"
+        echo "URL: ${DOCS_URL}"
+        echo "docs-url=${DOCS_URL}" >> "$GITHUB_OUTPUT"
+
+    - name: Deploy to GitHub Pages
+      if: inputs.target == 'github'
+      id: deploy-github
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        branch: gh-pages
+        folder: ${{ inputs.path }}
+        clean: true
+
+    - name: Set GitHub Pages output URL
+      if: inputs.target == 'github'
+      id: set-github-pages-url
+      shell: bash
+      run: |
+        DOCS_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+        echo "Documentation deployed successfully!"
+        echo "URL: ${DOCS_URL}"
+        echo "docs-url=${DOCS_URL}" >> "$GITHUB_OUTPUT"
+
+    - name: Set output URL
+      id: deploy
+      shell: bash
+      run: |
+        if [ "${{ inputs.target }}" = "s3" ]; then
+          echo "docs-url=${{ steps.deploy-s3.outputs.docs-url }}" >> "$GITHUB_OUTPUT"
+        else
+          echo "docs-url=${{ steps.set-github-pages-url.outputs.docs-url }}" >> "$GITHUB_OUTPUT"
+        fi
+
+branding:
+  icon: "book-open"
+  color: "blue"
