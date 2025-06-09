@@ -43,7 +43,7 @@ jobs:
 | `path`       | Yes      | `docs`                        | Path to pre-built documentation directory |
 | `target`     | No       | `s3`                          | Deployment target: `s3` or `github`       |
 | `bucket`     | No       | `typeform-design-docs-vblxnu` | S3 bucket name                            |
-| `prefix`     | No       | Repository name               | S3 prefix for organization                |
+| `prefix`     | No       | `<repo-name>/<branch>`        | S3 prefix for organization                |
 | `aws-region` | No       | `us-east-1`                   | AWS region for S3                         |
 
 ## Output Parameters
@@ -51,6 +51,26 @@ jobs:
 | Parameter  | Description                              |
 | ---------- | ---------------------------------------- |
 | `docs-url` | URL where the documentation was deployed |
+
+## S3 Prefix and TTL Behavior
+
+### Default Prefix Format
+
+When no custom `prefix` is specified, the action uses the format: `<repository-name>/<branch-name>`
+
+Examples:
+
+- `my-repo/main` - for main branch deployments
+- `my-repo/feature-branch` - for feature branch deployments
+- `other-repo/PR-123` - for pull request branch deployments
+
+### TTL (Time To Live) for Non-Main Branches
+
+- **Main branch**: Files are uploaded without expiration (permanent)
+- **Other branches with default prefix**: Files are uploaded with a 1-month TTL to prevent storage bloat from temporary branches
+- **Custom prefix**: No TTL is applied regardless of branch (user controls the lifecycle)
+
+This ensures that documentation for feature branches and pull requests is automatically cleaned up after 30 days when using the default prefix format, while main branch documentation and custom prefix deployments remain permanently available.
 
 ## Examples
 
