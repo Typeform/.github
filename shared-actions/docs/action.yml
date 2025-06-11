@@ -74,7 +74,6 @@ runs:
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ steps.tools_aws_role_arn.outputs.arn }}
-        role-session-name: docs-action-${{ github.run_id }}
         aws-region: ${{ inputs.aws-region }}
 
     - name: Deploy to S3
