@@ -75,7 +75,6 @@ runs:
       with:
         role-to-assume: ${{ steps.tools_aws_role_arn.outputs.arn }}
         aws-region: ${{ inputs.aws-region }}
-        role-skip-session-tagging: true
 
     - name: Deploy to S3
       if: inputs.target == 's3'
