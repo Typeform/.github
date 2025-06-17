@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install Yarn
+        run: npm install -g yarn@1.22.22
+
       - name: Set GitHub packages registry
         run: |
           npm config set '//npm.pkg.github.com/:_authToken' ${{ secrets.GH_TOKEN }}
