@@ -57,23 +57,23 @@ runs:
           sudo ./aws/install
         fi
 
-    - name: Get Tools AWS account ID
+    - name: Get AWS account ID
       if: inputs.target == 's3'
-      id: tools_aws_account_id
+      id: aws_account_id
       shell: bash
-      run: echo "id=$(aws --region=us-east-1 ssm get-parameter --with-decryption --name /account/aws/tools/id --query Parameter.Value --output text)" >> $GITHUB_OUTPUT
+      run: echo "id=$(aws --region=us-east-1 ssm get-parameter --with-decryption --name /account/aws/dev/id --query Parameter.Value --output text)" >> $GITHUB_OUTPUT
 
-    - name: Build Tools IAM role ARN
+    - name: Build IAM role ARN
       if: inputs.target == 's3'
-      id: tools_aws_role_arn
+      id: aws_role_arn
       shell: bash
-      run: echo "arn=arn:aws:iam::${{ steps.tools_aws_account_id.outputs.id }}:role/gha.docs-action.us-east-1" >> $GITHUB_OUTPUT
+      run: echo "arn=arn:aws:iam::${{ steps.aws_account_id.outputs.id }}:role/gha.docs-action.us-east-1" >> $GITHUB_OUTPUT
 
     - name: Configure AWS credentials
       if: inputs.target == 's3'
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ steps.tools_aws_role_arn.outputs.arn }}
+        role-to-assume: ${{ steps.aws_role_arn.outputs.arn }}
         aws-region: ${{ inputs.aws-region }}
 
     - name: Deploy to S3
