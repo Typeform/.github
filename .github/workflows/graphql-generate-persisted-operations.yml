@@ -10,6 +10,7 @@ jobs:
   update-allow-list:
     runs-on: [self-hosted, ci-universal]
     env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
       GRAPHQL_ENDPOINTS: |
         https://graphqlbff.staging.internal.tfdev.typeform.tf
         https://graphqlbff.tfprod.internal.typeform.tf
