@@ -1,6 +1,6 @@
 # Docs Action
 
-This repository contains a GitHub Action to upload and deploy pre-built documentation for a project to the [Typeform internal Docs Hub](https://docs.typeform.com/).
+This repository contains a GitHub Action to upload and deploy pre-built documentation for a project to the [Typeform internal Docs](https://docs.typeform.com/).
 
 This action expects documentation to already be built and uploads it to:
 
@@ -72,6 +72,34 @@ Examples:
 
 This ensures that documentation for feature branches and pull requests is automatically cleaned up after 30 days when using the default prefix format, while main branch documentation and custom prefix deployments remain permanently available.
 
+## Pull Request Comments
+
+When the action runs on pull request events (`pull_request` or `pull_request_target`), it automatically posts a comment to the PR with the documentation preview URL. The comment includes:
+
+- 📚 A visual indicator with the docs preview URL
+- ⚠️ An expiration warning when TTL is applied (for non-main branches with default prefix)
+
+The action intelligently updates existing comments instead of creating duplicates, ensuring a clean comment thread.
+
+Example comment:
+
+```
+📚 **Docs preview ready!**
+
+View this PR's docs preview at: https://typeform-design-docs-vblxnu.s3.amazonaws.com/my-repo/feat-branch/index.html
+
+⚠️ The preview will be deleted on January 31, 2025
+```
+
+## Branch Name Detection
+
+The action correctly detects branch names for different GitHub event types:
+
+- **Push events**: Uses the actual branch name from `github.ref_name`
+- **Pull request events**: Uses the source branch name from `github.head_ref` (not the merge ref like `466/merge`)
+
+This ensures that documentation is deployed with the correct branch-based prefix and that PR comments show the accurate preview URL.
+
 ## Examples
 
 ### Deploy to S3
@@ -126,11 +154,13 @@ jobs:
           target: "github"
 ```
 
-### Complete Workflow Example
+### Deploy on Pull Requests with Comments
 
 ```yaml
-name: Build and deploy docs
-on: [push]
+name: Deploy docs preview on PR
+on:
+  pull_request:
+    branches: [main]
 
 jobs:
   docs:
@@ -138,6 +168,34 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write # Required for PR comments
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build documentation
+        run: |
+          # Your build process here
+          npm run build-docs
+
+      - uses: Typeform/.github/shared-actions/docs@main
+        with:
+          path: "docs"
+          target: "s3"
+```
+
+### Complete Workflow Example
+
+```yaml
+name: Build and deploy docs
+on: [push, pull_request]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write # Required for PR comments
     steps:
       - uses: actions/checkout@v4
 
