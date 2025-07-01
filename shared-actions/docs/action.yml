@@ -82,7 +82,12 @@ runs:
       shell: bash
       run: |
         # Extract branch name from GitHub ref
-        BRANCH_NAME="${{ github.ref_name }}"
+        # For pull requests, use head_ref (source branch), otherwise use ref_name
+        if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.event_name }}" = "pull_request_target" ]; then
+          BRANCH_NAME="${{ github.head_ref }}"
+        else
+          BRANCH_NAME="${{ github.ref_name }}"
+        fi
 
         # Determine S3 prefix and whether it's custom
         if [ -n "${{ inputs.prefix }}" ]; then
