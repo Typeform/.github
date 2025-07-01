@@ -134,7 +134,8 @@ runs:
         fi
 
         # Generate the documentation URL
-        DOCS_URL="https://${{ inputs.bucket }}.s3.amazonaws.com/${S3_PREFIX}/index.html"
+        DOCS_BASE_URL="https://docs.typeform.tf"
+        DOCS_URL="${DOCS_BASE_URL}/${S3_PREFIX}/index.html"
         echo "Documentation deployed successfully!"
         echo "URL: ${DOCS_URL}"
         echo "docs-url=${DOCS_URL}" >> "$GITHUB_OUTPUT"
