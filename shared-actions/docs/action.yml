@@ -1,5 +1,5 @@
 name: "Docs Action"
-description: "Upload and deploy documentation for projects to Typeform internal Docs Hub"
+description: "Upload and deploy documentation for projects to Typeform internal Docs"
 author: "Typeform"
 
 inputs:
@@ -114,7 +114,9 @@ runs:
           echo "Non-main branch with default prefix detected. Setting 1 month TTL on uploaded files..."
           # Calculate expiration date (30 days from now)
           EXPIRATION_DATE=$(date -d "+30 days" -u +"%Y-%m-%dT%H:%M:%SZ")
+          EXPIRATION_DATE_READABLE=$(date -d "+30 days" -u +"%B %d, %Y")
           echo "Expiration date: ${EXPIRATION_DATE}"
+          echo "expiration-date=${EXPIRATION_DATE_READABLE}" >> "$GITHUB_OUTPUT"
 
           # Sync to S3 with expiration metadata
           aws s3 sync "${{ inputs.path }}/" "${S3_PATH}" --delete --region "${{ inputs.aws-region }}" \
@@ -126,6 +128,7 @@ runs:
           else
             echo "Main branch detected. No TTL set on uploaded files."
           fi
+          echo "expiration-date=" >> "$GITHUB_OUTPUT"
           # Sync to S3 without expiration
           aws s3 sync "${{ inputs.path }}/" "${S3_PATH}" --delete --region "${{ inputs.aws-region }}"
         fi
@@ -154,6 +157,30 @@ runs:
         echo "Documentation deployed successfully!"
         echo "URL: ${DOCS_URL}"
         echo "docs-url=${DOCS_URL}" >> "$GITHUB_OUTPUT"
+
+    - name: Find existing PR comment
+      if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+      uses: peter-evans/find-comment@v3
+      id: find-comment
+      continue-on-error: true
+      with:
+        issue-number: ${{ github.event.number }}
+        body-includes: "📚 **Docs preview ready!**"
+
+    - name: Create or update PR comment
+      if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+      uses: peter-evans/create-or-update-comment@v4
+      continue-on-error: true
+      with:
+        issue-number: ${{ github.event.number }}
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        edit-mode: replace
+        body: |
+          📚 **Docs preview ready!**
+
+          View this PR's docs preview at: ${{ inputs.target == 's3' && steps.deploy-s3.outputs.docs-url || steps.set-github-pages-url.outputs.docs-url }}
+          ${{ inputs.target == 's3' && steps.deploy-s3.outputs.expiration-date && format('
+          ⚠️ The preview will be deleted on {0}', steps.deploy-s3.outputs.expiration-date) || '' }}
 
     - name: Set output URL
       id: deploy
