@@ -21,7 +21,7 @@ jobs:
     runs-on: [self-hosted, ci-universal]
 
     env:
-      DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple:dev-16266907570
+      DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple:latest
 
     steps:
       - name: Check out Git repository
