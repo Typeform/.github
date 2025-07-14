@@ -9,6 +9,11 @@ on:
         required: true
       STAGING_PERSONAL_ACCESS_TOKEN:
         required: true
+    inputs:
+      app:
+        type: string
+        default: ""
+        required: false
 
 jobs:
   run-deep-purple-tests:
@@ -16,7 +21,7 @@ jobs:
     runs-on: [self-hosted, ci-universal]
 
     env:
-      DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple:latest
+      DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple:dev-16197627412
 
     steps:
       - name: Check out Git repository
@@ -24,7 +29,12 @@ jobs:
 
       - name: Extract app name from package.json
         run: |
-          echo "APP_NAME=$(jq -r '.name' package.json | sed 's/@typeform\///')" >> $GITHUB_ENV
+          APP="${{ inputs.app }}"
+          if [ -z "${APP}" ]; then
+            echo "APP_NAME=$(jq -r '.name' package.json | sed 's/@typeform\///')" >> $GITHUB_ENV
+          else
+            echo "APP_NAME=${APP}" >> $GITHUB_ENV
+          fi
 
       - name: Print extracted app name
         run: echo "Extracted APP_NAME is ${{ env.APP_NAME }}"
