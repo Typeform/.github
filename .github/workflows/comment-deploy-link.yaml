@@ -77,7 +77,7 @@ jobs:
         id: find-comment
         with:
           issue-number: ${{ github.event.number }}
-          body-includes: "🚀 Deploy this version of `${{ inputs.service }}` in"
+          body-includes: "Deploy this version of `${{ inputs.service }}` in"
 
       - name: Create Comment
         uses: peter-evans/create-or-update-comment@v4
@@ -87,7 +87,7 @@ jobs:
           issue-number: ${{ github.event.number }}
           body: |
             🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` created, hooray!
-            🚀 Deploy this version of `${{ inputs.service }}`in an **ephemeral environment** with `--reference`:
+            🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
 
       - name: Update Comment
@@ -98,7 +98,7 @@ jobs:
           issue-number: ${{ github.event.number }}
           body: |
             🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` created, hooray!
-            🚀 Deploy this version of `${{ inputs.service }}`in an **ephemeral environment** with `--reference`:
+            🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           edit-mode: replace
