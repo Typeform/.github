@@ -15,7 +15,7 @@ on:
       git_sha:
         type: string
         required: false
-        default:
+        default: ${{ github.pull_request.head.sha  }}
       update-comment:
         type: boolean
         required: false
@@ -93,8 +93,6 @@ jobs:
             🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` from commit ${{ inputs.git_sha }} created, hooray!
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
-            debug: `github`
-            ${{ toJSON(github) }}
 
       - name: Update Comment
         uses: peter-evans/create-or-update-comment@v4
@@ -106,7 +104,5 @@ jobs:
             🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` from commit ${{ inputs.git_sha }} created, hooray!
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
-            debug: `github`
-            ${{ toJSON(github) }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           edit-mode: replace
