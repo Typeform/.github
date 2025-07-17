@@ -15,7 +15,7 @@ on:
       git_sha:
         type: string
         required: false
-        default: ${{ github.sha }}
+        default: ${{ github.event.head.sha }}
       update-comment:
         type: boolean
         required: false
