@@ -12,6 +12,10 @@ on:
       version:
         type: string
         required: true
+      git_sha:
+        type: string
+        required: false
+        default: ${{ github.sha }}
       update-comment:
         type: boolean
         required: false
@@ -86,7 +90,7 @@ jobs:
         with:
           issue-number: ${{ github.event.number }}
           body: |
-            🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` created, hooray!
+            🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` from commit `${{ inputs.git_sha }}` created, hooray!
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
 
@@ -97,7 +101,7 @@ jobs:
         with:
           issue-number: ${{ github.event.number }}
           body: |
-            🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` created, hooray!
+            🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` from commit `${{ inputs.git_sha }}` created, hooray!
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
