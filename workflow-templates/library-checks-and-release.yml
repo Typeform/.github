@@ -17,7 +17,7 @@ env:
 jobs:
   main:
     name: Run checks and deploy
-    runs-on: [self-hosted, fear]
+    runs-on: [self-hosted, ci-universal]
 
     steps:
       - name: Check out Git repository
