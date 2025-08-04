@@ -19,6 +19,9 @@ jobs:
   run-deep-purple-tests:
     name: Run Deep Purple Tests Against Changes
     runs-on: [self-hosted, ci-universal]
+    permissions:
+      pull-requests: write
+      contents: read
 
     env:
       DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple:latest
