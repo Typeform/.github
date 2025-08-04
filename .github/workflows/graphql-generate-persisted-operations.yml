@@ -67,6 +67,22 @@ jobs:
           GQL_MANIFEST_DOCUMENTS: '["**/*.{js,ts,tsx,graphql}","!**/*.d.ts","!**/*.spec.{ts,tsx}","!**/*.test.{ts,tsx}","!node_modules/**","!persisted-ops-generator/**"]'
           GQL_MANIFEST_OUTPUT: "generated/persisted-query-manifest.json"
 
+      - name: Add custom persisted operation
+        run: |
+          # Read the generated manifest
+          manifest=$(cat generated/persisted-query-manifest.json)
+
+          # Create the new operation entry
+          new_operation='{
+            "id": "674469b2cda3134e3f5d2ff6e676e1b2201511d614252150d45695ce30e1748d",
+            "name": "GetPublishedFormAndJobs",
+            "type": "query",
+            "body": "query GetPublishedFormAndJobs($formId: ID!, $getDraft: Boolean!) {\n  form(id: $formId) {\n    id\n    links {\n      display\n      __typename\n    }\n    fields {\n      ...FieldsFragment\n      __typename\n    }\n    thankyouScreens {\n      ref\n      title\n      type\n      __typename\n    }\n    hidden {\n      key\n      __typename\n    }\n    variables\n    followUps {\n      id\n      name\n      status\n      trigger {\n        type\n        properties\n        __typename\n      }\n      tasks {\n        id\n        status\n        type\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  draft(id: $formId) @include(if: $getDraft) {\n    id\n    links {\n      display\n      __typename\n    }\n    fields {\n      ...FieldsFragment\n      __typename\n    }\n    thankyouScreens {\n      ref\n      title\n      type\n      __typename\n    }\n    hidden {\n      key\n      __typename\n    }\n    variables\n    __typename\n  }\n}\n\nfragment ChoiceFragment on Choice {\n  ref\n  label\n  __typename\n}\n\nfragment FieldsFragment on FormField {\n  ...FieldsFragmentWithoutGroup\n  ...GroupFieldsFragment\n  ...InlineGroupFieldsFragment\n  __typename\n}\n\nfragment FieldsFragmentWithoutGroup on FormField {\n  ...FormFieldFragment\n  ... on PictureChoiceField {\n    properties {\n      ... on PictureChoiceFieldProperties {\n        allow_other_choice: allowOtherChoice\n        choices {\n          ...ChoiceFragment\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  ... on MultipleChoiceField {\n    properties {\n      ... on MultipleChoiceFieldProperties {\n        allow_other_choice: allowOtherChoice\n        choices {\n          ...ChoiceFragment\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  ... on DropdownField {\n    properties {\n      ... on DropdownFieldProperties {\n        choices {\n          ...ChoiceFragment\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  ... on AddressField {\n    properties {\n      ... on AddressFieldProperties {\n        fields {\n          ... on FormField {\n            subfield_key: subfieldKey\n            ...FormFieldFragment\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  ... on ContactInfoField {\n    properties {\n      ... on ContactInfoFieldProperties {\n        fields {\n          ... on FormField {\n            subfield_key: subfieldKey\n            ...FormFieldFragment\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  ... on MatrixField {\n    properties {\n      ... on MatrixFieldProperties {\n        fields {\n          ...FormFieldFragment\n          ... on MultipleChoiceField {\n            properties {\n              ... on MultipleChoiceFieldProperties {\n                allow_other_choice: allowOtherChoice\n                choices {\n                  ...ChoiceFragment\n                  __typename\n                }\n                __typename\n              }\n              __typename\n            }\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  ... on RankingField {\n    properties {\n      ... on RankingFieldProperties {\n        choices {\n          ...ChoiceFragment\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment FormFieldFragment on FormField {\n  title\n  type\n  ref\n  validations\n  __typename\n}\n\nfragment GroupFieldsFragment on FormField {\n  ... on GroupField {\n    ...FormFieldFragment\n    properties {\n      ... on GroupFieldProperties {\n        fields {\n          ...FieldsFragmentWithoutGroup\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment InlineGroupFieldsFragment on FormField {\n  ... on InlineGroupField {\n    ...FormFieldFragment\n    properties {\n      ... on InlineGroupFieldProperties {\n        fields {\n          ...FieldsFragmentWithoutGroup\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  __typename\n}"
+          }'
+
+          # Use jq to add the new operation to the operations array
+          echo "$manifest" | jq --argjson new_op "$new_operation" '.operations += [$new_op]' > generated/persisted-query-manifest.json
+
       - name: List generated files
         run: |
           echo "Listing contents of ./generated directory:"
@@ -84,26 +100,26 @@ jobs:
       - name: Print extracted app name
         run: echo "Extracted APP_NAME is ${{ env.APP_NAME }}"
 
-      - name: Upload manifest to internal allow list for all endpoints
-        run: |
-          mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
-          curl_exit_code=0
-          for url in "${ENDPOINTS[@]}"; do
-            [[ -z "$url" ]] && continue  # skip empty lines
-            echo "Uploading manifest to $url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}"
-            curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}" \
-              -H "Content-Type: application/json" \
-              --data-binary "@generated/persisted-query-manifest.json"
+      # - name: Upload manifest to internal allow list for all endpoints
+      #   run: |
+      #     mapfile -t ENDPOINTS <<< "${GRAPHQL_ENDPOINTS}"
+      #     curl_exit_code=0
+      #     for url in "${ENDPOINTS[@]}"; do
+      #       [[ -z "$url" ]] && continue  # skip empty lines
+      #       echo "Uploading manifest to $url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}"
+      #       curl --fail --max-time 30 -X PATCH "$url/internal/operation-allow-list?deploymentRunNumber=$GITHUB_RUN_NUMBER&appName=${APP_NAME}" \
+      #         -H "Content-Type: application/json" \
+      #         --data-binary "@generated/persisted-query-manifest.json"
 
-            if [ $? -ne 0 ]; then
-              echo "❌ Failed to upload manifest to $url"
-              curl_exit_code=1
-            else
-              echo "✅ Successfully uploaded to $url"
-            fi
-          done
+      #       if [ $? -ne 0 ]; then
+      #         echo "❌ Failed to upload manifest to $url"
+      #         curl_exit_code=1
+      #       else
+      #         echo "✅ Successfully uploaded to $url"
+      #       fi
+      #     done
 
-          if [ $curl_exit_code -ne 0 ]; then
-            echo "❌ One or more uploads failed, failing workflow"
-            exit $curl_exit_code
-          fi
+      #     if [ $curl_exit_code -ne 0 ]; then
+      #       echo "❌ One or more uploads failed, failing workflow"
+      #       exit $curl_exit_code
+      #     fi
