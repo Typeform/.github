@@ -26,7 +26,7 @@ on:
       golangci-lint-version:
         type: string
         required: false
-        default: "v1.64.4"
+        default: "v1.64.8"
 
 jobs:
   lint:
