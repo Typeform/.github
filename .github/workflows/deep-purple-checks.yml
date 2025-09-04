@@ -14,11 +14,16 @@ on:
         type: string
         default: ""
         required: false
+      runner:
+        description: "Self-hosted GHA runner"
+        type: string
+        required: false
+        default: "ci-universal"
 
 jobs:
   run-deep-purple-tests:
     name: Run Deep Purple Tests Against Changes
-    runs-on: [self-hosted, ci-universal]
+    runs-on: [self-hosted, "${{ inputs.runner }}"]
 
     env:
       DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple:latest
