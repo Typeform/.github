@@ -45,13 +45,18 @@ on:
         description: "Image labels"
         type: string
         required: false
+      runner:
+        description: "Self-hosted GHA runner"
+        type: string
+        required: false
+        default: "ci-base"
 env:
   VERSION_PREFIX: ''
   VERSION_LATEST: latest
 jobs:
   build:
     name: Build and push image
-    runs-on: [ self-hosted, ci-base]
+    runs-on: [ self-hosted, "${{ inputs.runner }}" ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -2,13 +2,19 @@ name: "Generate persisted operations"
 
 on:
   workflow_call:
+    inputs:
+      runner:
+        description: "Self-hosted GHA runner"
+        type: string
+        required: false
+        default: "ci-universal"
     secrets:
       GH_TOKEN:
         required: true
 
 jobs:
   update-allow-list:
-    runs-on: [self-hosted, ci-universal]
+    runs-on: [self-hosted, "${{ inputs.runner }}"]
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       GRAPHQL_ENDPOINTS: |
