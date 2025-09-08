@@ -92,7 +92,7 @@ jobs:
         id: comment-body-content
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
         run: |
-          if [[ "${{ steps.golangci-lint.conclusion }}" == "success" ]]; then
+          if [[ "${{ fromJSON(steps.golangci-lint).conclusion }}" == "success" ]]; then
             echo "results=$(echo ":tada::tada: **Congratulations! Your code seems to be really nice!** :tada::tada:")" >> $GITHUB_OUTPUT
           else
             echo "results=$(echo ":rotating_light::rotating_light: **There are linting issues, check the \`Files changed\` tab for more info** :rotating_light::rotating_light:")" >> $GITHUB_OUTPUT
