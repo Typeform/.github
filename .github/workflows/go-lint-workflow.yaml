@@ -27,6 +27,10 @@ on:
         type: string
         required: false
         default: "v1.64.8"
+      golangci-lint-action-version:
+        type: string
+        required: false
+        default: "v6"
       golangci-lint-config-repo:
         type: string
         required: false
@@ -72,14 +76,10 @@ jobs:
           cache: false
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        id: golangci-lint
+        uses: jenseng/dynamic-uses@v1
         with:
-          version: ${{ inputs.golangci-lint-version }}
-          only-new-issues: ${{ inputs.only-new-issues }}
-          working-directory: ${{ inputs.working-directory }}
-          verify: false # no need to verify, we know golang-builder has a valid config
-          args: --config ${{ github.workspace }}/${{ inputs.golangci-lint-config-repo-path }}/config/golangci.yaml --timeout=${{ inputs.timeout }}
+          uses: golangci/golangci-lint-action@${{ inputs.golangci-lint-action-version }}
+          with: '{ "version": ${{ inputs.golangci-lint-version }}, "only-new-issues": ${{ inputs.only-new-issues }}, "working-directory": "${{ inputs.working-directory }}", "verify": false, "args": "--config ${{ github.workspace }}/${{ inputs.golangci-lint-config-repo-path }}/config/golangci.yaml --timeout=${{ inputs.timeout }}" }'
 
       - name: Comment body
         id: comment-body-content
