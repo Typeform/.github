@@ -81,11 +81,11 @@ jobs:
           uses: golangci/golangci-lint-action@${{ inputs.golangci-lint-action-version }}
           with: |
             {
-              "version": ${{ inputs.golangci-lint-version }},
-              "only-new-issues": ${{ inputs.only-new-issues }},
-              "working-directory": "${{ inputs.working-directory }}",
+              "version": ${{ toJSON(inputs.golangci-lint-version) }},
+              "only-new-issues": ${{ toJSON(inputs.only-new-issues) }},
+              "working-directory": "${{ toJSON(inputs.working-directory) }}",
               "verify": false,
-              "args": "--config ${{ github.workspace }}/${{ inputs.golangci-lint-config-repo-path }}/config/golangci.yaml --timeout=${{ inputs.timeout }}" 
+              "args": ${{ toJSON(format('--config {0}/{1}/config/golangci.yaml --timeout={2}', github.workspace, inputs.golangci-lint-config-repo-path, inputs.timeout)) }}
             }
 
       - name: Comment body
