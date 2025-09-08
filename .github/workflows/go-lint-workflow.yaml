@@ -34,7 +34,7 @@ on:
       golangci-lint-config-repo-ref:
         type: string
         required: false
-        default: "1.14.12"
+        default: "1.14.13"
       golangci-lint-config-repo-path:
         type: string
         required: false
