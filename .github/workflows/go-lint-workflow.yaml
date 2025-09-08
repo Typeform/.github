@@ -27,6 +27,22 @@ on:
         type: string
         required: false
         default: "v1.64.8"
+      golangci-lint-action-version:
+        type: string
+        required: false
+        default: "v6"
+      golangci-lint-config-repo:
+        type: string
+        required: false
+        default: "Typeform/golang-builder"
+      golangci-lint-config-repo-ref:
+        type: string
+        required: false
+        default: "1.15.0"
+      golangci-lint-config-repo-path:
+        type: string
+        required: false
+        default: "lint-config"
 
 jobs:
   lint:
@@ -41,9 +57,9 @@ jobs:
       - name: Check out repository containing linter config
         uses: actions/checkout@v5
         with:
-          repository: Typeform/golang-builder
-          ref: main
-          path: lint-config
+          repository: ${{ inputs.golangci-lint-config-repo }}
+          ref: ${{ inputs.golangci-lint-config-repo-ref }}
+          path: ${{ inputs.golangci-lint-config-repo-path }}
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Configure git for private modules
@@ -60,20 +76,24 @@ jobs:
           cache: false
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        id: golangci-lint
+        id: runlint
+        uses: jenseng/dynamic-uses@v1
         with:
-          version: ${{ inputs.golangci-lint-version }}
-          only-new-issues: ${{ inputs.only-new-issues }}
-          working-directory: ${{ inputs.working-directory }}
-          verify: false # no need to verify, we know golang-builder has a valid config
-          args: --config ${{ github.workspace }}/lint-config/config/golangci.yaml --timeout=${{ inputs.timeout }}
+          uses: golangci/golangci-lint-action@${{ inputs.golangci-lint-action-version }}
+          with: |
+            {
+              "version": ${{ toJSON(inputs.golangci-lint-version) }},
+              "only-new-issues": ${{ toJSON(inputs.only-new-issues) }},
+              "working-directory": ${{ toJSON(inputs.working-directory) }},
+              "verify": false,
+              "args": ${{ toJSON(format('--config {0}/{1}/config/golangci.yaml --timeout={2}', github.workspace, inputs.golangci-lint-config-repo-path, inputs.timeout)) }}
+            }
 
       - name: Comment body
         id: comment-body-content
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
         run: |
-          if [[ "${{ steps.golangci-lint.conclusion }}" == "success" ]]; then
+          if [[ "${{ steps.runlint.outcome }}" == "success" ]]; then
             echo "results=$(echo ":tada::tada: **Congratulations! Your code seems to be really nice!** :tada::tada:")" >> $GITHUB_OUTPUT
           else
             echo "results=$(echo ":rotating_light::rotating_light: **There are linting issues, check the \`Files changed\` tab for more info** :rotating_light::rotating_light:")" >> $GITHUB_OUTPUT
