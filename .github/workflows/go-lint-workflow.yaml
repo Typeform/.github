@@ -79,7 +79,14 @@ jobs:
         uses: jenseng/dynamic-uses@v1
         with:
           uses: golangci/golangci-lint-action@${{ inputs.golangci-lint-action-version }}
-          with: '{ "version": ${{ inputs.golangci-lint-version }}, "only-new-issues": ${{ inputs.only-new-issues }}, "working-directory": "${{ inputs.working-directory }}", "verify": false, "args": "--config ${{ github.workspace }}/${{ inputs.golangci-lint-config-repo-path }}/config/golangci.yaml --timeout=${{ inputs.timeout }}" }'
+          with: |
+            {
+              "version": ${{ inputs.golangci-lint-version }},
+              "only-new-issues": ${{ inputs.only-new-issues }},
+              "working-directory": "${{ inputs.working-directory }}",
+              "verify": false,
+              "args": "--config ${{ github.workspace }}/${{ inputs.golangci-lint-config-repo-path }}/config/golangci.yaml --timeout=${{ inputs.timeout }}" 
+            }
 
       - name: Comment body
         id: comment-body-content
