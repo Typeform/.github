@@ -76,6 +76,7 @@ jobs:
           cache: false
 
       - name: golangci-lint
+        id: runlint
         uses: jenseng/dynamic-uses@v1
         with:
           uses: golangci/golangci-lint-action@${{ inputs.golangci-lint-action-version }}
@@ -83,7 +84,7 @@ jobs:
             {
               "version": ${{ toJSON(inputs.golangci-lint-version) }},
               "only-new-issues": ${{ toJSON(inputs.only-new-issues) }},
-              "working-directory": ${{ toJSON(inputs.working-directory) }},
+              "working-directory": "${{ toJSON(inputs.working-directory) }}",
               "verify": false,
               "args": ${{ toJSON(format('--config {0}/{1}/config/golangci.yaml --timeout={2}', github.workspace, inputs.golangci-lint-config-repo-path, inputs.timeout)) }}
             }
@@ -92,7 +93,11 @@ jobs:
         id: comment-body-content
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
         run: |
-          echo "${{ fromJSON(steps.golangci-lint.outputs) }}"
+          if [[ "${{ steps.runlint.outcome }}" == "success" ]]; then
+            echo "results=$(echo ":tada::tada: **Congratulations! Your code seems to be really nice!** :tada::tada:")" >> $GITHUB_OUTPUT
+          else
+            echo "results=$(echo ":rotating_light::rotating_light: **There are linting issues, check the \`Files changed\` tab for more info** :rotating_light::rotating_light:")" >> $GITHUB_OUTPUT
+          fi
 
       - name: Find previous lint comment
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
