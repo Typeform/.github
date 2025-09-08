@@ -36,10 +36,10 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check out repository containing linter config
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: Typeform/golang-builder
           ref: main
@@ -54,13 +54,13 @@ jobs:
           export GOPRIVATE=github.com/Typeform/*
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ inputs.go-version }}
           cache: false
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         id: golangci-lint
         with:
           version: ${{ inputs.golangci-lint-version }}
