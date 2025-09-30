@@ -122,7 +122,8 @@ jobs:
             To run the linter locally, please, run this command:
             ```
             docker run --rm \
-              -v $PWD:/app:ro \
+              -e GITHUB_TOKEN \
+              -v $PWD:/app \
               -w /app \
-                ${{env.ECR_REGISTRY}}/golang-builder:latest lint-repository
+                ${{env.ECR_REGISTRY}}/golang-builder:${{ inputs.golangci-lint-config-repo-ref }} sh -c 'init-git && golangci-lint run --config /golangci.yaml --fix ----new-from-rev main ./...'
             ```
