@@ -3,11 +3,9 @@ name: Deep Purple E2E Test Runner (Frontend Apps Only)
 on:
   workflow_call:
     secrets:
-      CLOUDFLARE_BYPASS_TOKEN:
+      JENKINS_OKTA_USERNAME:
         required: true
-      STAGING_BASIC_PASSWORD:
-        required: true
-      STAGING_PERSONAL_ACCESS_TOKEN:
+      JENKINS_USER_TOKEN:
         required: true
     inputs:
       app:
@@ -25,9 +23,6 @@ jobs:
     name: Run Deep Purple Tests Against Changes
     runs-on: [self-hosted, "${{ inputs.runner }}"]
 
-    env:
-      DOCKER_IMAGE: 567716553783.dkr.ecr.us-east-1.amazonaws.com/deep-purple:latest
-
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v5
@@ -44,31 +39,39 @@ jobs:
       - name: Print extracted app name
         run: echo "Extracted APP_NAME is ${{ env.APP_NAME }}"
 
-      - name: Create test-results directory
-        run: mkdir -p ${{ github.workspace }}/test-results
-
       - name: Run Deep Purple tests
-        run: |
-          docker run --name deep-purple-container \
-            -v ${{ github.workspace }}/test-results:/home/pwuser/test-results \
-            -e CLOUDFLARE_BYPASS_TOKEN=${{ secrets.CLOUDFLARE_BYPASS_TOKEN }} \
-            -e STAGING_BASIC_PASSWORD=${{ secrets.STAGING_BASIC_PASSWORD }} \
-            -e STAGING_PERSONAL_ACCESS_TOKEN=${{ secrets.STAGING_PERSONAL_ACCESS_TOKEN }} \
-            -e PREVIEW_APP_NAME="${{ env.APP_NAME }}" \
-            -e PREVIEW_APP_VERSION="${{ github.sha }}" \
-            -e MANUAL_BUILD=true \
-            -e DOMAIN=staging.tfdev.typeform.com \
-            ${{ env.DOCKER_IMAGE }} \
-            yarn test:ci:all
-
-      - name: Post test report to PR comments
-        uses: ctrf-io/github-test-reporter@v1
-        with:
-          report-path: "${{ github.workspace }}/test-results/ctrf/*.json"
-          pull-request-report: true
-          overwrite-comment: true
-          exit-on-fail: true
-          title: "Deep Purple Results"
+        id: 'deep-purple-tests'
+        uses: Typeform/deep-purple-action@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: always()
+          JENKINS_OKTA_USERNAME: ${{ secrets.JENKINS_OKTA_USERNAME }}
+          JENKINS_USER_TOKEN: ${{ secrets.JENKINS_USER_TOKEN }}
+        with:
+          preview-app-name: ${{ env.APP_NAME }}
+          preview-app-version: ${{ github.sha }}
+          gha-repo: ${{ github.repository }}
+          gha-event-name: ${{ github.event_name }}
+          gha-ref-name: ${{ github.ref_name }}
+          gha-actor: ${{ github.triggering_actor }}
+          gha-workflow-run-url: "${{github.server_url}}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Find previous Deep Purple run comment
+        if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
+        uses: peter-evans/find-comment@v3
+        id: previous-deep-purple-comment
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.number }}
+          body-includes: '## Deep Purple'
+
+      - name: Publish Deep Purple comment
+        if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.previous-deep-purple-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.number }}
+          edit-mode: replace
+          body: |
+            ## Deep Purple
+
+            ${{ steps.deep-purple-tests.outputs.help-message }}
