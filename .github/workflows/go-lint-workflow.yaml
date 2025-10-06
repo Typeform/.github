@@ -101,7 +101,7 @@ jobs:
 
       - name: Find previous lint comment
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         id: previous-lint-comment
         with:
           issue-number: ${{ github.event.number }}
@@ -109,7 +109,7 @@ jobs:
 
       - name: Publish lint comment
         if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
         with:
