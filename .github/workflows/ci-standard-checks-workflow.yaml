@@ -18,10 +18,15 @@ on:
         required: false
         default: false
         description: 'whether to use Typeform/ci-standard-checks@v1-beta'
+      runner:
+        description: "Self-hosted GHA runner"
+        type: string
+        required: false
+        default: "ci-base"
 
 jobs:
   ci-standard-checks:
-    runs-on: 'ubuntu-latest'
+    runs-on: [self-hosted, "${{ inputs.runner }}"]
     steps:
       - name: Check Out Source Code
         uses: actions/checkout@v5
