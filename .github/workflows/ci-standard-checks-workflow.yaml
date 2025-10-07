@@ -35,14 +35,14 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 20
-      - name: CI Standard Checks # bump2
+      - name: CI Standard Checks # bump3
         if: ${{ inputs.useBeta == false }}
         uses: Typeform/ci-standard-checks@v1
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           skipChecks: ${{ inputs.skipChecks }}
           enableChecks: ${{ inputs.enableChecks }}
-      - name: CI Standard Checks @v1-beta # bump2
+      - name: CI Standard Checks @v1-beta # bump3
         if: ${{ inputs.useBeta == true }}
         uses: Typeform/ci-standard-checks@v1-beta
         with:
