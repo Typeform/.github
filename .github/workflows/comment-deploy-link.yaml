@@ -104,6 +104,12 @@ jobs:
           issue-number: ${{ github.event.number }}
           body: |
             🎉 Version `${{ inputs.version }}` of service `${{ inputs.service }}` from commit ${{ inputs.git-sha }} created, hooray!
+            ```
+            ${{ inputs.version }}
+            ```
+            ```
+            tf env deploy ${{ inputs.service }} ${{ inputs.version }}
+            ```
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
