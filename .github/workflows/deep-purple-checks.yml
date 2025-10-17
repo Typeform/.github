@@ -21,7 +21,7 @@ on:
 jobs:
   run-deep-purple-tests:
     name: Run Deep Purple Tests Against Changes
-    runs-on: [self-hosted, "${{ inputs.runner }}"]
+    runs-on: [self-hosted, "ci-bob-the-builder-universal"]
 
     steps:
       - name: Check out Git repository
