@@ -55,7 +55,7 @@ jobs:
           gha-workflow-run-url: "${{github.server_url}}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Find previous Deep Purple run comment
-        if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
+        if: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && !cancelled() }}
         uses: peter-evans/find-comment@v4
         id: previous-deep-purple-comment
         with:
@@ -64,7 +64,7 @@ jobs:
           body-includes: '## Deep Purple'
 
       - name: Publish Deep Purple comment
-        if: ${{ !contains(github.ref, 'refs/heads/master') && !contains(github.ref, 'refs/heads/main') && (success() || failure()) }}
+        if: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && !cancelled() }}
         uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
