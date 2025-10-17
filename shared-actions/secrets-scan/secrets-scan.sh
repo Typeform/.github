@@ -10,9 +10,9 @@ then
     exit 1
 fi
 
-# Check if user is logged in to quay.io
-DOCKER_REGISTRY=quay.io
-docker pull ${DOCKER_REGISTRY}/typeform/gitleaks-config
+# Check if user is logged in to ECR
+DOCKER_REGISTRY=567716553783.dkr.ecr.us-east-1.amazonaws.com
+docker pull ${DOCKER_REGISTRY}/gitleaks-config
 exit_code=$?
 
 if [ ! $exit_code -eq 0 ]; then
@@ -30,7 +30,7 @@ mkdir -p $tmp_dir
 local_config=".gitleaks.toml"
 final_config="$tmp_dir/gitleaks_config.toml"
 commits_file="$tmp_dir/commit_list.txt"
-gitleaks_config_container="${DOCKER_REGISTRY}/typeform/gitleaks-config"
+gitleaks_config_container="${DOCKER_REGISTRY}/gitleaks-config"
 gitleaks_container="zricethezav/gitleaks"
 gitleaks_version="v7.2.0"
 
