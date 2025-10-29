@@ -8,7 +8,7 @@
   "private": false,
   "dependencies": {
     "analytics-node": "^3.5.0",
-    "@actions/core": "^1.2.6",
+    "@actions/core": "^1.11.1",
     "@actions/github": "^4.0.0"
   },
   "devDependencies": {
