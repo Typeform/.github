@@ -41,7 +41,7 @@ jobs:
 
       - name: Run Deep Purple tests
         id: 'deep-purple-tests'
-        uses: Typeform/deep-purple-action@v1
+        uses: Typeform/deep-purple-action@PLT-2515-user-type
         env:
           JENKINS_OKTA_USERNAME: ${{ secrets.JENKINS_OKTA_USERNAME }}
           JENKINS_USER_TOKEN: ${{ secrets.JENKINS_USER_TOKEN }}
