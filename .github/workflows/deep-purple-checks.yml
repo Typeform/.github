@@ -48,6 +48,7 @@ jobs:
         with:
           preview-app-name: ${{ env.APP_NAME }}
           preview-app-version: ${{ github.sha }}
+          user-type: 'test'
           gha-repo: ${{ github.repository }}
           gha-event-name: ${{ github.event_name }}
           gha-ref-name: ${{ github.ref_name }}
