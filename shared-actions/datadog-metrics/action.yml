@@ -1,0 +1,61 @@
+name: 'Send Datadog Metrics'
+description: 'Send CI/CD timing metrics to Datadog for baseline collection and monitoring'
+inputs:
+  DATADOG_API_KEY:
+    description: 'Datadog API Key'
+    required: true
+  metric_name:
+    description: 'Metric name (e.g., ci.stage.duration)'
+    required: true
+  metric_value:
+    description: 'Metric value (duration in seconds)'
+    required: true
+  project:
+    description: 'Project name'
+    required: true
+  stage:
+    description: 'Stage name (setup, build, test, deploy, etc.)'
+    required: true
+  pr_number:
+    description: 'PR number'
+    required: false
+    default: 'none'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Send metric to Datadog
+      shell: bash
+      run: |
+        TIMESTAMP=$(date +%s)
+        
+        echo "📊 Sending metric to Datadog:"
+        echo "  Project: ${{ inputs.project }}"
+        echo "  Stage: ${{ inputs.stage }}"
+        echo "  Duration: ${{ inputs.metric_value }}s"
+        echo "  PR: ${{ inputs.pr_number }}"
+        
+        curl -X POST "https://api.datadoghq.com/api/v1/series" \
+          -H "Content-Type: application/json" \
+          -H "DD-API-KEY: ${{ inputs.DATADOG_API_KEY }}" \
+          -d @- << 'EOFINNER'
+        {
+          "series": [
+            {
+              "metric": "${{ inputs.metric_name }}",
+              "points": [[$TIMESTAMP, ${{ inputs.metric_value }}]],
+              "type": "gauge",
+              "tags": [
+                "project:${{ inputs.project }}",
+                "stage:${{ inputs.stage }}",
+                "pr:${{ inputs.pr_number }}",
+                "branch:${{ github.ref_name }}",
+                "workflow:${{ github.workflow }}",
+                "run_id:${{ github.run_id }}"
+              ]
+            }
+          ]
+        }
+        EOFINNER
+        
+        echo "✅ Metric sent successfully"
