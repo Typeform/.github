@@ -7,8 +7,11 @@ inputs:
   metric_name:
     description: 'Metric name (e.g., ci.stage.duration)'
     required: true
-  metric_value:
-    description: 'Metric value (duration in seconds)'
+  start_time:
+    description: 'Start time in Unix timestamp (seconds since epoch)'
+    required: true
+  end_time:
+    description: 'End time in Unix timestamp (seconds since epoch)'
     required: true
   project:
     description: 'Project name'
@@ -24,26 +27,31 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Send metric to Datadog
+    - name: Calculate duration and send metric to Datadog
       shell: bash
       run: |
+        # Calculate duration
+        START_TIME=${{ inputs.start_time }}
+        END_TIME=${{ inputs.end_time }}
+        DURATION=$((END_TIME - START_TIME))
         TIMESTAMP=$(date +%s)
         
         echo "📊 Sending metric to Datadog:"
         echo "  Project: ${{ inputs.project }}"
         echo "  Stage: ${{ inputs.stage }}"
-        echo "  Duration: ${{ inputs.metric_value }}s"
+        echo "  Duration: ${DURATION}s"
         echo "  PR: ${{ inputs.pr_number }}"
         
+        # Send to Datadog
         curl -X POST "https://api.datadoghq.com/api/v1/series" \
           -H "Content-Type: application/json" \
           -H "DD-API-KEY: ${{ inputs.DATADOG_API_KEY }}" \
-          -d @- << 'EOFINNER'
+          -d @- << EOFINNER
         {
           "series": [
             {
               "metric": "${{ inputs.metric_name }}",
-              "points": [[$TIMESTAMP, ${{ inputs.metric_value }}]],
+              "points": [[$TIMESTAMP, $DURATION]],
               "type": "gauge",
               "tags": [
                 "project:${{ inputs.project }}",
@@ -58,4 +66,4 @@ runs:
         }
         EOFINNER
         
-        echo "✅ Metric sent successfully"
+        echo "✅ Metric sent successfully (${DURATION}s)"

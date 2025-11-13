@@ -26,11 +26,14 @@ This action is used to collect baseline metrics during Phase 0 of the CI/CD cons
   with:
     DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
     metric_name: 'ci.stage.duration'
-    metric_value: ${{ steps.end.outputs.time - steps.start.outputs.time }}
+    start_time: ${{ steps.start.outputs.time }}
+    end_time: ${{ steps.end.outputs.time }}
     project: 'demo-app'
     stage: 'build'
     pr_number: ${{ github.event.pull_request.number }}
 ```
+
+**Note**: The action automatically calculates the duration from start_time and end_time, so you don't need to do the calculation yourself!
 
 ## Inputs
 
@@ -38,7 +41,8 @@ This action is used to collect baseline metrics during Phase 0 of the CI/CD cons
 |-------|----------|---------|-------------|
 | `DATADOG_API_KEY` | Yes | - | Datadog API key for authentication |
 | `metric_name` | Yes | - | Metric name (e.g., 'ci.stage.duration') |
-| `metric_value` | Yes | - | Duration in seconds |
+| `start_time` | Yes | - | Start time (Unix timestamp from `date +%s`) |
+| `end_time` | Yes | - | End time (Unix timestamp from `date +%s`) |
 | `project` | Yes | - | Project name (e.g., 'demo-app', 'chief') |
 | `stage` | Yes | - | Stage name (e.g., 'build', 'test', 'deploy') |
 | `pr_number` | No | 'none' | PR number for tracking |
@@ -111,11 +115,19 @@ jobs:
         with:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           metric_name: 'ci.stage.duration'
-          metric_value: ${{ steps.end.outputs.time - steps.start.outputs.time }}
+          start_time: ${{ steps.start.outputs.time }}
+          end_time: ${{ steps.end.outputs.time }}
           project: 'demo-app'
           stage: 'build'
           pr_number: ${{ github.event.pull_request.number }}
 ```
+
+## Benefits
+
+- **Centralized calculation**: Duration is calculated inside the action, not in each workflow
+- **Consistent logic**: All projects use the same calculation method
+- **Simpler workflows**: Just pass start and end times, no manual arithmetic
+- **Easy to maintain**: Update calculation logic in one place
 
 ## Projects Using This Action
 
