@@ -1,0 +1,45 @@
+name: 'Setup Playwright with Caching'
+description: 'Install and cache Playwright browsers for E2E testing'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get Playwright version
+      id: playwright-version
+      shell: bash
+      run: |
+        if [ -f "node_modules/@playwright/test/package.json" ]; then
+          VERSION=$(node -p "require('./node_modules/@playwright/test/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Playwright version: $VERSION"
+        else
+          echo "⚠️ Playwright not found in node_modules"
+          echo "version=unknown" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Cache Playwright browsers
+      if: ${{ !env.ACT && steps.playwright-version.outputs.version != 'unknown' }}
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright-version.outputs.version }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-playwright-
+    
+    - name: Install Playwright browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        if command -v yarn &> /dev/null && [ -f "package.json" ]; then
+          # Check if playwright:install script exists
+          if grep -q '"playwright:install"' package.json; then
+            echo "📦 Installing Playwright browsers via yarn script..."
+            yarn playwright:install
+          else
+            echo "📦 Installing Playwright browsers directly..."
+            yarn playwright install --with-deps
+          fi
+        else
+          echo "⚠️ yarn or package.json not found, skipping Playwright installation"
+        fi

@@ -1,0 +1,38 @@
+name: 'Download Build Artifacts'
+description: 'Download and setup build artifacts from previous job'
+inputs:
+  artifact-name:
+    description: 'Artifact name to download'
+    required: true
+  create-dist:
+    description: 'Create dist directory and move files'
+    required: false
+    default: 'true'
+  file-pattern:
+    description: 'File pattern to move to dist/ (e.g., demo-app.*)'
+    required: false
+    default: '*.js,*.css,*.html,*.map'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download build artifacts
+      if: ${{ !env.ACT }}
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+    
+    - name: Create dist directory and move files
+      if: ${{ !env.ACT && inputs.create-dist == 'true' }}
+      shell: bash
+      run: |
+        echo "📂 Creating dist directory and moving artifact files..."
+        mkdir -p dist
+        
+        # Move files matching pattern to dist directory
+        for pattern in $(echo "${{ inputs.file-pattern }}" | tr ',' ' '); do
+          mv $pattern dist/ 2>/dev/null || true
+        done
+        
+        echo "✅ Files moved to dist directory"
+        ls -la dist/ || echo "No files in dist/"

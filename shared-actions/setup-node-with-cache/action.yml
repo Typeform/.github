@@ -1,0 +1,52 @@
+name: 'Setup Node with Enhanced Caching'
+description: 'Setup Node.js with yarn caching and GitHub packages registry'
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+  GH_TOKEN:
+    description: 'GitHub token for private packages'
+    required: true
+  enable-yarn-cache:
+    description: 'Enable yarn global cache (~/.cache/yarn)'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+    
+    - name: Get yarn cache directory path
+      id: yarn-cache-dir-path
+      shell: bash
+      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+    
+    - name: Set GitHub packages registry
+      shell: bash
+      run: |
+        npm config set '//npm.pkg.github.com/:_authToken' ${{ inputs.GH_TOKEN }}
+        npm config set @typeform:registry https://npm.pkg.github.com/
+    
+    - name: Get yarn cache
+      if: ${{ !env.ACT }}
+      uses: actions/cache@v4
+      id: yarn-cache
+      with:
+        path: |
+          node_modules
+          ${{ inputs.enable-yarn-cache == 'true' && '~/.cache/yarn' || '' }}
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-yarn-
+    
+    - name: Install Node.js dependencies
+      if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: yarn install --frozen-lockfile
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
