@@ -147,13 +147,13 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@main
+        uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -197,7 +197,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -226,16 +226,16 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Playwright
-        uses: Typeform/.github/shared-actions/setup-playwright@main
+        uses: Typeform/.github/shared-actions/setup-playwright@feat/reusable-frontend-workflows
       
       - name: Download Build Artifacts
-        uses: Typeform/.github/shared-actions/download-build-artifacts@main
+        uses: Typeform/.github/shared-actions/download-build-artifacts@feat/reusable-frontend-workflows
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
           file-pattern: ${{ inputs.app-name }}.*
@@ -267,19 +267,19 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download Build Artifacts
-        uses: Typeform/.github/shared-actions/download-build-artifacts@main
+        uses: Typeform/.github/shared-actions/download-build-artifacts@feat/reusable-frontend-workflows
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
           file-pattern: ${{ inputs.app-name }}.*
       
       - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@main
+        uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
