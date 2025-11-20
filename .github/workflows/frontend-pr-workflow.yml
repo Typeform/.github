@@ -123,6 +123,10 @@ on:
         required: true
       DATADOG_API_KEY:
         required: false
+      JENKINS_OKTA_USERNAME:
+        required: false
+      JENKINS_USER_TOKEN:
+        required: false
 
 permissions:
   id-token: write
