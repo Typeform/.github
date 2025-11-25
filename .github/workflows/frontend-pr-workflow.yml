@@ -71,6 +71,10 @@ on:
         description: 'Integration test command'
         type: string
         default: 'yarn test:integration'
+      integration-test-framework:
+        description: 'Integration test framework (playwright, codeceptjs, cypress, puppeteer, none)'
+        type: string
+        default: 'none'
       
       # E2E configuration
       run-deep-purple:
@@ -273,6 +277,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Playwright
+        if: inputs.integration-test-framework == 'playwright'
         uses: Typeform/.github/shared-actions/setup-playwright@feat/reusable-frontend-workflows
       
       - name: Download Build Artifacts
