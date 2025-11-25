@@ -23,7 +23,6 @@ runs:
     - name: Set up Node.js with asdf
       if: ${{ inputs.use-asdf == 'true' }}
       uses: asdf-vm/actions/install@v3
-      shell: bash
     
     - name: Set up Node.js with setup-node
       if: ${{ inputs.use-asdf != 'true' }}
