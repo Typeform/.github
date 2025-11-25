@@ -27,7 +27,8 @@ Standardized Node.js setup with enhanced yarn caching and GitHub packages regist
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `node-version` | Node.js version to use | No | `'20'` |
+| `node-version` | Node.js version to use (ignored if use-asdf is true) | No | `'20'` |
+| `use-asdf` | Use asdf-vm for version management | No | `'false'` |
 | `GH_TOKEN` | GitHub token for private packages | Yes | - |
 | `enable-yarn-cache` | Enable yarn global cache (~/.cache/yarn) | No | `'true'` |
 
@@ -37,19 +38,20 @@ None
 
 ## What It Does
 
-1. **Sets up Node.js** with the specified version
+1. **Sets up Node.js** with the specified version (or uses asdf-vm)
 2. **Configures GitHub packages registry** for @typeform scope
 3. **Caches dependencies** with multi-layer strategy:
    - `node_modules/` - Installed dependencies
-   - `~/.cache/yarn` - Yarn global cache (optional)
+   - `~/.cache/yarn` - Yarn global cache (always enabled for better performance)
 4. **Uses restore-keys** for fallback caching when exact match not found
-5. **Installs dependencies** automatically on cache miss
+5. **Logs cache status** for visibility (HIT/MISS)
+6. **Installs dependencies** automatically on cache miss
 
 ## Cache Strategy
 
 ### Cache Key
 ```
-${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('yarn.lock') }}
+${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}
 ```
 
 ### Restore Keys (Fallback)
@@ -58,9 +60,11 @@ ${{ runner.os }}-${{ runner.arch }}-yarn-
 ```
 
 This ensures:
-- **Exact match**: Uses cached dependencies if yarn.lock unchanged
-- **Partial match**: Uses most recent cache if yarn.lock changed
+- **Exact match**: Uses cached dependencies if yarn.lock or package.json unchanged
+- **Partial match**: Uses most recent cache if dependencies changed
 - **Architecture-specific**: Prevents ARM/x86 cache conflicts
+- **Monorepo support**: `**/yarn.lock` pattern handles nested workspaces
+- **Consistent keys**: Removed `.tool-versions` dependency for reliability
 
 ## Performance Impact
 
@@ -118,6 +122,42 @@ act pull_request -j build
 - ✅ fe-stats-utils
 
 **All 10 frontend projects**
+
+## Troubleshooting
+
+### Cache Not Working?
+
+If you see "❌ Cache MISS" on every run:
+
+1. **Check cache key consistency**:
+   ```bash
+   # In your workflow logs, look for:
+   # "🔍 Looking for key: linux-x64-yarn-abc123..."
+   # The hash should be the same across runs if yarn.lock hasn't changed
+   ```
+
+2. **Verify files exist**:
+   ```bash
+   # Ensure yarn.lock exists in your repo
+   ls -la yarn.lock
+   ```
+
+3. **Check cache size**:
+   - GitHub has a 10GB cache limit per repository
+   - Old caches are automatically evicted
+   - Check Settings → Actions → Caches in your repo
+
+4. **Review cache logs**:
+   - Look for "✅ Cache HIT" or "❌ Cache MISS" in workflow logs
+   - Check the cache key being used
+
+### Still Slow After Cache Hit?
+
+If cache hits but setup still takes >1 minute:
+
+1. **Large node_modules**: Consider using artifacts instead of cache
+2. **Slow runner disk**: Check runner performance
+3. **Network latency**: Cache download may be slow
 
 ## Related Actions
 

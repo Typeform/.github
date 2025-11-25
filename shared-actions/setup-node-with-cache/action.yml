@@ -48,10 +48,22 @@ runs:
       with:
         path: |
           node_modules
-          ${{ inputs.enable-yarn-cache == 'true' && '~/.cache/yarn' || '' }}
-        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('yarn.lock') }}-${{ hashFiles('.tool-versions') }}
+          ~/.cache/yarn
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}
         restore-keys: |
           ${{ runner.os }}-${{ runner.arch }}-yarn-
+    
+    - name: Log cache status
+      if: ${{ !env.ACT }}
+      shell: bash
+      run: |
+        if [ "${{ steps.yarn-cache.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ Cache HIT - Dependencies restored from cache"
+          echo "📦 Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+        else
+          echo "❌ Cache MISS - Installing dependencies"
+          echo "🔍 Looking for key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+        fi
     
     - name: Install Node.js dependencies
       if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit != 'true' }}
