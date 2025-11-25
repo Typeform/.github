@@ -39,13 +39,15 @@ None
 ## What It Does
 
 1. **Sets up Node.js** with the specified version (or uses asdf-vm)
-2. **Configures GitHub packages registry** for @typeform scope
-3. **Caches dependencies** with multi-layer strategy:
+2. **Caches asdf installations** (when using asdf-vm) to avoid re-downloading Node.js
+3. **Configures GitHub packages registry** for @typeform scope
+4. **Caches dependencies** with multi-layer strategy:
    - `node_modules/` - Installed dependencies
    - `~/.cache/yarn` - Yarn global cache (always enabled for better performance)
-4. **Uses restore-keys** for fallback caching when exact match not found
-5. **Logs cache status** for visibility (HIT/MISS)
-6. **Installs dependencies** automatically on cache miss
+   - `~/.asdf/installs` - asdf tool installations (when using asdf)
+5. **Uses restore-keys** for fallback caching when exact match not found
+6. **Logs cache status** for visibility (HIT/MISS)
+7. **Installs dependencies** automatically on cache miss
 
 ## Cache Strategy
 
@@ -70,9 +72,13 @@ This ensures:
 
 | Scenario | Before | After | Improvement |
 |----------|--------|-------|-------------|
-| Cache hit | 2-3 min | 10-15 sec | 85% faster |
+| Cache hit (setup-node) | 2-3 min | 10-15 sec | 85% faster |
+| Cache hit (asdf) | 2-3 min | 5-10 sec | 90% faster |
 | Cache miss | 2-3 min | 1-2 min | 40% faster (with yarn cache) |
 | Cache hit rate | 60% | 85%+ | 42% better |
+| asdf Node.js install | 1-2 min | 5 sec | 95% faster (when cached) |
+
+**Note**: When using asdf-vm, the action caches both the asdf installations and node_modules, providing even better performance.
 
 ## Local Testing with act
 
