@@ -11,9 +11,13 @@ on:
       
       # Node configuration
       node-version:
-        description: 'Node.js version'
+        description: 'Node.js version (ignored if use-asdf is true)'
         type: string
         default: '20'
+      use-asdf:
+        description: 'Use asdf-vm for version management (reads from .tool-versions)'
+        type: boolean
+        default: false
       
       # Runner configuration
       runner:
@@ -35,7 +39,21 @@ on:
         type: string
         default: 'yarn clean'
       
+      # Linting configuration
+      run-linting:
+        description: 'Run linting'
+        type: boolean
+        default: false
+      lint-command:
+        description: 'Lint command'
+        type: string
+        default: 'yarn lint'
+      
       # Test configuration
+      pre-test-command:
+        description: 'Command to run before tests (e.g., GraphQL codegen)'
+        type: string
+        default: ''
       run-unit-tests:
         description: 'Run unit tests'
         type: boolean
@@ -154,6 +172,7 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -161,6 +180,10 @@ jobs:
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Run linting
+        if: inputs.run-linting
+        run: ${{ inputs.lint-command }}
       
       - name: Clean dist directory
         run: ${{ inputs.clean-command }}
@@ -204,6 +227,13 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Run pre-test command
+        if: inputs.pre-test-command != ''
+        run: ${{ inputs.pre-test-command }}
+        env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Run unit tests
@@ -233,6 +263,13 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Run pre-test command
+        if: inputs.pre-test-command != ''
+        run: ${{ inputs.pre-test-command }}
+        env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Playwright
@@ -274,6 +311,7 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download Build Artifacts

@@ -1,10 +1,14 @@
 name: 'Setup Node with Enhanced Caching'
-description: 'Setup Node.js with yarn caching and GitHub packages registry'
+description: 'Setup Node.js with yarn caching and GitHub packages registry. Supports both setup-node and asdf-vm.'
 inputs:
   node-version:
-    description: 'Node.js version to use'
+    description: 'Node.js version to use (ignored if use-asdf is true)'
     required: false
     default: '20'
+  use-asdf:
+    description: 'Use asdf-vm for version management (reads from .tool-versions)'
+    required: false
+    default: 'false'
   GH_TOKEN:
     description: 'GitHub token for private packages'
     required: true
@@ -16,7 +20,13 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Set up Node.js
+    - name: Set up Node.js with asdf
+      if: ${{ inputs.use-asdf == 'true' }}
+      uses: asdf-vm/actions/install@v3
+      shell: bash
+    
+    - name: Set up Node.js with setup-node
+      if: ${{ inputs.use-asdf != 'true' }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
@@ -40,7 +50,7 @@ runs:
         path: |
           node_modules
           ${{ inputs.enable-yarn-cache == 'true' && '~/.cache/yarn' || '' }}
-        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('yarn.lock') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('yarn.lock') }}-${{ hashFiles('.tool-versions') }}
         restore-keys: |
           ${{ runner.os }}-${{ runner.arch }}-yarn-
     

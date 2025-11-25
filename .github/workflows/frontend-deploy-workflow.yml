@@ -11,9 +11,13 @@ on:
       
       # Node configuration
       node-version:
-        description: 'Node.js version'
+        description: 'Node.js version (ignored if use-asdf is true)'
         type: string
         default: '20'
+      use-asdf:
+        description: 'Use asdf-vm for version management (reads from .tool-versions)'
+        type: boolean
+        default: false
       
       # Runner configuration
       runner:
@@ -135,6 +139,7 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -186,6 +191,7 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
         with:
           node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download Build Artifacts
