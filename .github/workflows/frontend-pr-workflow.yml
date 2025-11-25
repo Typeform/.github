@@ -288,6 +288,8 @@ jobs:
       
       - name: Run integration tests
         run: ${{ inputs.integration-test-command }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Upload test results
         if: always()
