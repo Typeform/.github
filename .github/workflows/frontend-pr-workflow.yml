@@ -372,4 +372,6 @@ jobs:
     uses: Typeform/.github/.github/workflows/deep-purple-checks.yml@v1
     with:
       app: ${{ inputs.app-name }}
-    secrets: inherit
+    secrets:
+      JENKINS_OKTA_USERNAME: ${{ secrets.JENKINS_OKTA_USERNAME }}
+      JENKINS_USER_TOKEN: ${{ secrets.JENKINS_USER_TOKEN }}
