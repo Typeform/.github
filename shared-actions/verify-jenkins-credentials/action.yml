@@ -29,8 +29,8 @@ runs:
       run: |
         echo "🔐 Verifying Jenkins credentials..."
         
-        # Test basic authentication
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+        # Test basic authentication with redirect following
+        HTTP_CODE=$(curl -L -s -o /dev/null -w "%{http_code}" \
           -u "${{ inputs.jenkins-username }}:${{ inputs.jenkins-token }}" \
           "${{ inputs.jenkins-url }}/api/json")
         
@@ -55,6 +55,11 @@ runs:
           echo "valid=false" >> $GITHUB_OUTPUT
           echo "error=404 Not Found - Jenkins URL may be incorrect" >> $GITHUB_OUTPUT
           exit 1
+        elif [ "$HTTP_CODE" = "302" ]; then
+          echo "❌ Redirect detected - Authentication not working"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=302 Redirect - Jenkins is redirecting to login page. Credentials may be invalid or authentication method incorrect" >> $GITHUB_OUTPUT
+          exit 1
         else
           echo "❌ Unexpected response code: $HTTP_CODE"
           echo "valid=false" >> $GITHUB_OUTPUT
@@ -68,8 +73,8 @@ runs:
       run: |
         echo "🔍 Testing access to Deep Purple job..."
         
-        # Test if we can access the Deep Purple job
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+        # Test if we can access the Deep Purple job with redirect following
+        HTTP_CODE=$(curl -L -s -o /dev/null -w "%{http_code}" \
           -u "${{ inputs.jenkins-username }}:${{ inputs.jenkins-token }}" \
           "${{ inputs.jenkins-url }}/job/quality-assistance/job/deep-purple-k8s-manual/api/json")
         
@@ -80,6 +85,8 @@ runs:
         elif [ "$HTTP_CODE" = "404" ]; then
           echo "⚠️ Deep Purple job not found at expected path"
           echo "   Expected: /job/quality-assistance/job/deep-purple-k8s-manual"
+        elif [ "$HTTP_CODE" = "302" ]; then
+          echo "⚠️ Redirect when accessing Deep Purple job - authentication issue"
         else
           echo "⚠️ Unexpected response when accessing Deep Purple job: $HTTP_CODE"
         fi
