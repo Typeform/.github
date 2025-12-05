@@ -1,0 +1,85 @@
+name: 'Verify Jenkins Credentials'
+description: 'Test Jenkins API credentials before running Deep Purple tests'
+inputs:
+  jenkins-url:
+    description: 'Jenkins server URL'
+    required: false
+    default: 'https://jenkins.typeform.com'
+  jenkins-username:
+    description: 'Jenkins Okta username'
+    required: true
+  jenkins-token:
+    description: 'Jenkins API token'
+    required: true
+
+outputs:
+  credentials-valid:
+    description: 'Whether credentials are valid (true/false)'
+    value: ${{ steps.verify.outputs.valid }}
+  error-message:
+    description: 'Error message if credentials are invalid'
+    value: ${{ steps.verify.outputs.error }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Verify Jenkins credentials
+      id: verify
+      shell: bash
+      run: |
+        echo "🔐 Verifying Jenkins credentials..."
+        
+        # Test basic authentication
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+          -u "${{ inputs.jenkins-username }}:${{ inputs.jenkins-token }}" \
+          "${{ inputs.jenkins-url }}/api/json")
+        
+        echo "📊 HTTP Response Code: $HTTP_CODE"
+        
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ Jenkins credentials are valid"
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "error=" >> $GITHUB_OUTPUT
+        elif [ "$HTTP_CODE" = "401" ]; then
+          echo "❌ Authentication failed - Invalid credentials"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=401 Unauthorized - Invalid username or token" >> $GITHUB_OUTPUT
+          exit 1
+        elif [ "$HTTP_CODE" = "403" ]; then
+          echo "❌ Authentication failed - Access forbidden"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=403 Forbidden - User lacks permissions" >> $GITHUB_OUTPUT
+          exit 1
+        elif [ "$HTTP_CODE" = "404" ]; then
+          echo "❌ Jenkins endpoint not found"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=404 Not Found - Jenkins URL may be incorrect" >> $GITHUB_OUTPUT
+          exit 1
+        else
+          echo "❌ Unexpected response code: $HTTP_CODE"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=HTTP $HTTP_CODE - Unexpected error" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+    
+    - name: Test Deep Purple job access
+      if: steps.verify.outputs.valid == 'true'
+      shell: bash
+      run: |
+        echo "🔍 Testing access to Deep Purple job..."
+        
+        # Test if we can access the Deep Purple job
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+          -u "${{ inputs.jenkins-username }}:${{ inputs.jenkins-token }}" \
+          "${{ inputs.jenkins-url }}/job/quality-assistance/job/deep-purple-k8s-manual/api/json")
+        
+        echo "📊 Deep Purple Job HTTP Code: $HTTP_CODE"
+        
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ Can access Deep Purple job"
+        elif [ "$HTTP_CODE" = "404" ]; then
+          echo "⚠️ Deep Purple job not found at expected path"
+          echo "   Expected: /job/quality-assistance/job/deep-purple-k8s-manual"
+        else
+          echo "⚠️ Unexpected response when accessing Deep Purple job: $HTTP_CODE"
+        fi
