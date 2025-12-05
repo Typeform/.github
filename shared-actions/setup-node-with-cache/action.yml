@@ -20,6 +20,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # Cache 1: asdf installations (Node.js and Yarn binaries)
+    # This cache is separate because it only changes when .tool-versions is updated,
+    # which happens infrequently (only when upgrading Node/Yarn versions).
+    # By caching it separately, we avoid re-downloading binaries on every dependency change.
     - name: Cache asdf installations
       if: ${{ inputs.use-asdf == 'true' && !env.ACT }}
       uses: actions/cache@v4
@@ -60,6 +64,13 @@ runs:
         npm config set '//npm.pkg.github.com/:_authToken' ${{ inputs.GH_TOKEN }}
         npm config set @typeform:registry https://npm.pkg.github.com/
     
+    # Cache 2: yarn dependencies (node_modules and yarn global cache)
+    # This cache changes whenever package.json or yarn.lock is modified.
+    # It's separate from the asdf cache so that dependency updates don't invalidate
+    # the cached Node.js binaries, making builds more efficient.
+    # Note: restore-keys allows partial matches, which can restore stale caches.
+    # If you need to force a fresh install, manually delete old caches at:
+    # https://github.com/Typeform/<repo>/actions/caches
     - name: Get yarn cache
       if: ${{ !env.ACT }}
       uses: actions/cache@v4

@@ -4,14 +4,10 @@ inputs:
   artifact-name:
     description: 'Artifact name to download'
     required: true
-  create-dist:
-    description: 'Create dist directory and move files'
+  output-dir:
+    description: 'Directory to download artifacts into'
     required: false
-    default: 'true'
-  file-pattern:
-    description: 'File pattern to move to dist/ (e.g., demo-app.*)'
-    required: false
-    default: '*.js,*.css,*.html,*.map'
+    default: 'dist'
 
 runs:
   using: 'composite'
@@ -21,18 +17,11 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.output-dir }}
     
-    - name: Create dist directory and move files
-      if: ${{ !env.ACT && inputs.create-dist == 'true' }}
+    - name: Verify download
+      if: ${{ !env.ACT }}
       shell: bash
       run: |
-        echo "📂 Creating dist directory and moving artifact files..."
-        mkdir -p dist
-        
-        # Move files matching pattern to dist directory
-        for pattern in $(echo "${{ inputs.file-pattern }}" | tr ',' ' '); do
-          mv $pattern dist/ 2>/dev/null || true
-        done
-        
-        echo "✅ Files moved to dist directory"
-        ls -la dist/ || echo "No files in dist/"
+        echo "📂 Verifying artifacts in ${{ inputs.output-dir }}..."
+        ls -la ${{ inputs.output-dir }}/ || echo "⚠️ Directory is empty!"

@@ -91,6 +91,10 @@ on:
         description: 'Deploy command'
         type: string
         default: 'yarn deploy:preview'
+      build-output-dir:
+        description: 'Build output directory name (dist, build, lib, etc.)'
+        type: string
+        default: 'dist'
       cdn-bucket:
         description: 'S3 bucket for assets'
         type: string
@@ -284,7 +288,7 @@ jobs:
         uses: Typeform/.github/shared-actions/download-build-artifacts@feat/reusable-frontend-workflows
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          file-pattern: ${{ inputs.app-name }}.*
+          output-dir: ${{ inputs.build-output-dir }}
       
       - name: Run integration tests
         run: ${{ inputs.integration-test-command }}
@@ -325,7 +329,7 @@ jobs:
         uses: Typeform/.github/shared-actions/download-build-artifacts@feat/reusable-frontend-workflows
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          file-pattern: ${{ inputs.app-name }}.*
+          output-dir: ${{ inputs.build-output-dir }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
