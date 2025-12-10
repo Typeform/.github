@@ -1,0 +1,64 @@
+name: 'Setup Jarvis'
+description: 'Setup Jarvis from npm, GitHub branch, or local development'
+inputs:
+  jarvis-branch:
+    description: 'Jarvis branch to use (empty = npm version from package.json)'
+    required: false
+    default: ''
+  GH_TOKEN:
+    description: 'GitHub token for private repo access'
+    required: true
+  working-directory:
+    description: 'Working directory for the project'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Jarvis
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.GH_TOKEN }}
+        JARVIS_BRANCH: ${{ inputs.jarvis-branch }}
+      run: |
+        if [ "$ACT" = "true" ]; then
+          # Local testing with act: link local Jarvis
+          echo "🔗 Linking local Jarvis from /Users/kevin.barz/code/jarvis"
+          cd /Users/kevin.barz/code/jarvis && yarn link
+          cd $GITHUB_WORKSPACE && yarn link @typeform/jarvis
+          echo "✅ Jarvis linked from local development copy"
+          ls -la node_modules/@typeform/jarvis
+        elif [ -n "$JARVIS_BRANCH" ]; then
+          # CI with branch specified: clone and link from GitHub
+          echo "📦 Installing Jarvis from GitHub branch: $JARVIS_BRANCH"
+          JARVIS_DIR="/tmp/jarvis-$JARVIS_BRANCH"
+          
+          # Clone the specified branch (using GH_TOKEN for private repo)
+          git clone --depth 1 --branch "$JARVIS_BRANCH" \
+            "https://x-access-token:${GH_TOKEN}@github.com/Typeform/jarvis.git" "$JARVIS_DIR"
+          
+          # Install Jarvis dependencies
+          cd "$JARVIS_DIR"
+          yarn install --frozen-lockfile
+          
+          # Link Jarvis
+          yarn link
+          
+          # Link to this project
+          cd $GITHUB_WORKSPACE
+          yarn link @typeform/jarvis
+          
+          echo "✅ Jarvis linked from GitHub branch: $JARVIS_BRANCH"
+          echo "📍 Jarvis location: $JARVIS_DIR"
+          ls -la node_modules/@typeform/jarvis
+        else
+          # Default: use npm version from package.json (already installed by yarn install)
+          echo "📦 Using Jarvis from npm (version from package.json)"
+          if [ -f "node_modules/@typeform/jarvis/package.json" ]; then
+            echo "✅ Jarvis version: $(node -p "require('./node_modules/@typeform/jarvis/package.json').version")"
+          else
+            echo "⚠️ Jarvis not found in node_modules - may need to run yarn install first"
+          fi
+        fi

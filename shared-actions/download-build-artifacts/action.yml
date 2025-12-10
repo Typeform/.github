@@ -1,0 +1,27 @@
+name: 'Download Build Artifacts'
+description: 'Download and setup build artifacts from previous job'
+inputs:
+  artifact-name:
+    description: 'Artifact name to download'
+    required: true
+  output-dir:
+    description: 'Directory to download artifacts into'
+    required: false
+    default: 'dist'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download build artifacts
+      if: ${{ !env.ACT }}
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.output-dir }}
+    
+    - name: Verify download
+      if: ${{ !env.ACT }}
+      shell: bash
+      run: |
+        echo "📂 Verifying artifacts in ${{ inputs.output-dir }}..."
+        ls -la ${{ inputs.output-dir }}/ || echo "⚠️ Directory is empty!"

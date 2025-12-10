@@ -27,6 +27,13 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
+      - name: Verify Jenkins credentials
+        continue-on-error: false
+        uses: Typeform/.github/shared-actions/verify-jenkins-credentials@feat/reusable-frontend-workflows
+        with:
+          jenkins-username: ${{ secrets.JENKINS_OKTA_USERNAME }}
+          jenkins-token: ${{ secrets.JENKINS_USER_TOKEN }}
+
       - name: Extract app name from package.json
         run: |
           APP="${{ inputs.app }}"

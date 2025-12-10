@@ -1,0 +1,103 @@
+name: 'Setup Node with Enhanced Caching'
+description: 'Setup Node.js with yarn caching and GitHub packages registry. Supports both setup-node and asdf-vm.'
+inputs:
+  node-version:
+    description: 'Node.js version to use (ignored if use-asdf is true)'
+    required: false
+    default: '20'
+  use-asdf:
+    description: 'Use asdf-vm for version management (reads from .tool-versions)'
+    required: false
+    default: 'false'
+  GH_TOKEN:
+    description: 'GitHub token for private packages'
+    required: true
+  enable-yarn-cache:
+    description: 'Enable yarn global cache (~/.cache/yarn)'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    # Cache 1: asdf installations (Node.js and Yarn binaries)
+    # This cache is separate because it only changes when .tool-versions is updated,
+    # which happens infrequently (only when upgrading Node/Yarn versions).
+    # By caching it separately, we avoid re-downloading binaries on every dependency change.
+    - name: Cache asdf installations
+      if: ${{ inputs.use-asdf == 'true' && !env.ACT }}
+      uses: actions/cache@v4
+      id: asdf-cache
+      with:
+        path: |
+          ~/.asdf/installs
+          ~/.asdf/plugins
+        key: ${{ runner.os }}-${{ runner.arch }}-asdf-${{ hashFiles('**/.tool-versions') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-asdf-
+    
+    - name: Set up Node.js with asdf
+      if: ${{ inputs.use-asdf == 'true' }}
+      uses: asdf-vm/actions/install@v3
+    
+    - name: Reshim asdf after cache restore
+      if: ${{ inputs.use-asdf == 'true' && steps.asdf-cache.outputs.cache-hit == 'true' }}
+      shell: bash
+      run: |
+        asdf reshim nodejs
+        asdf reshim yarn
+    
+    - name: Set up Node.js with setup-node
+      if: ${{ inputs.use-asdf != 'true' }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+    
+    - name: Get yarn cache directory path
+      id: yarn-cache-dir-path
+      shell: bash
+      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+    
+    - name: Set GitHub packages registry
+      shell: bash
+      run: |
+        npm config set '//npm.pkg.github.com/:_authToken' ${{ inputs.GH_TOKEN }}
+        npm config set @typeform:registry https://npm.pkg.github.com/
+    
+    # Cache 2: yarn dependencies (node_modules and yarn global cache)
+    # This cache changes whenever package.json or yarn.lock is modified.
+    # It's separate from the asdf cache so that dependency updates don't invalidate
+    # the cached Node.js binaries, making builds more efficient.
+    # Note: restore-keys allows partial matches, which can restore stale caches.
+    # If you need to force a fresh install, manually delete old caches at:
+    # https://github.com/Typeform/<repo>/actions/caches
+    - name: Get yarn cache
+      if: ${{ !env.ACT }}
+      uses: actions/cache@v4
+      id: yarn-cache
+      with:
+        path: |
+          node_modules
+          ~/.cache/yarn
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-yarn-
+    
+    - name: Log cache status
+      if: ${{ !env.ACT }}
+      shell: bash
+      run: |
+        if [ "${{ steps.yarn-cache.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ Cache HIT - Dependencies restored from cache"
+          echo "📦 Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+        else
+          echo "❌ Cache MISS - Installing dependencies"
+          echo "🔍 Looking for key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+        fi
+    
+    - name: Install Node.js dependencies
+      if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: yarn install --frozen-lockfile
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}

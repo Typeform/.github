@@ -1,0 +1,246 @@
+name: Frontend Deploy Workflow
+
+on:
+  workflow_call:
+    inputs:
+      # Project identification
+      app-name:
+        description: 'Application name (e.g., demo-app, app-shell)'
+        type: string
+        required: true
+      
+      # Node configuration
+      node-version:
+        description: 'Node.js version (ignored if use-asdf is true)'
+        type: string
+        default: '20'
+      use-asdf:
+        description: 'Use asdf-vm for version management (reads from .tool-versions)'
+        type: boolean
+        default: false
+      
+      # Runner configuration
+      runner:
+        description: 'Runner for build/deploy jobs'
+        type: string
+        default: '["self-hosted", "ci-universal"]'
+      
+      # Build configuration
+      build-command:
+        description: 'Production build command'
+        type: string
+        default: 'yarn dist'
+      clean-command:
+        description: 'Clean command before build'
+        type: string
+        default: 'yarn clean'
+      
+      # Deploy configuration
+      deploy-command:
+        description: 'Production deploy command'
+        type: string
+        default: 'yarn deploy'
+      cdn-bucket:
+        description: 'S3 bucket for production assets'
+        type: string
+        required: true
+      cloudfront-dist:
+        description: 'CloudFront distribution ID'
+        type: string
+        required: true
+      cdn-url:
+        description: 'Public CDN URL'
+        type: string
+        required: true
+      
+      # AWS configuration
+      aws-region:
+        description: 'AWS region'
+        type: string
+        default: 'us-east-1'
+      aws-account:
+        description: 'AWS account (prod/staging)'
+        type: string
+        default: 'prod'
+      
+      # Jarvis configuration
+      jarvis-branch:
+        description: 'Jarvis branch to use (empty = npm version)'
+        type: string
+        default: ''
+      jarvis-datadog-enabled:
+        description: 'Enable Jarvis Datadog logging'
+        type: boolean
+        default: true
+      jarvis-datadog-service:
+        description: 'Datadog service name'
+        type: string
+        required: true
+      jarvis-datadog-env:
+        description: 'Datadog environment'
+        type: string
+        default: 'production'
+      
+      # Timeout configuration
+      build-timeout:
+        description: 'Build job timeout (minutes)'
+        type: number
+        default: 15
+      deploy-timeout:
+        description: 'Deploy job timeout (minutes)'
+        type: number
+        default: 10
+      
+      # Revert mode
+      revert-mode:
+        description: 'Skip tests and linting (for emergency reverts)'
+        type: boolean
+        default: false
+    
+    secrets:
+      GH_TOKEN:
+        required: true
+      DATADOG_API_KEY:
+        required: false
+      LINEARB_API_KEY:
+        required: false
+      DATADOG_API_KEY_FRONTEND_METRICS:
+        required: false
+      DATADOG_JS_SOURCEMAPS_US:
+        required: false
+      DATADOG_JS_SOURCEMAPS_EU:
+        required: false
+      SLACK_OAUTH_TOKEN:
+        required: false
+
+permissions:
+  id-token: write
+  contents: read
+
+# Concurrency control: Only one deploy at a time per workflow
+concurrency:
+  group: 'deploy-${{ github.workflow }}'
+  cancel-in-progress: false
+
+jobs:
+  # Job 1: Build for Production
+  build:
+    name: 🏗️ Build
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    timeout-minutes: ${{ inputs.build-timeout }}
+    outputs:
+      artifact-name: ${{ steps.artifact-info.outputs.name }}
+    
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node with Cache
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
+        with:
+          node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Setup Jarvis
+        uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
+        with:
+          jarvis-branch: ${{ inputs.jarvis-branch }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Clean dist directory
+        run: ${{ inputs.clean-command }}
+      
+      - name: Build production assets
+        run: ${{ inputs.build-command }}
+        env:
+          PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
+          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          JARVIS_DATADOG_SITE: datadoghq.com
+          JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
+          JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
+      
+      - name: Set artifact info
+        id: artifact-info
+        run: echo "name=build-${{ github.run_id }}" >> $GITHUB_OUTPUT
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.run_id }}
+          path: dist/
+          retention-days: 1
+  
+  # Job 2: Deploy to Production
+  deploy:
+    name: 🚀 Deploy to Production
+    needs: build
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    timeout-minutes: ${{ inputs.deploy-timeout }}
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node with Cache
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
+        with:
+          node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Download Build Artifacts
+        uses: Typeform/.github/shared-actions/download-build-artifacts@feat/reusable-frontend-workflows
+        with:
+          artifact-name: ${{ needs.build.outputs.artifact-name }}
+          file-pattern: ${{ inputs.app-name }}.*
+      
+      - name: Setup Jarvis
+        uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
+        with:
+          jarvis-branch: ${{ inputs.jarvis-branch }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: AWS auth
+        uses: Typeform/.github-private/actions/aws-auth@aws-auth-0.0.2
+        with:
+          region: ${{ inputs.aws-region }}
+          account: ${{ inputs.aws-account }}
+          output_credentials: true
+      
+      - name: Deploy to production
+        run: ${{ inputs.deploy-command }}
+        env:
+          # Jarvis debug logging
+          DEBUG: jarvis
+          # GitHub
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          # AWS configuration
+          AWS_REGION: ${{ inputs.aws-region }}
+          AWS_ASSETS_BUCKET: ${{ inputs.cdn-bucket }}
+          AWS_CLOUDFRONT_DIST: ${{ inputs.cloudfront-dist }}
+          PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
+          # Jarvis Datadog logging
+          JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
+          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          JARVIS_DATADOG_SITE: datadoghq.com
+          JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
+          JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
+          # Production-specific secrets
+          LINEARB_API_KEY: ${{ secrets.LINEARB_API_KEY }}
+          DATADOG_API_KEY_FRONTEND_METRICS: ${{ secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
+          DATADOG_API_KEY_US: ${{ secrets.DATADOG_JS_SOURCEMAPS_US }}
+          DATADOG_API_KEY_EU: ${{ secrets.DATADOG_JS_SOURCEMAPS_EU }}
+          SLACK_OAUTH_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
+      
+      - name: Print deployment info
+        run: |
+          echo "✅ Deployed to production"
+          echo "📦 App: ${{ inputs.app-name }}"
+          echo "🌐 CDN: ${{ inputs.cdn-url }}"
+          echo "📝 Commit: ${{ github.sha }}"
