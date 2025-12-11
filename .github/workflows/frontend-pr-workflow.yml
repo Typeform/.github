@@ -396,11 +396,10 @@ jobs:
       - name: Print GitHub SHA
         run: echo "The commit SHA is ${{ github.sha }}"
   
-  # Job 5: SonarCloud Analysis (parallel with tests)
+  # Job 5: SonarCloud Analysis (runs immediately, parallel with build and tests)
   sonarcloud:
     name: 🔍 SonarCloud
     if: inputs.run-sonarcloud
-    needs: build
     permissions:
       contents: read
     uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1

@@ -189,14 +189,13 @@ jobs:
           path: ${{ inputs.build-output-dir }}
           retention-days: 1
   
-  # Job 2: SonarCloud Analysis (parallel with deploy)
+  # Job 2: SonarCloud Analysis (runs immediately, parallel with build)
   sonarcloud:
     name: 🔍 SonarCloud
     if: inputs.run-sonarcloud
-    needs: build
     permissions:
       contents: read
-    uses: Typeform/.github/reusable-workflows/sonarcloud-scan/workflow.yml@v1
+    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
     with:
       app-name: ${{ inputs.app-name }}
       node-version: ${{ inputs.node-version }}
