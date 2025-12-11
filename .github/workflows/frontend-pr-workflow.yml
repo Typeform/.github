@@ -180,14 +180,14 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -235,14 +235,14 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -277,14 +277,14 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -297,10 +297,10 @@ jobs:
       
       - name: Setup Playwright
         if: inputs.integration-test-framework == 'playwright'
-        uses: Typeform/.github/shared-actions/setup-playwright@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-playwright@v1
       
       - name: Download Build Artifacts
-        uses: Typeform/.github/shared-actions/download-build-artifacts@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
           output-dir: ${{ inputs.build-output-dir }}
@@ -334,20 +334,20 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download Build Artifacts
-        uses: Typeform/.github/shared-actions/download-build-artifacts@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
           output-dir: ${{ inputs.build-output-dir }}
       
       - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@feat/reusable-frontend-workflows
+        uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -384,7 +384,7 @@ jobs:
     permissions:
       pull-requests: write
       contents: read
-    uses: Typeform/.github/.github/workflows/deep-purple-checks.yml@feat/reusable-frontend-workflows
+    uses: Typeform/.github/.github/workflows/deep-purple-checks.yml@v1
     with:
       app: ${{ inputs.app-name }}
     secrets:
