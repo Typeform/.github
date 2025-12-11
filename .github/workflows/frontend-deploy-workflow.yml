@@ -34,6 +34,10 @@ on:
         description: 'Clean command before build'
         type: string
         default: 'yarn clean'
+      build-output-dir:
+        description: 'Build output directory name (dist, build, lib, etc.)'
+        type: string
+        default: 'dist'
       
       # Deploy configuration
       deploy-command:
@@ -170,7 +174,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ github.run_id }}
-          path: dist/
+          path: ${{ inputs.build-output-dir }}
           retention-days: 1
   
   # Job 2: Deploy to Production
@@ -198,7 +202,7 @@ jobs:
         uses: Typeform/.github/shared-actions/download-build-artifacts@feat/monorepo-support
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          file-pattern: ${{ inputs.app-name }}.*
+          output-dir: ${{ inputs.build-output-dir }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@feat/monorepo-support

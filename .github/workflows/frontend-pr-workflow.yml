@@ -219,7 +219,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ github.run_id }}
-          path: dist/
+          path: ${{ inputs.build-output-dir }}
           retention-days: 1
   
   # Job 2: Unit Tests (parallel with integration tests)
