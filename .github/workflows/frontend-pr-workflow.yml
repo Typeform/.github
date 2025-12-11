@@ -79,6 +79,22 @@ on:
         type: string
         default: 'none'
       
+      # SonarCloud configuration
+      run-sonarcloud:
+        description: 'Run SonarCloud analysis'
+        type: boolean
+        default: true
+      sonarcloud-timeout:
+        description: 'SonarCloud job timeout (minutes)'
+        type: number
+        default: 10
+      
+      # GraphQL configuration
+      run-graphql-persisted-operations:
+        description: 'Generate GraphQL persisted operations for BFF allow list'
+        type: boolean
+        default: false
+      
       # E2E configuration
       run-deep-purple:
         description: 'Run Deep Purple E2E tests'
@@ -150,6 +166,8 @@ on:
     secrets:
       GH_TOKEN:
         required: true
+      SONAR_CLOUD_TOKEN:
+        required: false
       DATADOG_API_KEY:
         required: false
       JENKINS_OKTA_USERNAME:
@@ -378,7 +396,37 @@ jobs:
       - name: Print GitHub SHA
         run: echo "The commit SHA is ${{ github.sha }}"
   
-  # Job 5: Deep Purple E2E Tests
+  # Job 5: SonarCloud Analysis (parallel with tests)
+  sonarcloud:
+    name: 🔍 SonarCloud
+    if: inputs.run-sonarcloud
+    needs: build
+    permissions:
+      contents: read
+    uses: Typeform/.github/reusable-workflows/sonarcloud-scan/workflow.yml@v1
+    with:
+      app-name: ${{ inputs.app-name }}
+      node-version: ${{ inputs.node-version }}
+      use-asdf: ${{ inputs.use-asdf }}
+      runner: ${{ inputs.runner }}
+      coverage-artifact-name: ${{ inputs.run-unit-tests && format('coverage-{0}', github.run_id) || '' }}
+      timeout: ${{ inputs.sonarcloud-timeout }}
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
+  
+  # Job 6: GraphQL Persisted Operations (parallel with tests)
+  graphql-persisted-operations:
+    name: 🔐 GraphQL Persisted Operations
+    if: inputs.run-graphql-persisted-operations
+    needs: build
+    permissions:
+      contents: read
+    uses: Typeform/.github/.github/workflows/graphql-generate-persisted-operations.yml@v1
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  
+  # Job 7: Deep Purple E2E Tests
   deep-purple:
     name: 🔮 Deep Purple E2E
     if: inputs.run-deep-purple

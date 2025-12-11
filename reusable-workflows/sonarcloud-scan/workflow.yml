@@ -1,0 +1,84 @@
+name: SonarCloud Scan
+
+on:
+  workflow_call:
+    inputs:
+      # Project identification
+      app-name:
+        description: 'Application name (must match sonar.projectKey in sonar-project.properties)'
+        type: string
+        required: true
+      
+      # Node configuration
+      node-version:
+        description: 'Node.js version (ignored if use-asdf is true)'
+        type: string
+        default: '20'
+      use-asdf:
+        description: 'Use asdf-vm for version management (reads from .tool-versions)'
+        type: boolean
+        default: false
+      
+      # Runner configuration
+      runner:
+        description: 'Runner for SonarCloud scan'
+        type: string
+        default: '[self-hosted, ci-universal]'
+      
+      # Coverage configuration
+      coverage-artifact-name:
+        description: 'Name of coverage artifact to download (optional, e.g., coverage-12345)'
+        type: string
+        default: ''
+      
+      # Timeout configuration
+      timeout:
+        description: 'Job timeout (minutes)'
+        type: number
+        default: 10
+    
+    secrets:
+      GH_TOKEN:
+        required: true
+      SONAR_CLOUD_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  sonarcloud:
+    name: 🔍 SonarCloud Analysis
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    timeout-minutes: ${{ inputs.timeout }}
+    
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarCloud to analyze git history
+      
+      - name: Setup Node with Cache
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Download coverage artifacts
+        if: inputs.coverage-artifact-name != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.coverage-artifact-name }}
+          path: coverage/
+        continue-on-error: true
+      
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          args: >
+            -Dsonar.projectVersion=${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
+          LC_ALL: "C.UTF-8"

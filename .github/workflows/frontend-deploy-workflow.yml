@@ -85,6 +85,16 @@ on:
         type: string
         default: 'production'
       
+      # SonarCloud configuration
+      run-sonarcloud:
+        description: 'Run SonarCloud analysis'
+        type: boolean
+        default: true
+      sonarcloud-timeout:
+        description: 'SonarCloud job timeout (minutes)'
+        type: number
+        default: 10
+      
       # Timeout configuration
       build-timeout:
         description: 'Build job timeout (minutes)'
@@ -104,6 +114,8 @@ on:
     secrets:
       GH_TOKEN:
         required: true
+      SONAR_CLOUD_TOKEN:
+        required: false
       DATADOG_API_KEY:
         required: false
       LINEARB_API_KEY:
@@ -177,7 +189,26 @@ jobs:
           path: ${{ inputs.build-output-dir }}
           retention-days: 1
   
-  # Job 2: Deploy to Production
+  # Job 2: SonarCloud Analysis (parallel with deploy)
+  sonarcloud:
+    name: 🔍 SonarCloud
+    if: inputs.run-sonarcloud
+    needs: build
+    permissions:
+      contents: read
+    uses: Typeform/.github/reusable-workflows/sonarcloud-scan/workflow.yml@v1
+    with:
+      app-name: ${{ inputs.app-name }}
+      node-version: ${{ inputs.node-version }}
+      use-asdf: ${{ inputs.use-asdf }}
+      runner: ${{ inputs.runner }}
+      coverage-artifact-name: ''  # No coverage for main branch deployments
+      timeout: ${{ inputs.sonarcloud-timeout }}
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
+  
+  # Job 3: Deploy to Production
   deploy:
     name: 🚀 Deploy to Production
     needs: build
