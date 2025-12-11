@@ -392,8 +392,9 @@ jobs:
     permissions:
       pull-requests: write
       contents: read
-    uses: Typeform/.github/.github/workflows/deep-purple-checks.yml@${{ inputs.shared-actions-ref }}
+    uses: Typeform/.github/.github/workflows/deep-purple-checks.yml@feat/monorepo-support
     with:
+      shared-actions-ref: ${{ inputs.shared-actions-ref }}
       app: ${{ inputs.app-name }}
     secrets:
       JENKINS_OKTA_USERNAME: ${{ secrets.JENKINS_OKTA_USERNAME }}
