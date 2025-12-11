@@ -191,7 +191,7 @@ jobs:
   
   # Job 2: SonarCloud Analysis (runs immediately, parallel with build)
   sonarcloud:
-    name: 🔍 SonarCloud
+    name: SonarCloud
     if: inputs.run-sonarcloud
     permissions:
       contents: read
