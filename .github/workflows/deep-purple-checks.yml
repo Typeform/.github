@@ -8,11 +8,6 @@ on:
       JENKINS_USER_TOKEN:
         required: true
     inputs:
-      # Shared actions configuration
-      shared-actions-ref:
-        description: 'Branch/tag reference for shared actions (e.g., v1, main, feat/monorepo-support)'
-        type: string
-        default: 'feat/monorepo-support'
       app:
         type: string
         default: ""
@@ -34,7 +29,7 @@ jobs:
 
       - name: Verify Jenkins credentials
         continue-on-error: false
-        uses: Typeform/.github/shared-actions/verify-jenkins-credentials@${{ inputs.shared-actions-ref }}
+        uses: ./.github/shared-actions/verify-jenkins-credentials
         with:
           jenkins-username: ${{ secrets.JENKINS_OKTA_USERNAME }}
           jenkins-token: ${{ secrets.JENKINS_USER_TOKEN }}
