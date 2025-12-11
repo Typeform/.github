@@ -241,6 +241,12 @@ jobs:
           use-asdf: ${{ inputs.use-asdf }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
+      - name: Setup Jarvis
+        uses: Typeform/.github/shared-actions/setup-jarvis@v1
+        with:
+          jarvis-branch: ${{ inputs.jarvis-branch }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
       - name: Run pre-test command
         if: inputs.pre-test-command != ''
         run: ${{ inputs.pre-test-command }}
@@ -275,6 +281,12 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Setup Jarvis
+        uses: Typeform/.github/shared-actions/setup-jarvis@v1
+        with:
+          jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Run pre-test command
