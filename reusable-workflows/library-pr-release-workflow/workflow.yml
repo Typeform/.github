@@ -1,0 +1,124 @@
+name: Library PR & Release Workflow
+
+on:
+  workflow_call:
+    inputs:
+      # Node configuration
+      node-version:
+        description: 'Node.js version'
+        type: string
+        default: '20'
+      
+      # Runner configuration
+      runner:
+        description: 'Runner to use'
+        type: string
+        default: '["self-hosted", "ci-universal"]'
+      
+      # Commands
+      lint-command:
+        description: 'Lint command'
+        type: string
+        default: 'yarn lint'
+      
+      test-command:
+        description: 'Test command'
+        type: string
+        default: 'yarn test --coverage'
+      
+      build-command:
+        description: 'Build command (optional, leave empty to skip)'
+        type: string
+        default: ''
+      
+      # Semantic Release
+      run-semantic-release:
+        description: 'Run semantic-release on specified branches'
+        type: boolean
+        default: true
+      
+      semantic-release-branches:
+        description: 'Branches to run semantic-release on (JSON array)'
+        type: string
+        default: '["main", "beta", "alpha", "next"]'
+      
+      # SonarCloud
+      run-sonarcloud:
+        description: 'Run SonarCloud scan'
+        type: boolean
+        default: true
+      
+      sonar-project-key:
+        description: 'SonarCloud project key (defaults to repository name)'
+        type: string
+        default: ''
+      
+      # Timeouts
+      timeout-minutes:
+        description: 'Job timeout in minutes'
+        type: number
+        default: 15
+    
+    secrets:
+      GH_TOKEN:
+        required: true
+      SONAR_CLOUD_TOKEN:
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Concurrency control: Cancel old runs for PRs, never cancel for main branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks-and-release:
+    name: 🔍 Checks & Release
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarCloud and semantic-release
+      
+      - name: Setup Node with Cache
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Run linters
+        run: ${{ inputs.lint-command }}
+      
+      - name: Run tests
+        run: ${{ inputs.test-command }}
+      
+      - name: Build (if specified)
+        if: inputs.build-command != ''
+        run: ${{ inputs.build-command }}
+      
+      - name: Semantic Release
+        if: |
+          inputs.run-semantic-release &&
+          contains(fromJSON(inputs.semantic-release-branches), github.ref_name)
+        run: yarn semantic-release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: SonarCloud Scan
+        if: inputs.run-sonarcloud
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          args: >
+            -Dsonar.projectKey=${{ inputs.sonar-project-key != '' && inputs.sonar-project-key || format('{0}_{1}', github.repository_owner, github.event.repository.name) }}
+            -Dsonar.projectVersion=${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
+          LC_ALL: "C.UTF-8"
