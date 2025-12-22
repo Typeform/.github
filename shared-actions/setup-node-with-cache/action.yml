@@ -95,14 +95,23 @@ runs:
         # - Monorepos need workspace linking even with cached node_modules
         # - Some projects have critical postinstall scripts (e.g., building native modules)
         #
-        # We detect three scenarios that require yarn install on cache hit:
+        # We detect scenarios that require yarn install on cache hit:
         
         NEEDS_INSTALL=false
         
         # 1. Yarn workspaces: Need symlink creation between workspace packages
         if grep -q '"workspaces"' package.json 2>/dev/null; then
-          echo "📦 Detected Yarn workspaces - install needed for workspace linking"
-          NEEDS_INSTALL=true
+          echo "📦 Detected Yarn workspaces"
+          
+          # Exception: Turbo monorepos don't need install on cache hit
+          # Turbo caches include complete node_modules with correct structure
+          if [ -f "turbo.json" ]; then
+            echo "⚡ Turbo monorepo detected - install NOT needed (cache includes everything)"
+            NEEDS_INSTALL=false
+          else
+            echo "🔗 Non-Turbo workspace - install needed for workspace linking"
+            NEEDS_INSTALL=true
+          fi
         fi
         
         # 2. Lerna monorepo: Need lerna bootstrap (usually in postinstall hook)
