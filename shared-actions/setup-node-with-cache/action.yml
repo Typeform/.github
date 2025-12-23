@@ -88,6 +88,8 @@ runs:
       if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit == 'true' }}
       shell: bash
       run: |
+        set +e  # Don't exit on error - we want to continue even if find fails
+        
         echo "=== 🔍 Cache Debug Info ==="
         echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
         echo ""
@@ -104,17 +106,20 @@ runs:
         echo ""
         
         echo "=== 🏢 Workspace Structure ==="
-        WORKSPACE_PACKAGES=$(find packages/*/package.json apps/*/package.json -type f 2>/dev/null | wc -l | tr -d ' ')
-        WORKSPACE_MODULES=$(find packages/*/node_modules apps/*/node_modules -maxdepth 0 -type d 2>/dev/null | wc -l | tr -d ' ')
+        # Use find with || true to prevent failures when directories don't exist
+        WORKSPACE_PACKAGES=$(find packages/*/package.json apps/*/package.json -type f 2>/dev/null || true | wc -l | tr -d ' ')
+        WORKSPACE_MODULES=$(find packages/*/node_modules apps/*/node_modules -maxdepth 0 -type d 2>/dev/null || true | wc -l | tr -d ' ')
         echo "📦 Workspace packages: $WORKSPACE_PACKAGES"
         echo "🔗 Workspace node_modules: $WORKSPACE_MODULES"
         
         if [ "$WORKSPACE_PACKAGES" -gt 0 ]; then
           echo ""
           echo "Workspace packages found:"
-          find packages/*/package.json apps/*/package.json -type f 2>/dev/null | sed 's|/package.json||' | sed 's|^|  - |'
+          find packages/*/package.json apps/*/package.json -type f 2>/dev/null || true | sed 's|/package.json||' | sed 's|^|  - |'
         fi
         echo ""
+        
+        set -e  # Re-enable exit on error
     
     - name: Check if yarn install needed on cache hit
       id: check-install-needed
@@ -158,9 +163,9 @@ runs:
           
           # Verification 3: For workspaces, verify workspace packages have node_modules
           if [ "$NEEDS_INSTALL" == "false" ]; then
-            WORKSPACE_PACKAGES=$(find packages/*/package.json apps/*/package.json -type f 2>/dev/null | wc -l | tr -d ' ')
+            WORKSPACE_PACKAGES=$(find packages/*/package.json apps/*/package.json -type f 2>/dev/null || true | wc -l | tr -d ' ')
             if [ "$WORKSPACE_PACKAGES" -gt 0 ]; then
-              WORKSPACE_MODULES=$(find packages/*/node_modules apps/*/node_modules -maxdepth 0 -type d 2>/dev/null | wc -l | tr -d ' ')
+              WORKSPACE_MODULES=$(find packages/*/node_modules apps/*/node_modules -maxdepth 0 -type d 2>/dev/null || true | wc -l | tr -d ' ')
               if [ "$WORKSPACE_MODULES" -eq 0 ]; then
                 echo "⚠️ Workspace packages exist but no workspace node_modules found - forcing install"
                 NEEDS_INSTALL=true
