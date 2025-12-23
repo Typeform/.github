@@ -83,6 +83,39 @@ runs:
         restore-keys: |
           ${{ runner.os }}-${{ runner.arch }}-yarn-
     
+    - name: Debug cache contents
+      id: debug-cache
+      if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit == 'true' }}
+      shell: bash
+      run: |
+        echo "=== 🔍 Cache Debug Info ==="
+        echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+        echo ""
+        
+        echo "=== 📦 Root node_modules Status ==="
+        if [ -d "node_modules" ]; then
+          MODULE_COUNT=$(ls -1 node_modules 2>/dev/null | wc -l | tr -d ' ')
+          echo "✅ node_modules exists"
+          echo "📊 Package count: $MODULE_COUNT"
+          echo "🔒 Yarn integrity: $([ -f 'node_modules/.yarn-integrity' ] && echo '✅ present' || echo '❌ missing')"
+        else
+          echo "❌ node_modules directory not found"
+        fi
+        echo ""
+        
+        echo "=== 🏢 Workspace Structure ==="
+        WORKSPACE_PACKAGES=$(find packages/*/package.json apps/*/package.json -type f 2>/dev/null | wc -l | tr -d ' ')
+        WORKSPACE_MODULES=$(find packages/*/node_modules apps/*/node_modules -maxdepth 0 -type d 2>/dev/null | wc -l | tr -d ' ')
+        echo "📦 Workspace packages: $WORKSPACE_PACKAGES"
+        echo "🔗 Workspace node_modules: $WORKSPACE_MODULES"
+        
+        if [ "$WORKSPACE_PACKAGES" -gt 0 ]; then
+          echo ""
+          echo "Workspace packages found:"
+          find packages/*/package.json apps/*/package.json -type f 2>/dev/null | sed 's|/package.json||' | sed 's|^|  - |'
+        fi
+        echo ""
+    
     - name: Check if yarn install needed on cache hit
       id: check-install-needed
       if: ${{ !env.ACT }}
@@ -94,57 +127,108 @@ runs:
         # - Cache restores node_modules, but doesn't run postinstall hooks
         # - Monorepos need workspace linking even with cached node_modules
         # - Some projects have critical postinstall scripts (e.g., building native modules)
+        # - Cached node_modules might be incomplete or corrupted
         #
         # We detect scenarios that require yarn install on cache hit:
         
         NEEDS_INSTALL=false
+        CACHE_HIT="${{ steps.yarn-cache.outputs.cache-hit }}"
         
-        # 1. Yarn workspaces: Need symlink creation between workspace packages
-        if grep -q '"workspaces"' package.json 2>/dev/null; then
-          echo "📦 Detected Yarn workspaces"
+        # On cache hit, verify cache integrity before trusting it
+        if [ "$CACHE_HIT" == "true" ]; then
+          echo "=== 🔍 Verifying Cache Integrity ==="
           
-          # Exception: Turbo monorepos don't need install on cache hit
-          # Turbo caches include complete node_modules with correct structure
-          if [ -f "turbo.json" ]; then
-            echo "⚡ Turbo monorepo detected - install NOT needed (cache includes everything)"
-            NEEDS_INSTALL=false
+          # Verification 1: Check if node_modules exists and has content
+          if [ ! -d "node_modules" ]; then
+            echo "❌ node_modules directory missing - forcing install"
+            NEEDS_INSTALL=true
           else
-            echo "🔗 Non-Turbo workspace - install needed for workspace linking"
+            MODULE_COUNT=$(ls -1 node_modules 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$MODULE_COUNT" -lt 5 ]; then
+              echo "⚠️ node_modules appears empty ($MODULE_COUNT packages) - forcing install"
+              NEEDS_INSTALL=true
+            fi
+          fi
+          
+          # Verification 2: Check yarn integrity file
+          if [ "$NEEDS_INSTALL" == "false" ] && [ ! -f "node_modules/.yarn-integrity" ]; then
+            echo "⚠️ Missing .yarn-integrity file - cache may be incomplete, forcing install"
+            NEEDS_INSTALL=true
+          fi
+          
+          # Verification 3: For workspaces, verify workspace packages have node_modules
+          if [ "$NEEDS_INSTALL" == "false" ]; then
+            WORKSPACE_PACKAGES=$(find packages/*/package.json apps/*/package.json -type f 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$WORKSPACE_PACKAGES" -gt 0 ]; then
+              WORKSPACE_MODULES=$(find packages/*/node_modules apps/*/node_modules -maxdepth 0 -type d 2>/dev/null | wc -l | tr -d ' ')
+              if [ "$WORKSPACE_MODULES" -eq 0 ]; then
+                echo "⚠️ Workspace packages exist but no workspace node_modules found - forcing install"
+                NEEDS_INSTALL=true
+              fi
+            fi
+          fi
+          
+          if [ "$NEEDS_INSTALL" == "false" ]; then
+            echo "✅ Cache integrity verified"
+          fi
+        fi
+        
+        # Only skip install for Turbo monorepos if cache is verified as complete
+        if [ "$NEEDS_INSTALL" == "false" ]; then
+          # 1. Yarn workspaces: Need symlink creation between workspace packages
+          if grep -q '"workspaces"' package.json 2>/dev/null; then
+            echo "📦 Detected Yarn workspaces"
+            
+            # Exception: Turbo monorepos don't need install on cache hit
+            # Turbo caches include complete node_modules with correct structure
+            if [ -f "turbo.json" ]; then
+              echo "⚡ Turbo monorepo detected - install NOT needed (cache verified complete)"
+              NEEDS_INSTALL=false
+            else
+              echo "🔗 Non-Turbo workspace - install needed for workspace linking"
+              NEEDS_INSTALL=true
+            fi
+          fi
+          
+          # 2. Lerna monorepo: Need lerna bootstrap (usually in postinstall hook)
+          if [ -f "lerna.json" ]; then
+            echo "📦 Detected Lerna monorepo - install needed for lerna bootstrap"
+            NEEDS_INSTALL=true
+          fi
+          
+          # 3. Postinstall hook: Any project with postinstall needs it executed
+          #    Examples: building native modules, generating files, running setup scripts
+          if grep -q '"postinstall"' package.json 2>/dev/null; then
+            echo "🔧 Detected postinstall hook - install needed to execute it"
             NEEDS_INSTALL=true
           fi
         fi
         
-        # 2. Lerna monorepo: Need lerna bootstrap (usually in postinstall hook)
-        if [ -f "lerna.json" ]; then
-          echo "📦 Detected Lerna monorepo - install needed for lerna bootstrap"
-          NEEDS_INSTALL=true
-        fi
-        
-        # 3. Postinstall hook: Any project with postinstall needs it executed
-        #    Examples: building native modules, generating files, running setup scripts
-        if grep -q '"postinstall"' package.json 2>/dev/null; then
-          echo "🔧 Detected postinstall hook - install needed to execute it"
-          NEEDS_INSTALL=true
-        fi
-        
         echo "needs-install=$NEEDS_INSTALL" >> $GITHUB_OUTPUT
     
-    - name: Log cache status
+    - name: Log cache status and decision
       if: ${{ !env.ACT }}
       shell: bash
       run: |
+        echo "=== 📊 Cache Status Summary ==="
         if [ "${{ steps.yarn-cache.outputs.cache-hit }}" == "true" ]; then
           echo "✅ Cache HIT - Dependencies restored from cache"
           echo "📦 Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          echo ""
           if [ "${{ steps.check-install-needed.outputs.needs-install }}" == "true" ]; then
-            echo "🔗 Will run yarn install for workspace linking and/or postinstall hooks"
+            echo "🔄 Decision: WILL run yarn install"
+            echo "Reasons: Cache verification failed, workspace linking needed, or postinstall hooks detected"
           else
-            echo "⚡ Skipping yarn install - not a monorepo and no postinstall hooks"
+            echo "⚡ Decision: SKIP yarn install"
+            echo "Reason: Turbo monorepo with verified complete cache"
           fi
         else
-          echo "❌ Cache MISS - Installing dependencies"
+          echo "❌ Cache MISS - Fresh installation required"
           echo "🔍 Looking for key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          echo ""
+          echo "🔄 Decision: WILL run yarn install"
         fi
+        echo ""
     
     - name: Install Node.js dependencies
       if: ${{ !env.ACT && (steps.yarn-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}

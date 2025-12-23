@@ -10,6 +10,8 @@ Standardized Node.js setup with enhanced yarn caching and GitHub packages regist
 - ✅ Restore-keys for fallback caching (85%+ hit rate)
 - ✅ GitHub packages registry configuration
 - ✅ Automatic dependency installation on cache miss
+- ✅ **Cache integrity verification** to prevent stale cache issues
+- ✅ **Comprehensive debug logging** for troubleshooting
 - ✅ Support for local testing with `act`
 
 ## Usage
@@ -46,9 +48,14 @@ None
    - `~/.cache/yarn` - Yarn global cache (always enabled for better performance)
    - `~/.asdf/installs` - asdf tool installations (when using asdf)
 5. **Uses restore-keys** for fallback caching when exact match not found
-6. **Logs cache status** for visibility (HIT/MISS)
-7. **Installs dependencies** automatically on cache miss
-8. **Smart install detection** on cache hit:
+6. **Verifies cache integrity** on cache hit:
+   - Checks if `node_modules/` exists and has content
+   - Validates `.yarn-integrity` file presence
+   - Verifies workspace packages have `node_modules/`
+   - Forces fresh install if cache is incomplete or corrupted
+7. **Logs cache status** with detailed debug information
+8. **Installs dependencies** automatically on cache miss or verification failure
+9. **Smart install detection** on cache hit (after verification):
    - **Turbo monorepos**: Skips install (cache includes everything)
    - **Lerna monorepos**: Runs install (needs lerna bootstrap)
    - **Yarn workspaces**: Runs install (needs workspace linking)
@@ -73,9 +80,24 @@ This ensures:
 - **Monorepo support**: `**/yarn.lock` pattern handles nested workspaces
 - **Consistent keys**: Removed `.tool-versions` dependency for reliability
 
+### Cache Integrity Verification
+
+On cache hit, the action performs **automatic verification** to prevent stale cache issues:
+
+1. **node_modules existence check**: Verifies directory exists and has packages
+2. **Yarn integrity validation**: Checks for `.yarn-integrity` file
+3. **Workspace structure validation**: Ensures workspace packages have `node_modules/`
+
+If any verification fails, the action **forces a fresh install** to rebuild the cache correctly.
+
+**Why this matters**: Prevents issues where:
+- Cache is restored but incomplete (network interruption during save)
+- Workspace dependencies added but not in cached `node_modules/`
+- Cache corruption or partial restoration
+
 ### Monorepo Optimization
 
-The action intelligently handles different monorepo types:
+The action intelligently handles different monorepo types (after cache verification):
 
 | Monorepo Type | Cache Hit Behavior | Reason |
 |---------------|-------------------|---------|
@@ -83,6 +105,7 @@ The action intelligently handles different monorepo types:
 | **Lerna** (has `lerna.json`) | ⚠️ Runs install | Needs `lerna bootstrap` for package linking |
 | **Yarn workspaces** (no turbo.json) | ⚠️ Runs install | Needs workspace symlink creation |
 | **Postinstall hooks** | ⚠️ Runs install | Needs to execute postinstall scripts |
+| **Failed verification** | ⚠️ Runs install | Cache incomplete or corrupted |
 
 **Why Turbo is different**: Turbo monorepos cache the complete `node_modules` structure including all workspace links. Unlike Lerna or plain Yarn workspaces, Turbo doesn't need to recreate symlinks on cache restore, making cache hits significantly faster.
 
@@ -180,6 +203,33 @@ If you see "❌ Cache MISS" on every run:
    - Look for "✅ Cache HIT" or "❌ Cache MISS" in workflow logs
    - Check the cache key being used
 
+### Cache Hits But Still Runs Install?
+
+If you see cache hit but install still runs, check the debug logs:
+
+1. **Cache verification failed**:
+   ```
+   ⚠️ node_modules appears empty - forcing install
+   ⚠️ Missing .yarn-integrity file - forcing install
+   ⚠️ Workspace packages exist but no workspace node_modules found - forcing install
+   ```
+   This means the cache was incomplete. The action will rebuild it correctly.
+
+2. **Monorepo requires install**:
+   ```
+   🔗 Non-Turbo workspace - install needed for workspace linking
+   📦 Detected Lerna monorepo - install needed for lerna bootstrap
+   🔧 Detected postinstall hook - install needed to execute it
+   ```
+   This is expected behavior for non-Turbo monorepos.
+
+3. **Review debug output**:
+   The action logs detailed cache information:
+   - Root `node_modules/` package count
+   - Yarn integrity file status
+   - Workspace package count
+   - Workspace `node_modules/` count
+
 ### Still Slow After Cache Hit?
 
 If cache hits but setup still takes >1 minute:
@@ -187,6 +237,16 @@ If cache hits but setup still takes >1 minute:
 1. **Large node_modules**: Consider using artifacts instead of cache
 2. **Slow runner disk**: Check runner performance
 3. **Network latency**: Cache download may be slow
+4. **Verification forcing install**: Check debug logs for verification failures
+
+### Stale Cache Issues?
+
+If builds fail with "Cannot find module" after cache hit:
+
+1. **Check debug logs** for cache verification results
+2. **Manually delete old caches** at: `Settings → Actions → Caches`
+3. **The action should auto-detect** incomplete caches and rebuild them
+4. **If issue persists**, open an issue with the debug logs
 
 ## Related Actions
 
