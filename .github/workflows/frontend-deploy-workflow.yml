@@ -215,11 +215,19 @@ jobs:
     timeout-minutes: ${{ inputs.deploy-timeout }}
     permissions:
       id-token: write
-      contents: read
+      contents: write
     
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
       
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
