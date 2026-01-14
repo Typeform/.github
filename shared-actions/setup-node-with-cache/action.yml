@@ -95,13 +95,23 @@ runs:
         # - Monorepos need workspace linking even with cached node_modules
         # - Some projects have critical postinstall scripts (e.g., building native modules)
         #
+        # CRITICAL FOR YARN WORKSPACES:
+        # Yarn workspaces MUST run 'yarn install' even on cache hits because:
+        # 1. Workspace symlinks are NOT preserved in GitHub Actions cache
+        # 2. Yarn creates symlinks between workspace packages during install
+        # 3. Without symlinks, workspace dependencies won't be found (e.g., "jest: not found")
+        # 4. This is fast (~10-20s) because packages are cached, only symlinks are created
+        # 5. Turbo or other build tools don't change this requirement
+        #
         # We detect three scenarios that require yarn install on cache hit:
         
         NEEDS_INSTALL=false
         
         # 1. Yarn workspaces: Need symlink creation between workspace packages
+        #    This check MUST succeed for any Yarn workspace monorepo
         if grep -q '"workspaces"' package.json 2>/dev/null; then
           echo "📦 Detected Yarn workspaces - install needed for workspace linking"
+          echo "   ⚠️  Skipping install will cause 'module not found' errors in CI"
           NEEDS_INSTALL=true
         fi
         
@@ -119,6 +129,7 @@ runs:
         fi
         
         echo "needs-install=$NEEDS_INSTALL" >> $GITHUB_OUTPUT
+        echo "📊 Final decision: NEEDS_INSTALL=$NEEDS_INSTALL"
     
     - name: Log cache status
       if: ${{ !env.ACT }}
