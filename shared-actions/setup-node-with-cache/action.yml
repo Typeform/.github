@@ -220,7 +220,7 @@ runs:
             echo "Reasons: Cache verification failed, workspace linking needed, or postinstall hooks detected"
           else
             echo "⚡ Decision: SKIP yarn install"
-            echo "Reason: Turbo monorepo with verified complete cache"
+            echo "Reason: Cache verified and no workspace linking or postinstall hooks required"
           fi
         else
           echo "❌ Cache MISS - Fresh installation required"

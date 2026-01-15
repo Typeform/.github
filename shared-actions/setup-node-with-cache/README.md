@@ -56,10 +56,10 @@ None
 7. **Logs cache status** with detailed debug information
 8. **Installs dependencies** automatically on cache miss or verification failure
 9. **Smart install detection** on cache hit (after verification):
-   - **Turbo monorepos**: Skips install (cache includes everything)
+   - **Yarn workspaces**: ALWAYS runs install (needs workspace symlink creation)
    - **Lerna monorepos**: Runs install (needs lerna bootstrap)
-   - **Yarn workspaces**: Runs install (needs workspace linking)
    - **Postinstall hooks**: Runs install (needs hook execution)
+   - **Note**: Even Turbo monorepos need install for workspace linking
 
 ## Cache Strategy
 
@@ -95,36 +95,44 @@ If any verification fails, the action **forces a fresh install** to rebuild the 
 - Workspace dependencies added but not in cached `node_modules/`
 - Cache corruption or partial restoration
 
-### Monorepo Optimization
+### Monorepo Handling
 
 The action intelligently handles different monorepo types (after cache verification):
 
 | Monorepo Type | Cache Hit Behavior | Reason |
 |---------------|-------------------|---------|
-| **Turbo** (has `turbo.json`) | ✅ Skips install | Cache includes complete node_modules structure |
+| **Yarn workspaces** | ⚠️ ALWAYS runs install | Workspace symlinks NOT preserved in cache |
 | **Lerna** (has `lerna.json`) | ⚠️ Runs install | Needs `lerna bootstrap` for package linking |
-| **Yarn workspaces** (no turbo.json) | ⚠️ Runs install | Needs workspace symlink creation |
 | **Postinstall hooks** | ⚠️ Runs install | Needs to execute postinstall scripts |
 | **Failed verification** | ⚠️ Runs install | Cache incomplete or corrupted |
 
-**Why Turbo is different**: Turbo monorepos cache the complete `node_modules` structure including all workspace links. Unlike Lerna or plain Yarn workspaces, Turbo doesn't need to recreate symlinks on cache restore, making cache hits significantly faster.
+**Critical: Yarn Workspace Symlinks**
 
-**Performance impact for Turbo projects**:
-- Before optimization: 2-3 min (runs install even on cache hit)
-- After optimization: 10-15 sec (skips install on cache hit)
-- **85% faster** on cache hit
+Even Turbo monorepos need `yarn install` on cache hit because:
+- GitHub Actions cache does NOT preserve symlinks
+- Yarn creates symlinks between workspace packages during install
+- Without symlinks, workspace dependencies aren't found (e.g., "jest: not found")
+- Turbo handles BUILD caching, not workspace linking
+
+**Performance impact**:
+- Adds ~10-20 seconds to cache hits for workspace symlink creation
+- This is unavoidable for Yarn workspace monorepos
+- The install is fast because packages are already cached
 
 ## Performance Impact
 
 | Scenario | Before | After | Improvement |
 |----------|--------|-------|-------------|
-| Cache hit (setup-node) | 2-3 min | 10-15 sec | 85% faster |
-| Cache hit (asdf) | 2-3 min | 5-10 sec | 90% faster |
+| Cache hit (setup-node) | 2-3 min | 30-40 sec | 75% faster |
+| Cache hit (asdf) | 2-3 min | 25-35 sec | 80% faster |
 | Cache miss | 2-3 min | 1-2 min | 40% faster (with yarn cache) |
 | Cache hit rate | 60% | 85%+ | 42% better |
 | asdf Node.js install | 1-2 min | 5 sec | 95% faster (when cached) |
 
-**Note**: When using asdf-vm, the action caches both the asdf installations and node_modules, providing even better performance.
+**Note**:
+- Cache hits for Yarn workspaces include ~10-20s for workspace symlink creation
+- When using asdf-vm, the action caches both the asdf installations and node_modules
+- The install on cache hit is fast because packages are already cached
 
 ## Local Testing with act
 
@@ -217,11 +225,12 @@ If you see cache hit but install still runs, check the debug logs:
 
 2. **Monorepo requires install**:
    ```
-   🔗 Non-Turbo workspace - install needed for workspace linking
+   📦 Detected Yarn workspaces - install needed for workspace linking
    📦 Detected Lerna monorepo - install needed for lerna bootstrap
    🔧 Detected postinstall hook - install needed to execute it
    ```
-   This is expected behavior for non-Turbo monorepos.
+   This is expected behavior for Yarn workspace monorepos (including Turbo-based ones).
+   The install recreates workspace symlinks that aren't preserved in cache.
 
 3. **Review debug output**:
    The action logs detailed cache information:
