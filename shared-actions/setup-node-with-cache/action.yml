@@ -78,6 +78,8 @@ runs:
       with:
         path: |
           node_modules
+          apps/**/node_modules
+          packages/**/node_modules
           ~/.cache/yarn
         key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}
         restore-keys: |
@@ -180,14 +182,22 @@ runs:
         
         # Check for monorepo configurations that need install
         if [ "$NEEDS_INSTALL" == "false" ]; then
-          # 1. Yarn workspaces: ALWAYS need symlink creation between workspace packages
-          #    CRITICAL: Workspace symlinks are NOT preserved in GitHub Actions cache!
-          #    Even Turbo monorepos need this - Turbo handles build caching, not workspace linking.
+          # 1. Yarn workspaces: Check if workspace node_modules are cached
+          #    If we cache workspace node_modules explicitly (apps/**/node_modules, packages/**/node_modules),
+          #    then symlinks work correctly and we don't need to run yarn install.
+          #    If workspace node_modules are missing, we must run yarn install to populate them.
           if grep -q '"workspaces"' package.json 2>/dev/null; then
-            echo "📦 Detected Yarn workspaces - install needed for workspace linking"
-            echo "   ⚠️  Workspace symlinks are not preserved in cache"
-            echo "   ⚠️  Skipping install will cause 'module not found' errors"
-            NEEDS_INSTALL=true
+            # Check if workspace node_modules directories exist (were cached)
+            WORKSPACE_MODULES=$(find packages/*/node_modules apps/*/node_modules -maxdepth 0 -type d 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$WORKSPACE_MODULES" -gt 0 ]; then
+              echo "✅ Yarn workspaces detected with cached node_modules ($WORKSPACE_MODULES workspaces)"
+              echo "   ✅ Workspace symlinks preserved - install NOT needed"
+              NEEDS_INSTALL=false
+            else
+              echo "⚠️ Yarn workspaces detected but workspace node_modules missing"
+              echo "   ⚠️ Install needed to populate workspace directories"
+              NEEDS_INSTALL=true
+            fi
           fi
           
           # 2. Lerna monorepo: Need lerna bootstrap (usually in postinstall hook)
