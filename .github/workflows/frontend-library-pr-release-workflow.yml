@@ -82,7 +82,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Required for SonarCloud and semantic-release
       
@@ -113,7 +113,7 @@ jobs:
       
       - name: SonarCloud Scan
         if: inputs.run-sonarcloud
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v7
         with:
           args: >
             -Dsonar.projectKey=${{ inputs.sonar-project-key != '' && inputs.sonar-project-key || format('{0}_{1}', github.repository_owner, github.event.repository.name) }}
