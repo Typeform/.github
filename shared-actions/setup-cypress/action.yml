@@ -1,0 +1,60 @@
+name: 'Setup Cypress with Caching'
+description: 'Install and cache Cypress binary for E2E testing'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get Cypress version
+      id: cypress-version
+      shell: bash
+      run: |
+        if [ -f "node_modules/cypress/package.json" ]; then
+          VERSION=$(node -p "require('./node_modules/cypress/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Cypress version: $VERSION"
+        elif [ -f "package.json" ]; then
+          VERSION=$(node -p "const pkg = require('./package.json'); (pkg.dependencies?.cypress || pkg.devDependencies?.cypress || '').replace(/[\^~]/, '')")
+          if [ -n "$VERSION" ]; then
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "✅ Cypress version: $VERSION (from package.json)"
+          else
+            echo "⚠️ Cypress not found in package.json"
+            echo "version=unknown" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "⚠️ package.json not found"
+          echo "version=unknown" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Cache Cypress binary
+      if: ${{ !env.ACT && steps.cypress-version.outputs.version != 'unknown' }}
+      uses: actions/cache@v4
+      id: cypress-cache
+      with:
+        path: ~/.cache/Cypress
+        key: ${{ runner.os }}-${{ runner.arch }}-cypress-${{ steps.cypress-version.outputs.version }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-cypress-
+    
+    - name: Install Cypress binary
+      if: steps.cypress-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        if command -v yarn &> /dev/null && [ -f "package.json" ]; then
+          echo "📦 Installing Cypress binary..."
+          yarn cypress install
+          echo "✅ Cypress binary installed"
+        else
+          echo "⚠️ yarn or package.json not found, skipping Cypress installation"
+        fi
+    
+    - name: Verify Cypress installation
+      if: steps.cypress-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        if [ -d "$HOME/.cache/Cypress" ]; then
+          echo "✅ Cypress binary found at ~/.cache/Cypress"
+          du -sh ~/.cache/Cypress/* 2>/dev/null || echo "Cache directory exists but is empty"
+        else
+          echo "⚠️ Cypress binary directory not found"
+        fi
