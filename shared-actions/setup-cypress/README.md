@@ -129,16 +129,10 @@ This allows:
 ## Compatibility
 
 ### Cypress Versions
-- ✅ Cypress 9.x (tested with 9.7.0)
-- ✅ Cypress 10.x (tested with 10.3.0, 10.3.1)
-- ✅ Cypress 12.x (tested with 12.13.0)
-- ✅ Cypress 13.x (tested with 13.6.2, 13.15.2)
-
-### Runners
-- ✅ Self-hosted Linux runners
-- ✅ GitHub-hosted ubuntu-latest
-- ⚠️ macOS (not tested, should work)
-- ⚠️ Windows (not tested, may need adjustments)
+- ✅ Cypress 9.x 
+- ✅ Cypress 10.x 
+- ✅ Cypress 12.x 
+- ✅ Cypress 13.x 
 
 ## Reusable By
 
@@ -146,11 +140,6 @@ This action is used by:
 - [`frontend-pr-workflow.yml`](../../.github/workflows/frontend-pr-workflow.yml) - Centralized PR workflow
 - Individual project workflows for Cypress testing
 
-## Related Actions
-
-- [`setup-node-with-cache`](../setup-node-with-cache) - Node.js setup with dependency caching
-- [`setup-playwright`](../setup-playwright) - Similar action for Playwright
-- [`setup-jarvis`](../setup-jarvis) - Jarvis deployment tool setup
 
 ## Best Practices
 
@@ -159,17 +148,4 @@ This action is used by:
 3. **Monitor cache hit rates**: Check workflow logs to ensure caching is effective
 4. **Version pin Cypress**: Use exact versions in package.json for consistent caching
 
-## Maintenance
 
-- **Owner**: Frontend Infrastructure Team
-- **Last Updated**: 2026-02-03
-- **Version**: v1
-- **Status**: Active
-
-## Support
-
-For issues or questions:
-1. Check [Troubleshooting](#troubleshooting) section
-2. Review [Cypress documentation](https://docs.cypress.io)
-3. Contact Frontend Infrastructure team
-4. Create issue in `.github` repository
