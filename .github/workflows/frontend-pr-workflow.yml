@@ -495,7 +495,7 @@ jobs:
   
   # Job 8: Cypress Functional Tests
   cypress-functional:
-    name: 🌲 Cypress Functional
+    name: ⚙️ Cypress Functional
     if: inputs.run-cypress-functional
     needs: build
     runs-on: ${{ fromJSON(inputs.cypress-runner != '' && inputs.cypress-runner || inputs.e2e-runner) }}
