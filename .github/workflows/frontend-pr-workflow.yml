@@ -519,7 +519,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Cypress
-        uses: Typeform/.github/shared-actions/setup-cypress@PLT-2912-add-cypress-support-for-workflows
+        uses: Typeform/.github/shared-actions/setup-cypress@v1
       
       - name: Run pre-test command
         if: inputs.pre-test-command != ''
@@ -576,7 +576,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Cypress
-        uses: Typeform/.github/shared-actions/setup-cypress@PLT-2912-add-cypress-support-for-workflows
+        uses: Typeform/.github/shared-actions/setup-cypress@v1
       
       - name: Run pre-test command
         if: inputs.pre-test-command != ''
