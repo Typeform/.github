@@ -1,6 +1,25 @@
-# Version: v2 (base PR workflow)
-# Version tracking: See workflow-version output and WORKFLOW_VERSION/WORKFLOW_FILE env vars
 name: Frontend PR Workflow
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📋 WORKFLOW VERSION CONFIGURATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# This is the ONLY place you need to update the version number.
+# All version references throughout this workflow use these values.
+#
+# WORKFLOW_VERSION: Short version identifier (v1, v2, v3, etc.)
+# WORKFLOW_FILE: Full filename without extension
+#
+# When creating a new version:
+# 1. Copy this file to a new filename (e.g., frontend-pr-workflow-v3.yml)
+# 2. Update ONLY these two values below
+# 3. Everything else will automatically use the new version
+#
+env:
+  WORKFLOW_VERSION: 'v2'
+  WORKFLOW_FILE: 'frontend-pr-workflow-v2'
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 # This workflow is designed to be called from other repositories
 # It uses the same branch/tag as the calling workflow for consistency
@@ -287,9 +306,9 @@ jobs:
         id: artifact-info
         run: |
           echo "name=build-${{ github.run_id }}" >> $GITHUB_OUTPUT
-          echo "version=v2" >> $GITHUB_OUTPUT
+          echo "version=${{ env.WORKFLOW_VERSION }}" >> $GITHUB_OUTPUT
           echo "📦 Build artifact: build-${{ github.run_id }}"
-          echo "📋 Workflow version: v2 (frontend-pr-workflow)"
+          echo "📋 Workflow version: ${{ env.WORKFLOW_VERSION }} (${{ env.WORKFLOW_FILE }})"
       
       - name: Upload build artifacts
         if: ${{ !env.ACT }}
@@ -455,8 +474,8 @@ jobs:
         if: inputs.jarvis-datadog-enabled
         run: |
           npx --yes @datadog/datadog-ci@latest tag --level pipeline \
-            --tags "workflow_version:v2" \
-            --tags "workflow_file:frontend-pr-workflow"
+            --tags "workflow_version:${{ env.WORKFLOW_VERSION }}" \
+            --tags "workflow_file:${{ env.WORKFLOW_FILE }}"
         env:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DATADOG_SITE: datadoghq.com
