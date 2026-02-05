@@ -223,6 +223,12 @@ on:
         description: 'Skip tests and linting (for emergency reverts)'
         type: boolean
         default: false
+      
+      # Slack notifications
+      slack-channel:
+        description: 'Slack channel for deployment notifications (e.g., tfprod-deploy)'
+        type: string
+        default: 'poc-tfprod-admin-deploy'
     
     secrets:
       GH_TOKEN:
@@ -659,3 +665,180 @@ jobs:
           echo "🌐 CDN: ${{ inputs.cdn-url }}"
           echo "📝 Commit: ${{ github.sha }}"
           echo "📋 Workflow: frontend-deploy-workflow-v2 (v2)"
+  
+  # Job 8: Slack Notifications (runs after deploy completes)
+  notify-slack:
+    name: 📢 Notify Slack
+    if: always() && inputs.slack-channel != '' && needs.deploy.result != 'cancelled'
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    
+    steps:
+      - name: Get commit message
+        id: commit
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B ${{ github.sha }} 2>/dev/null || echo "Commit message unavailable")
+          # Truncate to 100 chars and escape for JSON
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -c 100 | sed 's/"/\\"/g' | tr -d '\n')
+          echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "short_sha=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      
+      - name: Send success notification
+        if: needs.deploy.result == 'success'
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: ${{ inputs.slack-channel }}
+          payload: |
+            {
+              "text": "✅ Deployment Successful: ${{ inputs.app-name }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "✅ Deployment Successful",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*App:*\n${{ inputs.app-name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\nProduction"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*CDN:*\n<${{ inputs.cdn-url }}|${{ inputs.cdn-url }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Deployed by:*\n${{ github.actor }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ steps.commit.outputs.short_sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Commit Message:*\n${{ steps.commit.outputs.message }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Commit"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
+      
+      - name: Send failure notification
+        if: needs.deploy.result == 'failure'
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: ${{ inputs.slack-channel }}
+          payload: |
+            {
+              "text": "❌ Deployment Failed: ${{ inputs.app-name }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "❌ Deployment Failed",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*App:*\n${{ inputs.app-name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\nProduction"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Failed at:*\nDeploy job"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Deployed by:*\n${{ github.actor }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ steps.commit.outputs.short_sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":warning: *Action Required:* Check the workflow logs for details."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Logs"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "style": "danger"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Commit"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
