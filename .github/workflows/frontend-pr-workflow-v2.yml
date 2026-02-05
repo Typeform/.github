@@ -1,27 +1,25 @@
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# ⚠️  THIS FILE IS A COPY OF frontend-pr-workflow-v1.yml
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#
-# This is the "default" workflow that projects use when they don't specify a version.
-# It is intentionally a copy of the latest stable version to avoid delegation complexity.
-#
-# 📋 Version History:
-#   - 2026-02-04: Synced from frontend-pr-workflow-v1.yml (original, with Cypress)
-#
-# 🔄 To promote a new version to default:
-#   1. Copy the new version file content here (e.g., from frontend-pr-workflow-v2.yml)
-#   2. Update the version history above
-#   3. Keep the versioned files unchanged for explicit version pinning
-#
-# 📌 Projects can pin to specific versions:
-#   - frontend-pr-workflow-v1.yml (original, with Cypress support)
-#   - frontend-pr-workflow-v2.yml (enhanced with testing support)
-#   - frontend-pr-workflow.yml (this file - currently v1)
-#
-# 📖 See: ../ci-consolidation/workflow-versioning-strategy.md
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 name: Frontend PR Workflow
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📋 WORKFLOW VERSION CONFIGURATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# This is the ONLY place you need to update the version number.
+# All version references throughout this workflow use these values.
+#
+# WORKFLOW_VERSION: Short version identifier (v1, v2, v3, etc.)
+# WORKFLOW_FILE: Full filename without extension
+#
+# When creating a new version:
+# 1. Copy this file to a new filename (e.g., frontend-pr-workflow-v3.yml)
+# 2. Update ONLY these two values below
+# 3. Everything else will automatically use the new version
+#
+env:
+  WORKFLOW_VERSION: 'v2'
+  WORKFLOW_FILE: 'frontend-pr-workflow-v2'
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 # This workflow is designed to be called from other repositories
 # It uses the same branch/tag as the calling workflow for consistency
@@ -267,6 +265,7 @@ jobs:
     timeout-minutes: ${{ inputs.build-timeout }}
     outputs:
       artifact-name: ${{ steps.artifact-info.outputs.name }}
+      workflow-version: ${{ steps.artifact-info.outputs.version }}
     
     steps:
       - name: Check out Git repository
@@ -305,7 +304,11 @@ jobs:
       
       - name: Set artifact info
         id: artifact-info
-        run: echo "name=build-${{ github.run_id }}" >> $GITHUB_OUTPUT
+        run: |
+          echo "name=build-${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "version=${{ env.WORKFLOW_VERSION }}" >> $GITHUB_OUTPUT
+          echo "📦 Build artifact: build-${{ github.run_id }}"
+          echo "📋 Workflow version: ${{ env.WORKFLOW_VERSION }} (${{ env.WORKFLOW_FILE }})"
       
       - name: Upload build artifacts
         if: ${{ !env.ACT }}
@@ -467,9 +470,20 @@ jobs:
           JARVIS_DATADOG_SITE: datadoghq.com
           JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
           JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
+      - name: Tag pipeline with workflow version
+        if: inputs.jarvis-datadog-enabled
+        run: |
+          npx --yes @datadog/datadog-ci@latest tag --level pipeline \
+            --tags "workflow_version:${{ env.WORKFLOW_VERSION }}" \
+            --tags "workflow_file:${{ env.WORKFLOW_FILE }}"
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_SITE: datadoghq.com
       
       - name: Print GitHub SHA
-        run: echo "The commit SHA is ${{ github.sha }}"
+        run: |
+          echo "The commit SHA is ${{ github.sha }}"
+          echo "📋 Workflow: frontend-pr-workflow (v2)"
   
   # Job 5: SonarCloud Analysis (waits for unit tests if enabled, otherwise runs immediately)
   sonarcloud:

@@ -1,30 +1,25 @@
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# ⚠️  THIS FILE IS A COPY OF frontend-pr-workflow-v1.yml
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#
-# This is the "default" workflow that projects use when they don't specify a version.
-# It is intentionally a copy of the latest stable version to avoid delegation complexity.
-#
-# 📋 Version History:
-#   - 2026-02-04: Synced from frontend-pr-workflow-v1.yml (original, with Cypress)
-#
-# 🔄 To promote a new version to default:
-#   1. Copy the new version file content here (e.g., from frontend-pr-workflow-v2.yml)
-#   2. Update the version history above
-#   3. Keep the versioned files unchanged for explicit version pinning
-#
-# 📌 Projects can pin to specific versions:
-#   - frontend-pr-workflow-v1.yml (original, with Cypress support)
-#   - frontend-pr-workflow-v2.yml (enhanced with testing support)
-#   - frontend-pr-workflow.yml (this file - currently v1)
-#
-# 📖 See: ../ci-consolidation/workflow-versioning-strategy.md
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+name: Frontend Deploy Workflow
 
-name: Frontend PR Workflow
-
-# This workflow is designed to be called from other repositories
-# It uses the same branch/tag as the calling workflow for consistency
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📋 WORKFLOW VERSION CONFIGURATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# This is the ONLY place you need to update the version number.
+# All version references throughout this workflow use these values.
+#
+# WORKFLOW_VERSION: Short version identifier (v1, v2, v3, etc.)
+# WORKFLOW_FILE: Full filename without extension
+#
+# When creating a new version:
+# 1. Copy this file to a new filename (e.g., frontend-deploy-workflow-v3.yml)
+# 2. Update ONLY these two values below
+# 3. Everything else will automatically use the new version
+#
+env:
+  WORKFLOW_VERSION: 'v2'
+  WORKFLOW_FILE: 'frontend-deploy-workflow-v2'
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 on:
   workflow_call:
@@ -49,140 +44,33 @@ on:
       runner:
         description: 'Runner for build/deploy jobs'
         type: string
-        default: '[self-hosted, ci-universal]'
+        default: '["self-hosted", "ci-universal"]'
       e2e-runner:
         description: 'Runner for E2E/integration tests'
         type: string
-        default: '[self-hosted, ci-e2e]'
+        default: '["self-hosted", "ci-e2e"]'
       
       # Build configuration
       build-command:
-        description: 'Build command to run'
+        description: 'Production build command'
         type: string
-        default: 'yarn dist:preview'
+        default: 'yarn dist'
       clean-command:
         description: 'Clean command before build'
         type: string
         default: 'yarn clean'
-      
-      # Linting configuration
-      run-linting:
-        description: 'Run linting'
-        type: boolean
-        default: false
-      lint-command:
-        description: 'Lint command'
-        type: string
-        default: 'yarn lint'
-      
-      # Test configuration
-      pre-test-command:
-        description: 'Command to run before tests (e.g., GraphQL codegen)'
-        type: string
-        default: ''
-      run-unit-tests:
-        description: 'Run unit tests'
-        type: boolean
-        default: false
-      unit-test-command:
-        description: 'Unit test command'
-        type: string
-        default: 'yarn test:unit:coverage'
-      
-      run-integration-tests:
-        description: 'Run integration tests'
-        type: boolean
-        default: false
-      integration-test-command:
-        description: 'Integration test command'
-        type: string
-        default: 'yarn test:integration'
-      integration-test-framework:
-        description: 'Integration test framework (playwright, codeceptjs, cypress, puppeteer, none)'
-        type: string
-        default: 'none'
-      
-      # SonarCloud configuration
-      run-sonarcloud:
-        description: 'Run SonarCloud analysis'
-        type: boolean
-        default: true
-      sonarcloud-timeout:
-        description: 'SonarCloud job timeout (minutes)'
-        type: number
-        default: 10
-      
-      # GraphQL configuration
-      run-graphql-persisted-operations:
-        description: 'Generate GraphQL persisted operations for BFF allow list'
-        type: boolean
-        default: false
-      
-      # E2E configuration
-      run-deep-purple:
-        description: 'Run Deep Purple E2E tests'
-        type: boolean
-        default: false
-      
-      # Cypress configuration
-      run-cypress-functional:
-        description: 'Run Cypress functional tests'
-        type: boolean
-        default: false
-      cypress-functional-command:
-        description: 'Cypress functional test command'
-        type: string
-        default: 'yarn test:functional'
-      cypress-functional-start:
-        description: 'Command to start server for functional tests'
-        type: string
-        default: 'yarn start:ci'
-      cypress-functional-wait-on:
-        description: 'URL to wait for before running functional tests'
-        type: string
-        default: 'http://localhost:9000'
-      
-      run-cypress-visual:
-        description: 'Run Cypress visual regression tests'
-        type: boolean
-        default: false
-      cypress-visual-command:
-        description: 'Cypress visual test command'
-        type: string
-        default: 'yarn test:visual'
-      cypress-visual-start:
-        description: 'Command to start server for visual tests'
-        type: string
-        default: 'yarn start:ci'
-      cypress-visual-wait-on:
-        description: 'URL to wait for before running visual tests'
-        type: string
-        default: 'http://localhost:9000'
-      
-      cypress-runner:
-        description: 'Runner for Cypress tests (defaults to e2e-runner)'
-        type: string
-        default: ''
-      cypress-timeout:
-        description: 'Cypress test timeout (minutes)'
-        type: number
-        default: 20
-      
-      # Deployment configuration
-      deploy-preview:
-        description: 'Deploy preview environment'
-        type: boolean
-        default: true
-      deploy-command:
-        description: 'Deploy command'
-        type: string
-        default: 'yarn deploy:preview'
       build-output-dir:
         description: 'Build output directory name (dist, build, lib, etc.)'
         type: string
         default: 'dist'
+      
+      # Deploy configuration
+      deploy-command:
+        description: 'Production deploy command'
+        type: string
+        default: 'yarn deploy'
       cdn-bucket:
-        description: 'S3 bucket for assets'
+        description: 'S3 bucket for production assets'
         type: string
         required: true
       cloudfront-dist:
@@ -193,6 +81,16 @@ on:
         description: 'Public CDN URL'
         type: string
         required: true
+      
+      # AWS configuration
+      aws-region:
+        description: 'AWS region'
+        type: string
+        default: 'us-east-1'
+      aws-account:
+        description: 'AWS account (prod/staging)'
+        type: string
+        default: 'prod'
       
       # Jarvis configuration
       jarvis-branch:
@@ -210,25 +108,121 @@ on:
       jarvis-datadog-env:
         description: 'Datadog environment'
         type: string
-        default: 'staging'
+        default: 'production'
+      
+      # Test configuration
+      pre-test-command:
+        description: 'Command to run before tests (e.g., GraphQL codegen)'
+        type: string
+        default: ''
+      
+      # Unit tests
+      run-unit-tests:
+        description: 'Run unit tests before deployment'
+        type: boolean
+        default: false
+      unit-test-command:
+        description: 'Unit test command'
+        type: string
+        default: 'yarn test:ci --coverage'
+      unit-test-timeout:
+        description: 'Unit test timeout (minutes)'
+        type: number
+        default: 30
+      
+      # Integration tests (for self-managed servers: Playwright, CodeceptJS, etc.)
+      run-integration-tests:
+        description: 'Run integration tests with self-managed servers (Playwright webServer, etc.). Do NOT use with run-cypress-functional.'
+        type: boolean
+        default: false
+      integration-test-command:
+        description: 'Integration test command (framework manages its own server)'
+        type: string
+        default: 'yarn test:integration'
+      integration-test-framework:
+        description: 'Integration test framework: playwright (most common), codeceptjs, cypress (self-managed), puppeteer, none'
+        type: string
+        default: 'none'
+      integration-test-timeout:
+        description: 'Integration test timeout (minutes)'
+        type: number
+        default: 20
+      
+      # Cypress functional tests
+      run-cypress-functional:
+        description: 'Run Cypress functional tests before deployment'
+        type: boolean
+        default: false
+      cypress-functional-command:
+        description: 'Cypress functional test command'
+        type: string
+        default: 'yarn test:functional'
+      cypress-functional-start:
+        description: 'Command to start server for functional tests'
+        type: string
+        default: 'yarn start:ci'
+      cypress-functional-wait-on:
+        description: 'URL to wait for before running functional tests'
+        type: string
+        default: 'http://0.0.0.0:9000'
+      
+      # Cypress visual tests
+      run-cypress-visual:
+        description: 'Run Cypress visual regression tests before deployment'
+        type: boolean
+        default: false
+      cypress-visual-command:
+        description: 'Cypress visual test command'
+        type: string
+        default: 'yarn test:visual'
+      cypress-visual-start:
+        description: 'Command to start server for visual tests'
+        type: string
+        default: 'yarn start:ci'
+      cypress-visual-wait-on:
+        description: 'URL to wait for before running visual tests'
+        type: string
+        default: 'http://localhost:9000'
+      
+      # Cypress configuration
+      cypress-runner:
+        description: 'Runner for Cypress tests (defaults to e2e-runner)'
+        type: string
+        default: ''
+      cypress-timeout:
+        description: 'Cypress test timeout (minutes)'
+        type: number
+        default: 20
+      
+      # SonarCloud configuration
+      run-sonarcloud:
+        description: 'Run SonarCloud analysis'
+        type: boolean
+        default: true
+      sonarcloud-timeout:
+        description: 'SonarCloud job timeout (minutes)'
+        type: number
+        default: 10
+      sonarcloud-wait-for-tests:
+        description: 'Wait for unit tests to complete before running SonarCloud'
+        type: boolean
+        default: true
       
       # Timeout configuration
       build-timeout:
         description: 'Build job timeout (minutes)'
         type: number
         default: 15
-      test-timeout:
-        description: 'Test job timeout (minutes)'
-        type: number
-        default: 10
-      integration-timeout:
-        description: 'Integration test timeout (minutes)'
-        type: number
-        default: 20
       deploy-timeout:
         description: 'Deploy job timeout (minutes)'
         type: number
         default: 10
+      
+      # Revert mode
+      revert-mode:
+        description: 'Skip tests and linting (for emergency reverts)'
+        type: boolean
+        default: false
     
     secrets:
       GH_TOKEN:
@@ -237,12 +231,20 @@ on:
         required: false
       DATADOG_API_KEY:
         required: false
-      JENKINS_OKTA_USERNAME:
+      LINEARB_API_KEY:
         required: false
-      JENKINS_USER_TOKEN:
+      DATADOG_API_KEY_FRONTEND_METRICS:
         required: false
+      DATADOG_JS_SOURCEMAPS_US:
+        required: false
+      DATADOG_JS_SOURCEMAPS_EU:
+        required: false
+      SLACK_OAUTH_TOKEN:
+        required: false
+      # Cypress secrets
       CYPRESS_RECORD_KEY:
         required: false
+      # Visual Regression Tracker secrets
       VRT_APIURL:
         required: false
       VRT_APIKEY:
@@ -254,19 +256,20 @@ permissions:
   id-token: write
   contents: read
 
-# Concurrency control: Only cancels runs within the SAME PR
+# Concurrency control: Only one deploy at a time per workflow
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: 'deploy-${{ github.workflow }}'
+  cancel-in-progress: false
 
 jobs:
-  # Job 1: Build (foundation for all other jobs)
+  # Job 1: Build for Production
   build:
     name: 🏗️ Build
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: ${{ inputs.build-timeout }}
     outputs:
       artifact-name: ${{ steps.artifact-info.outputs.name }}
+      workflow-version: ${{ steps.artifact-info.outputs.version }}
     
     steps:
       - name: Check out Git repository
@@ -285,14 +288,10 @@ jobs:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
-      - name: Run linting
-        if: inputs.run-linting
-        run: ${{ inputs.lint-command }}
-      
       - name: Clean dist directory
         run: ${{ inputs.clean-command }}
       
-      - name: Build assets
+      - name: Build production assets
         run: ${{ inputs.build-command }}
         env:
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
@@ -305,27 +304,32 @@ jobs:
       
       - name: Set artifact info
         id: artifact-info
-        run: echo "name=build-${{ github.run_id }}" >> $GITHUB_OUTPUT
+        run: |
+          echo "name=build-${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "version=${{ env.WORKFLOW_VERSION }}" >> $GITHUB_OUTPUT
+          echo "📦 Build artifact: build-${{ github.run_id }}"
+          echo "📋 Workflow version: ${{ env.WORKFLOW_VERSION }} (${{ env.WORKFLOW_FILE }})"
       
       - name: Upload build artifacts
-        if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ github.run_id }}
           path: ${{ inputs.build-output-dir }}
           retention-days: 1
   
-  # Job 2: Unit Tests (parallel with integration tests)
+  # Job 2: Unit Tests (runs in parallel with other tests)
   unit-tests:
     name: 🧪 Unit Tests
     if: inputs.run-unit-tests
     needs: build
     runs-on: ${{ fromJSON(inputs.runner) }}
-    timeout-minutes: ${{ inputs.test-timeout }}
+    timeout-minutes: ${{ inputs.unit-test-timeout }}
     
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarCloud
       
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
@@ -359,13 +363,13 @@ jobs:
           path: coverage/
           retention-days: 7
   
-  # Job 3: Integration Tests (parallel with unit tests)
+  # Job 3: Integration Tests (runs in parallel with unit tests)
   integration-tests:
     name: 🔗 Integration Tests
     if: inputs.run-integration-tests
     needs: build
     runs-on: ${{ fromJSON(inputs.e2e-runner) }}
-    timeout-minutes: ${{ inputs.integration-timeout }}
+    timeout-minutes: ${{ inputs.integration-test-timeout }}
     
     steps:
       - name: Check out Git repository
@@ -384,15 +388,15 @@ jobs:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
+      - name: Setup Playwright
+        if: inputs.integration-test-framework == 'playwright'
+        uses: Typeform/.github/shared-actions/setup-playwright@v1
+      
       - name: Run pre-test command
         if: inputs.pre-test-command != ''
         run: ${{ inputs.pre-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Playwright
-        if: inputs.integration-test-framework == 'playwright'
-        uses: Typeform/.github/shared-actions/setup-playwright@v1
       
       - name: Download Build Artifacts
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
@@ -413,110 +417,7 @@ jobs:
           path: playwright-report/
           retention-days: 7
   
-  # Job 4: Deploy Preview (parallel with tests for faster feedback)
-  deploy-preview:
-    name: 🚀 Deploy Preview
-    if: inputs.deploy-preview
-    needs: [build]
-    runs-on: ${{ fromJSON(inputs.runner) }}
-    timeout-minutes: ${{ inputs.deploy-timeout }}
-    permissions:
-      id-token: write
-      contents: read
-    
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
-        with:
-          node-version: ${{ inputs.node-version }}
-          use-asdf: ${{ inputs.use-asdf }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Download Build Artifacts
-        uses: Typeform/.github/shared-actions/download-build-artifacts@v1
-        with:
-          artifact-name: ${{ needs.build.outputs.artifact-name }}
-          output-dir: ${{ inputs.build-output-dir }}
-      
-      - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@v1
-        with:
-          jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: AWS auth
-        continue-on-error: true
-        uses: Typeform/.github-private/actions/aws-auth@aws-auth-0.0.2
-        with:
-          region: 'us-east-1'
-          account: 'prod'
-      
-      - name: Deploy preview
-        run: ${{ inputs.deploy-command }}
-        env:
-          DEBUG: jarvis
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          AWS_ASSETS_BUCKET: ${{ inputs.cdn-bucket }}
-          AWS_CLOUDFRONT_DIST: ${{ inputs.cloudfront-dist }}
-          PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
-          JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
-          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          JARVIS_DATADOG_SITE: datadoghq.com
-          JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
-          JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
-      
-      - name: Print GitHub SHA
-        run: echo "The commit SHA is ${{ github.sha }}"
-  
-  # Job 5: SonarCloud Analysis (waits for unit tests if enabled, otherwise runs immediately)
-  sonarcloud:
-    name: 🔍 SonarCloud
-    if: inputs.run-sonarcloud
-    needs: [build, unit-tests]
-    permissions:
-      contents: read
-    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
-    with:
-      app-name: ${{ inputs.app-name }}
-      node-version: ${{ inputs.node-version }}
-      use-asdf: ${{ inputs.use-asdf }}
-      runner: ${{ inputs.runner }}
-      coverage-artifact-name: ${{ inputs.run-unit-tests && format('coverage-{0}', github.run_id) || '' }}
-      timeout: ${{ inputs.sonarcloud-timeout }}
-    secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
-  
-  # Job 6: GraphQL Persisted Operations (parallel with tests)
-  graphql-persisted-operations:
-    name: 🔐 GraphQL Persisted Operations
-    if: inputs.run-graphql-persisted-operations
-    needs: build
-    permissions:
-      contents: read
-    uses: Typeform/.github/.github/workflows/graphql-generate-persisted-operations.yml@v1
-    secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-  
-  # Job 7: Deep Purple E2E Tests
-  deep-purple:
-    name: 🔮 Deep Purple E2E
-    if: inputs.run-deep-purple
-    needs: deploy-preview
-    permissions:
-      pull-requests: write
-      contents: read
-    uses: Typeform/.github/.github/workflows/deep-purple-checks.yml@v1
-    with:
-      app: ${{ inputs.app-name }}
-    secrets:
-      JENKINS_OKTA_USERNAME: ${{ secrets.JENKINS_OKTA_USERNAME }}
-      JENKINS_USER_TOKEN: ${{ secrets.JENKINS_USER_TOKEN }}
-  
-  # Job 8: Cypress Functional Tests
+  # Job 4: Cypress Functional Tests (runs in parallel with other tests)
   cypress-functional:
     name: ⚙️ Cypress Functional
     if: inputs.run-cypress-functional
@@ -573,7 +474,7 @@ jobs:
             cypress/videos/
           retention-days: 7
   
-  # Job 9: Cypress Visual Tests
+  # Job 5: Cypress Visual Tests (runs in parallel with other tests)
   cypress-visual:
     name: 🎨 Cypress Visual
     if: inputs.run-cypress-visual
@@ -618,12 +519,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          CYPRESS_PORT: 8080
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
-          VRT_BRANCHNAME: ${{ github.head_ref || github.ref_name }}
-          VRT_CIBUILDID: ${{ github.sha }}
+          CYPRESS_PORT: 8080
       
       - name: Upload test results
         if: always()
@@ -634,3 +533,129 @@ jobs:
             cypress/screenshots/
             cypress/videos/
           retention-days: 7
+  
+  # Job 6: SonarCloud Analysis (waits for unit tests if enabled)
+  sonarcloud:
+    name: 🔍 SonarCloud
+    if: inputs.run-sonarcloud
+    needs: [build, unit-tests]
+    permissions:
+      contents: read
+    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
+    with:
+      app-name: ${{ inputs.app-name }}
+      node-version: ${{ inputs.node-version }}
+      use-asdf: ${{ inputs.use-asdf }}
+      runner: ${{ inputs.runner }}
+      coverage-artifact-name: ${{ inputs.run-unit-tests && format('coverage-{0}', github.run_id) || '' }}
+      timeout: ${{ inputs.sonarcloud-timeout }}
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
+  
+  # Job 7: Deploy to Production (only if all enabled tests pass)
+  deploy:
+    name: 🚀 Deploy to Production
+    needs: 
+      - build
+      - unit-tests
+      - integration-tests
+      - cypress-functional
+      - cypress-visual
+    # Deploy only if:
+    # - Build succeeded
+    # - All enabled tests succeeded (or were skipped if disabled)
+    if: |
+      always() &&
+      needs.build.result == 'success' &&
+      (inputs.run-unit-tests == false || needs.unit-tests.result == 'success') &&
+      (inputs.run-integration-tests == false || needs.integration-tests.result == 'success') &&
+      (inputs.run-cypress-functional == false || needs.cypress-functional.result == 'success') &&
+      (inputs.run-cypress-visual == false || needs.cypress-visual.result == 'success')
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    timeout-minutes: ${{ inputs.deploy-timeout }}
+    permissions:
+      id-token: write
+      contents: write
+    
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+      
+      - name: Setup Node with Cache
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: Download Build Artifacts
+        uses: Typeform/.github/shared-actions/download-build-artifacts@v1
+        with:
+          artifact-name: ${{ needs.build.outputs.artifact-name }}
+          output-dir: ${{ inputs.build-output-dir }}
+      
+      - name: Setup Jarvis
+        uses: Typeform/.github/shared-actions/setup-jarvis@v1
+        with:
+          jarvis-branch: ${{ inputs.jarvis-branch }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: AWS auth
+        uses: Typeform/.github-private/actions/aws-auth@aws-auth-0.0.2
+        with:
+          region: ${{ inputs.aws-region }}
+          account: ${{ inputs.aws-account }}
+          output_credentials: true
+      
+      - name: Deploy to production
+        run: ${{ inputs.deploy-command }}
+        env:
+          # Jarvis debug logging
+          DEBUG: jarvis
+          # GitHub
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          # AWS configuration
+          AWS_REGION: ${{ inputs.aws-region }}
+          AWS_ASSETS_BUCKET: ${{ inputs.cdn-bucket }}
+          AWS_CLOUDFRONT_DIST: ${{ inputs.cloudfront-dist }}
+          PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
+          # Jarvis Datadog logging
+          JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
+          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          JARVIS_DATADOG_SITE: datadoghq.com
+          JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
+          JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
+          JARVIS_DATADOG_TAGS: 'workflow_version:${{ env.WORKFLOW_VERSION }},workflow_file:${{ env.WORKFLOW_FILE }}'
+          # Production-specific secrets
+          LINEARB_API_KEY: ${{ secrets.LINEARB_API_KEY }}
+          DATADOG_API_KEY_FRONTEND_METRICS: ${{ secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
+          DATADOG_API_KEY_US: ${{ secrets.DATADOG_JS_SOURCEMAPS_US }}
+          DATADOG_API_KEY_EU: ${{ secrets.DATADOG_JS_SOURCEMAPS_EU }}
+          SLACK_OAUTH_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
+      
+      - name: Tag pipeline with workflow version
+        if: inputs.jarvis-datadog-enabled
+        run: |
+          npx --yes @datadog/datadog-ci@latest tag --level pipeline \
+            --tags "workflow_version:${{ env.WORKFLOW_VERSION }}" \
+            --tags "workflow_file:${{ env.WORKFLOW_FILE }}"
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_SITE: datadoghq.com
+      
+      - name: Print deployment info
+        run: |
+          echo "✅ Deployed to production"
+          echo "📦 App: ${{ inputs.app-name }}"
+          echo "🌐 CDN: ${{ inputs.cdn-url }}"
+          echo "📝 Commit: ${{ github.sha }}"
+          echo "📋 Workflow: frontend-deploy-workflow-v2 (v2)"
