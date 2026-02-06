@@ -432,53 +432,20 @@ jobs:
     timeout-minutes: ${{ inputs.cypress-timeout }}
     
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+      - name: Run Cypress Functional Tests
+        uses: Typeform/.github/shared-actions/run-cypress-functional@v1
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@v1
-        with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Cypress
-        uses: Typeform/.github/shared-actions/setup-cypress@v1
-      
-      - name: Run pre-test command
-        if: inputs.pre-test-command != ''
-        run: ${{ inputs.pre-test-command }}
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Cypress functional tests
-        uses: cypress-io/github-action@v6
-        timeout-minutes: 15
-        with:
-          install: false
-          start: ${{ inputs.cypress-functional-start }}
-          wait-on: ${{ inputs.cypress-functional-wait-on }}
-          command: ${{ inputs.cypress-functional-command }}
-        env:
+          pre-test-command: ${{ inputs.pre-test-command }}
+          test-command: ${{ inputs.cypress-functional-command }}
+          start-command: ${{ inputs.cypress-functional-start }}
+          wait-on-url: ${{ inputs.cypress-functional-wait-on }}
+          artifact-name: 'cypress-functional-results-${{ github.run_id }}'
+          artifact-retention-days: '7'
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          CYPRESS_PORT: 8080
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-functional-results-${{ github.run_id }}
-          path: |
-            cypress/screenshots/
-            cypress/videos/
-          retention-days: 7
   
   # Job 5: Cypress Visual Tests (runs in parallel with other tests)
   cypress-visual:
@@ -489,56 +456,25 @@ jobs:
     timeout-minutes: ${{ inputs.cypress-timeout }}
     
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+      - name: Run Cypress Visual Tests
+        uses: Typeform/.github/shared-actions/run-cypress-visual@v1
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@v1
-        with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Cypress
-        uses: Typeform/.github/shared-actions/setup-cypress@v1
-      
-      - name: Run pre-test command
-        if: inputs.pre-test-command != ''
-        run: ${{ inputs.pre-test-command }}
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Cypress visual tests
-        uses: cypress-io/github-action@v6
-        timeout-minutes: 15
-        with:
-          install: false
-          start: ${{ inputs.cypress-visual-start }}
-          wait-on: ${{ inputs.cypress-visual-wait-on }}
-          command: ${{ inputs.cypress-visual-command }}
-        env:
+          pre-test-command: ${{ inputs.pre-test-command }}
+          test-command: ${{ inputs.cypress-visual-command }}
+          start-command: ${{ inputs.cypress-visual-start }}
+          wait-on-url: ${{ inputs.cypress-visual-wait-on }}
+          vrt-branch-name: ${{ github.head_ref || github.ref_name }}
+          vrt-build-id: ${{ github.sha }}
+          artifact-name: 'cypress-visual-results-${{ github.run_id }}'
+          artifact-retention-days: '7'
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
-          CYPRESS_PORT: 8080
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-visual-results-${{ github.run_id }}
-          path: |
-            cypress/screenshots/
-            cypress/videos/
-          retention-days: 7
   
   # Job 6: SonarCloud Analysis (waits for unit tests if enabled)
   sonarcloud:
