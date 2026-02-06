@@ -566,7 +566,7 @@ jobs:
     
     steps:
       - name: Run Cypress Visual Tests
-        uses: Typeform/.github/shared-actions/run-cypress-visual@v1
+        uses: Typeform/.github/shared-actions/run-cypress-visual@PLT-2912-cypress-composite-actions
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
