@@ -303,7 +303,7 @@ jobs:
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
-          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
           JARVIS_DATADOG_SITE: datadoghq.com
           JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
           JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
@@ -636,7 +636,7 @@ jobs:
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
           # Jarvis Datadog logging
           JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
-          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
           JARVIS_DATADOG_SITE: datadoghq.com
           JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
           JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
@@ -655,7 +655,7 @@ jobs:
             --tags "workflow_version:${{ env.WORKFLOW_VERSION }}" \
             --tags "workflow_file:${{ env.WORKFLOW_FILE }}"
         env:
-          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
           DATADOG_SITE: datadoghq.com
       
       - name: Print deployment info
