@@ -433,7 +433,7 @@ jobs:
     
     steps:
       - name: Run Cypress Functional Tests
-        uses: Typeform/.github/shared-actions/run-cypress-functional@v1
+        uses: Typeform/.github/shared-actions/run-cypress-functional@PLT-2912-cypress-composite-actions
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
