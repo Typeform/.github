@@ -1,0 +1,134 @@
+name: 'Run Cypress Visual Regression Tests'
+description: 'Execute Cypress visual regression tests with VRT integration, server management, and artifact upload'
+
+inputs:
+  # Node & Jarvis configuration
+  node-version:
+    description: 'Node.js version (ignored if use-asdf is true)'
+    required: false
+    default: '20'
+  use-asdf:
+    description: 'Use asdf-vm for version management'
+    required: false
+    default: 'false'
+  jarvis-branch:
+    description: 'Jarvis branch to use (empty = npm version)'
+    required: false
+    default: ''
+  
+  # Pre-test setup
+  pre-test-command:
+    description: 'Command to run before tests (e.g., GraphQL codegen)'
+    required: false
+    default: ''
+  
+  # Cypress test configuration
+  test-command:
+    description: 'Cypress visual test command'
+    required: false
+    default: 'yarn test:visual'
+  start-command:
+    description: 'Command to start server for visual tests'
+    required: false
+    default: 'yarn start:ci'
+  wait-on-url:
+    description: 'URL to wait for before running visual tests'
+    required: false
+    default: 'http://localhost:9000'
+  
+  # VRT configuration
+  vrt-branch-name:
+    description: 'Branch name for VRT comparison (defaults to github.head_ref or github.ref_name)'
+    required: false
+    default: ''
+  vrt-build-id:
+    description: 'Build ID for VRT (defaults to github.sha)'
+    required: false
+    default: ''
+  
+  # Artifact configuration
+  artifact-name:
+    description: 'Name for uploaded test results artifact'
+    required: false
+    default: 'cypress-visual-results'
+  artifact-retention-days:
+    description: 'Days to retain test result artifacts'
+    required: false
+    default: '7'
+  
+  # Secrets (passed as inputs since composite actions cannot access secrets directly)
+  GH_TOKEN:
+    description: 'GitHub token for authentication'
+    required: true
+  CYPRESS_RECORD_KEY:
+    description: 'Cypress Dashboard recording key'
+    required: false
+    default: ''
+  VRT_APIURL:
+    description: 'Visual Regression Tracker API URL'
+    required: false
+    default: ''
+  VRT_APIKEY:
+    description: 'Visual Regression Tracker API key'
+    required: false
+    default: ''
+  VRT_PROJECT:
+    description: 'Visual Regression Tracker project name'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node with Cache
+      uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+      with:
+        node-version: ${{ inputs.node-version }}
+        use-asdf: ${{ inputs.use-asdf }}
+        GH_TOKEN: ${{ inputs.GH_TOKEN }}
+    
+    - name: Setup Jarvis
+      uses: Typeform/.github/shared-actions/setup-jarvis@v1
+      with:
+        jarvis-branch: ${{ inputs.jarvis-branch }}
+        GH_TOKEN: ${{ inputs.GH_TOKEN }}
+    
+    - name: Setup Cypress
+      uses: Typeform/.github/shared-actions/setup-cypress@v1
+    
+    - name: Run pre-test command
+      if: inputs.pre-test-command != ''
+      shell: bash
+      run: ${{ inputs.pre-test-command }}
+      env:
+        GH_TOKEN: ${{ inputs.GH_TOKEN }}
+    
+    - name: Cypress visual tests
+      uses: cypress-io/github-action@v6
+      with:
+        install: false
+        start: ${{ inputs.start-command }}
+        wait-on: ${{ inputs.wait-on-url }}
+        command: ${{ inputs.test-command }}
+      env:
+        GH_TOKEN: ${{ inputs.GH_TOKEN }}
+        CYPRESS_RECORD_KEY: ${{ inputs.CYPRESS_RECORD_KEY }}
+        CYPRESS_PORT: 8080
+        VRT_APIURL: ${{ inputs.VRT_APIURL }}
+        VRT_APIKEY: ${{ inputs.VRT_APIKEY }}
+        VRT_PROJECT: ${{ inputs.VRT_PROJECT }}
+        VRT_BRANCHNAME: ${{ inputs.vrt-branch-name }}
+        VRT_CIBUILDID: ${{ inputs.vrt-build-id }}
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          cypress/screenshots/
+          cypress/videos/
+        retention-days: ${{ fromJSON(inputs.artifact-retention-days) }}
