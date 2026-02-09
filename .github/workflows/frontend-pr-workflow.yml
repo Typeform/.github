@@ -23,6 +23,11 @@
 
 name: Frontend PR Workflow
 
+env:
+  WORKFLOW_VERSION: 'v2'
+  WORKFLOW_FILE: 'frontend-pr-workflow-v2'
+
+
 # This workflow is designed to be called from other repositories
 # It uses the same branch/tag as the calling workflow for consistency
 
@@ -237,6 +242,8 @@ on:
         required: false
       DATADOG_API_KEY:
         required: false
+      DATADOG_API_KEY_FRONTEND_METRICS:
+        required: false
       JENKINS_OKTA_USERNAME:
         required: false
       JENKINS_USER_TOKEN:
@@ -267,6 +274,7 @@ jobs:
     timeout-minutes: ${{ inputs.build-timeout }}
     outputs:
       artifact-name: ${{ steps.artifact-info.outputs.name }}
+      workflow-version: ${{ steps.artifact-info.outputs.version }}
     
     steps:
       - name: Check out Git repository
@@ -298,14 +306,18 @@ jobs:
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
-          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
           JARVIS_DATADOG_SITE: datadoghq.com
           JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
           JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
       
       - name: Set artifact info
         id: artifact-info
-        run: echo "name=build-${{ github.run_id }}" >> $GITHUB_OUTPUT
+        run: |
+          echo "name=build-${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "version=${{ env.WORKFLOW_VERSION }}" >> $GITHUB_OUTPUT
+          echo "📦 Build artifact: build-${{ github.run_id }}"
+          echo "📋 Workflow version: ${{ env.WORKFLOW_VERSION }} (${{ env.WORKFLOW_FILE }})"
       
       - name: Upload build artifacts
         if: ${{ !env.ACT }}
@@ -463,13 +475,24 @@ jobs:
           AWS_CLOUDFRONT_DIST: ${{ inputs.cloudfront-dist }}
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
           JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
-          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
           JARVIS_DATADOG_SITE: datadoghq.com
           JARVIS_DATADOG_SERVICE: ${{ inputs.jarvis-datadog-service }}
           JARVIS_DATADOG_ENV: ${{ inputs.jarvis-datadog-env }}
+      - name: Tag pipeline with workflow version
+        if: inputs.jarvis-datadog-enabled
+        run: |
+          npx --yes @datadog/datadog-ci@latest tag --level pipeline \
+            --tags "workflow_version:${{ env.WORKFLOW_VERSION }}" \
+            --tags "workflow_file:${{ env.WORKFLOW_FILE }}"
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
+          DATADOG_SITE: datadoghq.com
       
       - name: Print GitHub SHA
-        run: echo "The commit SHA is ${{ github.sha }}"
+        run: |
+          echo "The commit SHA is ${{ github.sha }}"
+          echo "📋 Workflow: frontend-pr-workflow (v2)"
   
   # Job 5: SonarCloud Analysis (waits for unit tests if enabled, otherwise runs immediately)
   sonarcloud:
@@ -525,53 +548,20 @@ jobs:
     timeout-minutes: ${{ inputs.cypress-timeout }}
     
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+      - name: Run Cypress Functional Tests
+        uses: Typeform/.github/shared-actions/run-cypress-functional@v1
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@v1
-        with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Cypress
-        uses: Typeform/.github/shared-actions/setup-cypress@v1
-      
-      - name: Run pre-test command
-        if: inputs.pre-test-command != ''
-        run: ${{ inputs.pre-test-command }}
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Cypress functional tests
-        uses: cypress-io/github-action@v6
-        timeout-minutes: 15
-        with:
-          install: false
-          start: ${{ inputs.cypress-functional-start }}
-          wait-on: ${{ inputs.cypress-functional-wait-on }}
-          command: ${{ inputs.cypress-functional-command }}
-        env:
+          pre-test-command: ${{ inputs.pre-test-command }}
+          test-command: ${{ inputs.cypress-functional-command }}
+          start-command: ${{ inputs.cypress-functional-start }}
+          wait-on-url: ${{ inputs.cypress-functional-wait-on }}
+          artifact-name: 'cypress-functional-results-${{ github.run_id }}'
+          artifact-retention-days: '7'
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          CYPRESS_PORT: 8080
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-functional-results-${{ github.run_id }}
-          path: |
-            cypress/screenshots/
-            cypress/videos/
-          retention-days: 7
   
   # Job 9: Cypress Visual Tests
   cypress-visual:
@@ -582,55 +572,22 @@ jobs:
     timeout-minutes: ${{ inputs.cypress-timeout }}
     
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+      - name: Run Cypress Visual Tests
+        uses: Typeform/.github/shared-actions/run-cypress-visual@v1
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Jarvis
-        uses: Typeform/.github/shared-actions/setup-jarvis@v1
-        with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Setup Cypress
-        uses: Typeform/.github/shared-actions/setup-cypress@v1
-      
-      - name: Run pre-test command
-        if: inputs.pre-test-command != ''
-        run: ${{ inputs.pre-test-command }}
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      
-      - name: Cypress visual tests
-        uses: cypress-io/github-action@v6
-        timeout-minutes: 15
-        with:
-          install: false
-          start: ${{ inputs.cypress-visual-start }}
-          wait-on: ${{ inputs.cypress-visual-wait-on }}
-          command: ${{ inputs.cypress-visual-command }}
-        env:
+          pre-test-command: ${{ inputs.pre-test-command }}
+          test-command: ${{ inputs.cypress-visual-command }}
+          start-command: ${{ inputs.cypress-visual-start }}
+          wait-on-url: ${{ inputs.cypress-visual-wait-on }}
+          vrt-branch-name: ${{ github.head_ref || github.ref_name }}
+          vrt-build-id: ${{ github.sha }}
+          artifact-name: 'cypress-visual-results-${{ github.run_id }}'
+          artifact-retention-days: '7'
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          CYPRESS_PORT: 8080
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
-          VRT_BRANCHNAME: ${{ github.head_ref || github.ref_name }}
-          VRT_CIBUILDID: ${{ github.sha }}
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-visual-results-${{ github.run_id }}
-          path: |
-            cypress/screenshots/
-            cypress/videos/
-          retention-days: 7
