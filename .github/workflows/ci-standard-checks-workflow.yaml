@@ -39,7 +39,7 @@ jobs:
           enableChecks: ${{ inputs.enableChecks }}
       - name: CI Standard Checks @v1-beta
         if: ${{ inputs.useBeta == true }}
-        uses: Typeform/ci-standard-checks@v1-beta
+        uses: Typeform/ci-standard-checks@fix-redocly-config-path
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           skipChecks: ${{ inputs.skipChecks }}
