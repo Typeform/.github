@@ -22,15 +22,17 @@ on:
       go-version:
         type: string
         required: false
-        default: "1.24.6"
+      go-version-file:
+        type: string
+        required: false
       golangci-lint-version:
         type: string
         required: false
-        default: "v1.64.8"
+        default: "v2.9.0"
       golangci-lint-action-version:
         type: string
         required: false
-        default: "v6"
+        default: "v9"
       golangci-lint-config-repo:
         type: string
         required: false
@@ -38,7 +40,7 @@ on:
       golangci-lint-config-repo-ref:
         type: string
         required: false
-        default: "1.15.0"
+        default: "main"
       golangci-lint-config-repo-path:
         type: string
         required: false
@@ -69,10 +71,25 @@ jobs:
           git config --global url."https://${TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
           export GOPRIVATE=github.com/Typeform/*
 
-      - name: Setup Go
+      - name: Setup Go (provided only go-version input, or both)
+        if: "${{ (inputs.go-version != '' && inputs.go-version-file == '') || (inputs.go-version != '' && inputs.go-version-file != '') }}"
         uses: actions/setup-go@v6
         with:
           go-version: ${{ inputs.go-version }}
+          cache: false
+
+      - name: Setup Go (provided only go-version-file input)
+        if: "${{ inputs.go-version == '' && inputs.go-version-file != '' }}"
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ inputs.go-version-file }}
+          cache: false
+
+      - name: Setup Go (provided neither go-version-file nor go-version input)
+        if: "${{ inputs.go-version == '' && inputs.go-version-file == '' }}"
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
           cache: false
 
       - name: golangci-lint
