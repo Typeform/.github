@@ -16,6 +16,14 @@ inputs:
     description: 'Enable yarn global cache (~/.cache/yarn)'
     required: false
     default: 'true'
+  cache-mode:
+    description: 'Cache strategy: "full" (node_modules + yarn cache), "node_modules-only", or "yarn-cache-only"'
+    required: false
+    default: 'full'
+  disable-restore-keys:
+    description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -71,19 +79,50 @@ runs:
     # Note: restore-keys allows partial matches, which can restore stale caches.
     # If you need to force a fresh install, manually delete old caches at:
     # https://github.com/Typeform/<repo>/actions/caches
+    
+    # Determine cache paths based on cache-mode input
+    - name: Set cache paths
+      id: cache-paths
+      shell: bash
+      run: |
+        CACHE_MODE="${{ inputs.cache-mode }}"
+        
+        case "$CACHE_MODE" in
+          "node_modules-only")
+            echo "Cache mode: node_modules only (no yarn cache)"
+            PATHS="node_modules
+        apps/**/node_modules
+        packages/**/node_modules"
+            ;;
+          "yarn-cache-only")
+            echo "Cache mode: yarn cache only (no node_modules)"
+            PATHS="~/.cache/yarn"
+            ;;
+          "full"|*)
+            echo "Cache mode: full (node_modules + yarn cache)"
+            PATHS="node_modules
+        apps/**/node_modules
+        packages/**/node_modules
+        ~/.cache/yarn"
+            ;;
+        esac
+        
+        # Write paths to output using heredoc to preserve newlines
+        echo "paths<<EOF" >> $GITHUB_OUTPUT
+        echo "$PATHS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        # Set cache key suffix based on mode
+        echo "key-suffix=-$CACHE_MODE" >> $GITHUB_OUTPUT
+    
     - name: Get yarn cache
       if: ${{ !env.ACT }}
       uses: actions/cache@v4
       id: yarn-cache
       with:
-        path: |
-          node_modules
-          apps/**/node_modules
-          packages/**/node_modules
-          ~/.cache/yarn
-        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ runner.arch }}-yarn-
+        path: ${{ steps.cache-paths.outputs.paths }}
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}${{ steps.cache-paths.outputs.key-suffix }}
+        restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-yarn-', runner.os, runner.arch) || '' }}
     
     - name: Debug cache contents
       id: debug-cache
