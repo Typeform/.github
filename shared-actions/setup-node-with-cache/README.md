@@ -33,6 +33,10 @@ Standardized Node.js setup with enhanced yarn caching and GitHub packages regist
 | `use-asdf` | Use asdf-vm for version management | No | `'false'` |
 | `GH_TOKEN` | GitHub token for private packages | Yes | - |
 | `enable-yarn-cache` | Enable yarn global cache (~/.cache/yarn) | No | `'true'` |
+| `cache-mode` | Cache strategy: `full`, `node_modules-only`, or `yarn-cache-only` | No | `'full'` |
+| `disable-restore-keys` | Disable restore-keys to avoid restoring stale caches | No | `'false'` |
+
+**📖 Need help choosing the right cache mode?** See the [Cache Strategy Guide](./CACHE-STRATEGY-GUIDE.md) for detailed recommendations.
 
 ## Outputs
 
@@ -159,6 +163,33 @@ act pull_request -j build
     node-version: '18'
     GH_TOKEN: ${{ secrets.GH_TOKEN }}
 ```
+
+### Cache node_modules Only (Faster for Non-Workspace Repos)
+```yaml
+- uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+  with:
+    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    cache-mode: 'node_modules-only'
+```
+**Use when**: Your `node_modules` cache is small and you want to skip yarn install entirely on cache hit. Best for non-workspace repos like Chief where the full cache (node_modules + yarn cache) is large.
+
+### Cache Yarn Cache Only (Faster Install on Miss)
+```yaml
+- uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+  with:
+    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    cache-mode: 'yarn-cache-only'
+```
+**Use when**: You expect frequent cache misses or want to reduce cache restore time. Yarn install will run every time but will be faster because tarballs are cached.
+
+### Disable Restore Keys (Exact Match Only)
+```yaml
+- uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+  with:
+    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    disable-restore-keys: 'true'
+```
+**Use when**: You want to avoid restoring large stale caches. Only exact cache key matches will be restored.
 
 ### Disable Yarn Global Cache
 ```yaml
