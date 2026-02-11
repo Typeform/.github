@@ -28,7 +28,7 @@ on:
       golangci-lint-version:
         type: string
         required: false
-        default: "2.9.0"
+        default: "v2.9.0"
       golangci-lint-action-version:
         type: string
         required: false
