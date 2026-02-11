@@ -46,6 +46,17 @@ on:
         type: boolean
         default: false
       
+      # Cache configuration
+      # Same options as PR workflow - see frontend-pr-workflow.yml for detailed comments
+      cache-mode:
+        description: 'Cache strategy: full, node_modules-only, or yarn-cache-only'
+        type: string
+        default: 'full'
+      disable-restore-keys:
+        description: 'Disable restore-keys to avoid restoring stale caches'
+        type: boolean
+        default: false
+      
       # Runner configuration
       runner:
         description: 'Runner for build/deploy jobs'
@@ -292,6 +303,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -348,6 +361,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -392,6 +407,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -543,6 +560,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download Build Artifacts
