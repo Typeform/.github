@@ -50,6 +50,27 @@ on:
         type: boolean
         default: false
       
+      # Cache configuration
+      # Choose the right strategy for your project:
+      # - 'full' (default): Cache node_modules + ~/.cache/yarn
+      #   → Best for: Workspace/monorepos, repos with "workspaces" in package.json
+      #   → Why: Workspace installs benefit from yarn cache even when node_modules is cached
+      # - 'node_modules-only': Cache only node_modules
+      #   → Best for: Large non-workspace repos (>1GB cache), simple single-package projects
+      #   → Why: Faster cache restore, acceptable slower install on miss
+      #   → Example: Chief, standalone apps
+      # - 'yarn-cache-only': Cache only ~/.cache/yarn
+      #   → Best for: Repos with frequent dependency changes, small projects
+      #   → Why: Smallest cache, fast restore, yarn install runs every time but is fast
+      cache-mode:
+        description: 'Cache strategy: full, node_modules-only, or yarn-cache-only'
+        type: string
+        default: 'full'
+      disable-restore-keys:
+        description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
+        type: boolean
+        default: false
+      
       # Runner configuration
       runner:
         description: 'Runner for build/deploy jobs'
@@ -285,6 +306,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -344,6 +367,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -388,6 +413,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -445,6 +472,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download Build Artifacts
