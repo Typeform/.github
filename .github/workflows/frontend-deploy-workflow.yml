@@ -592,6 +592,7 @@ jobs:
       
       - name: Tag pipeline with workflow version
         if: inputs.jarvis-datadog-enabled
+        continue-on-error: true
         run: |
           npx --yes @datadog/datadog-ci@latest tag --level pipeline \
             --tags "workflow_version:${{ env.WORKFLOW_VERSION }}" \
