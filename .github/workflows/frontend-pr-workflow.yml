@@ -281,6 +281,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  checks: write
 
 # Concurrency control: Only cancels runs within the SAME PR
 concurrency:
@@ -383,10 +384,35 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
+      - name: Install JUnit reporter
+        run: yarn add --dev --no-lockfile jest-junit@^16.0.0
+      
       - name: Run unit tests
-        run: ${{ inputs.unit-test-command }}
+        run: ${{ inputs.unit-test-command }} --reporters=default --reporters=jest-junit
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: junit.xml
+          JEST_JUNIT_CLASSNAME: '{classname}'
+          JEST_JUNIT_TITLE: '{title}'
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_id }}
+          path: test-results/junit.xml
+          retention-days: 7
+          if-no-files-found: warn
+      
+      - name: Test Report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Test Results
+          path: test-results/junit.xml
+          reporter: jest-junit
+          fail-on-error: false
       
       - name: Upload coverage
         if: always()
