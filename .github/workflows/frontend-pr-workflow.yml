@@ -421,15 +421,22 @@ jobs:
             echo "| 📊 Total | $TESTS |" >> $GITHUB_STEP_SUMMARY
             echo "| ⏱️ Duration | ${TIME}s |" >> $GITHUB_STEP_SUMMARY
             
-            # List failed tests
+            # List failed tests using awk (POSIX-compatible, no grep -P needed)
             if [ "$FAILURES" -gt 0 ] || [ "$ERRORS" -gt 0 ]; then
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "### Failed Tests" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              grep -oP 'testcase[^>]*name="\K[^"]*' test-results/junit.xml | while read -r name; do
-                # Check if this testcase has a failure element (simplified check)
-                echo "- \`$name\`" >> $GITHUB_STEP_SUMMARY
-              done | head -20
+              # Extract testcase names that contain <failure> or <error> child elements
+              awk '
+                /<testcase / {
+                  match($0, /name="[^"]*"/);
+                  name = substr($0, RSTART+6, RLENGTH-7);
+                  in_testcase = 1;
+                }
+                in_testcase && /<failure/ { print "- `" name "`"; in_testcase = 0; }
+                in_testcase && /<error/ { print "- `" name "`"; in_testcase = 0; }
+                /<\/testcase>/ { in_testcase = 0; }
+              ' test-results/junit.xml | head -20 >> $GITHUB_STEP_SUMMARY
             fi
           else
             echo "## ⚠️ No test results found" >> $GITHUB_STEP_SUMMARY
