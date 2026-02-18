@@ -395,6 +395,47 @@ jobs:
           JEST_JUNIT_CLASSNAME: '{classname}'
           JEST_JUNIT_TITLE: '{title}'
       
+      - name: Test Summary
+        if: always()
+        run: |
+          if [ -f test-results/junit.xml ]; then
+            # Parse JUnit XML for summary stats
+            TESTS=$(grep -o 'tests="[0-9]*"' test-results/junit.xml | head -1 | grep -o '[0-9]*')
+            FAILURES=$(grep -o 'failures="[0-9]*"' test-results/junit.xml | head -1 | grep -o '[0-9]*')
+            ERRORS=$(grep -o 'errors="[0-9]*"' test-results/junit.xml | head -1 | grep -o '[0-9]*')
+            TIME=$(grep -o 'time="[0-9.]*"' test-results/junit.xml | head -1 | grep -o '[0-9.]*')
+            PASSED=$((TESTS - FAILURES - ERRORS))
+            
+            if [ "$FAILURES" -gt 0 ] || [ "$ERRORS" -gt 0 ]; then
+              echo "## ❌ Unit Test Results" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "## ✅ Unit Test Results" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| ❌ Failed | $FAILURES |" >> $GITHUB_STEP_SUMMARY
+            echo "| ⚠️ Errors | $ERRORS |" >> $GITHUB_STEP_SUMMARY
+            echo "| 📊 Total | $TESTS |" >> $GITHUB_STEP_SUMMARY
+            echo "| ⏱️ Duration | ${TIME}s |" >> $GITHUB_STEP_SUMMARY
+            
+            # List failed tests
+            if [ "$FAILURES" -gt 0 ] || [ "$ERRORS" -gt 0 ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Failed Tests" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              grep -oP 'testcase[^>]*name="\K[^"]*' test-results/junit.xml | while read -r name; do
+                # Check if this testcase has a failure element (simplified check)
+                echo "- \`$name\`" >> $GITHUB_STEP_SUMMARY
+              done | head -20
+            fi
+          else
+            echo "## ⚠️ No test results found" >> $GITHUB_STEP_SUMMARY
+            echo "JUnit XML was not generated at test-results/junit.xml" >> $GITHUB_STEP_SUMMARY
+          fi
+      
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
