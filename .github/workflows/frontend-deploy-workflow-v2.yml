@@ -279,7 +279,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
@@ -317,7 +317,7 @@ jobs:
           echo "📋 Workflow version: ${{ env.WORKFLOW_VERSION }} (${{ env.WORKFLOW_FILE }})"
       
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-${{ github.run_id }}
           path: ${{ inputs.build-output-dir }}
@@ -333,7 +333,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Required for SonarCloud
       
@@ -363,7 +363,7 @@ jobs:
       
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-${{ github.run_id }}
           path: coverage/
@@ -379,7 +379,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
@@ -417,7 +417,7 @@ jobs:
       
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: integration-test-results-${{ github.run_id }}
           path: playwright-report/
@@ -522,7 +522,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
