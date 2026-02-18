@@ -384,7 +384,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Install JUnit reporter
-        run: yarn add --dev --no-lockfile --ignore-scripts jest-junit@^16.0.0
+        run: npm install --no-save --ignore-scripts jest-junit@^16.0.0
       
       - name: Run unit tests
         run: ${{ inputs.unit-test-command }} --reporters=default --reporters=jest-junit
