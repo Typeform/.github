@@ -324,7 +324,6 @@ jobs:
   unit-tests:
     name: 🧪 Unit Tests
     if: inputs.run-unit-tests
-    needs: build
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: ${{ inputs.test-timeout }}
     
