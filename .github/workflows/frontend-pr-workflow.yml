@@ -508,7 +508,7 @@ jobs:
     needs: [build, unit-tests]
     permissions:
       contents: read
-    uses: ./.github/workflows/sonarcloud-scan.yml
+    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml
     with:
       app-name: ${{ inputs.app-name }}
       node-version: ${{ inputs.node-version }}
