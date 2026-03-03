@@ -58,6 +58,10 @@ on:
         default: '[self-hosted, ci-e2e]'
       
       # Build configuration
+      pre-build-command:
+        description: 'Command to run before linting/build (e.g., GraphQL codegen)'
+        type: string
+        default: ''
       build-command:
         description: 'Build command to run'
         type: string
@@ -290,6 +294,15 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      # Runs before linting AND build so that generated files (e.g. GraphQL
+      # codegen) are available for both TypeScript-aware lint rules and
+      # build tools like fork-ts-checker-webpack-plugin.
+      - name: Run pre-build command
+        if: inputs.pre-build-command != ''
+        run: ${{ inputs.pre-build-command }}
+        env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Run linting
