@@ -1,12 +1,11 @@
 name: Frontend PR Workflow
 
-env:
-  WORKFLOW_VERSION: 'v2'
-  WORKFLOW_FILE: 'frontend-pr-workflow-v2'
-
-
 # This workflow is designed to be called from other repositories
 # It uses the same branch/tag as the calling workflow for consistency
+
+env:
+  WORKFLOW_VERSION: 'v1'
+  WORKFLOW_FILE: 'frontend-pr-workflow'
 
 on:
   workflow_call:
@@ -508,7 +507,7 @@ jobs:
     needs: [build, unit-tests]
     permissions:
       contents: read
-    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml
+    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
     with:
       app-name: ${{ inputs.app-name }}
       node-version: ${{ inputs.node-version }}

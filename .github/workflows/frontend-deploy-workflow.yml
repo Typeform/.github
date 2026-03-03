@@ -1,8 +1,8 @@
 name: Frontend Deploy Workflow
 
 env:
-  WORKFLOW_VERSION: 'v2'
-  WORKFLOW_FILE: 'frontend-deploy-workflow-v2'
+  WORKFLOW_VERSION: 'v1'
+  WORKFLOW_FILE: 'frontend-deploy-workflow'
 
 on:
   workflow_call:
