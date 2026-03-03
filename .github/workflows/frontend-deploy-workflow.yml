@@ -1,26 +1,3 @@
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# ⚠️  THIS FILE IS A COPY OF frontend-deploy-workflow-v1.yml
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#
-# This is the "default" workflow that projects use when they don't specify a version.
-# It is intentionally a copy of the latest stable version to avoid delegation complexity.
-#
-# 📋 Version History:
-#   - 2026-02-04: Synced from frontend-deploy-workflow-v1.yml (original, no testing)
-#
-# 🔄 To promote a new version to default:
-#   1. Copy the new version file content here (e.g., from frontend-deploy-workflow-v2.yml)
-#   2. Update the version history above
-#   3. Keep the versioned files unchanged for explicit version pinning
-#
-# 📌 Projects can pin to specific versions:
-#   - frontend-deploy-workflow-v1.yml (original, no testing support)
-#   - frontend-deploy-workflow-v2.yml (with testing support)
-#   - frontend-deploy-workflow.yml (this file - currently v1)
-#
-# 📖 See: ../ci-consolidation/workflow-versioning-strategy.md
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 name: Frontend Deploy Workflow
 
 env:
