@@ -18,6 +18,14 @@ on:
         description: 'Use asdf-vm for version management (reads from .tool-versions)'
         type: boolean
         default: false
+      cache-mode:
+        description: 'Cache strategy: full, node_modules-only, or yarn-cache-only'
+        type: string
+        default: 'full'
+      disable-restore-keys:
+        description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
+        type: boolean
+        default: false
       
       # Runner configuration
       runner:
@@ -63,6 +71,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download coverage artifacts

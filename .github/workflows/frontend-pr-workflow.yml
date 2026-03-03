@@ -1,26 +1,3 @@
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# ⚠️  THIS FILE IS A COPY OF frontend-pr-workflow-v1.yml
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#
-# This is the "default" workflow that projects use when they don't specify a version.
-# It is intentionally a copy of the latest stable version to avoid delegation complexity.
-#
-# 📋 Version History:
-#   - 2026-02-04: Synced from frontend-pr-workflow-v1.yml (original, with Cypress)
-#
-# 🔄 To promote a new version to default:
-#   1. Copy the new version file content here (e.g., from frontend-pr-workflow-v2.yml)
-#   2. Update the version history above
-#   3. Keep the versioned files unchanged for explicit version pinning
-#
-# 📌 Projects can pin to specific versions:
-#   - frontend-pr-workflow-v1.yml (original, with Cypress support)
-#   - frontend-pr-workflow-v2.yml (enhanced with testing support)
-#   - frontend-pr-workflow.yml (this file - currently v1)
-#
-# 📖 See: ../ci-consolidation/workflow-versioning-strategy.md
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 name: Frontend PR Workflow
 
 env:
@@ -531,11 +508,13 @@ jobs:
     needs: [build, unit-tests]
     permissions:
       contents: read
-    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
+    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml
     with:
       app-name: ${{ inputs.app-name }}
       node-version: ${{ inputs.node-version }}
       use-asdf: ${{ inputs.use-asdf }}
+      cache-mode: ${{ inputs.cache-mode }}
+      disable-restore-keys: ${{ inputs.disable-restore-keys }}
       runner: ${{ inputs.runner }}
       coverage-artifact-name: ${{ inputs.run-unit-tests && format('coverage-{0}', github.run_id) || '' }}
       timeout: ${{ inputs.sonarcloud-timeout }}
