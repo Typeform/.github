@@ -187,6 +187,10 @@ on:
         description: 'Build output directory name (dist, build, lib, etc.)'
         type: string
         default: 'dist'
+      build-artifact-path:
+        description: 'Path pattern for build artifacts (supports globs for monorepos, e.g. apps/*/dist). When set, artifacts are downloaded to workspace root to preserve directory structure. Defaults to build-output-dir.'
+        type: string
+        default: ''
       cdn-bucket:
         description: 'S3 bucket for assets'
         type: string
@@ -346,7 +350,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ github.run_id }}
-          path: ${{ inputs.build-output-dir }}
+          path: ${{ inputs.build-artifact-path || inputs.build-output-dir }}
           retention-days: 1
   
   # Job 2: Unit Tests (parallel with integration tests)
@@ -439,7 +443,7 @@ jobs:
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          output-dir: ${{ inputs.build-output-dir }}
+          output-dir: ${{ inputs.build-artifact-path && '.' || inputs.build-output-dir }}
       
       - name: Run integration tests
         run: ${{ inputs.integration-test-command }}
@@ -483,7 +487,7 @@ jobs:
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          output-dir: ${{ inputs.build-output-dir }}
+          output-dir: ${{ inputs.build-artifact-path && '.' || inputs.build-output-dir }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
