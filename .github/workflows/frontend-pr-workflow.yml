@@ -218,6 +218,12 @@ on:
         type: string
         default: 'staging'
       
+      # Turbo monorepo configuration
+      turbo-scm-base:
+        description: 'Git SHA for Turbo SCM base comparison (enables --affected flag for Turbo monorepos)'
+        type: string
+        default: ''
+      
       # Timeout configuration
       build-timeout:
         description: 'Build job timeout (minutes)'
@@ -304,10 +310,13 @@ jobs:
         run: ${{ inputs.pre-build-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Run linting
         if: inputs.run-linting
         run: ${{ inputs.lint-command }}
+        env:
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Clean dist directory
         run: ${{ inputs.clean-command }}
@@ -317,6 +326,7 @@ jobs:
         env:
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
           JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
           JARVIS_DATADOG_SITE: datadoghq.com
@@ -371,11 +381,13 @@ jobs:
         run: ${{ inputs.pre-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Run unit tests
         run: ${{ inputs.unit-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Upload coverage
         if: always()
@@ -417,6 +429,7 @@ jobs:
         run: ${{ inputs.pre-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Setup Playwright
         if: inputs.integration-test-framework == 'playwright'
@@ -432,6 +445,7 @@ jobs:
         run: ${{ inputs.integration-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Upload test results
         if: always()
@@ -489,6 +503,7 @@ jobs:
         env:
           DEBUG: jarvis
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           AWS_ASSETS_BUCKET: ${{ inputs.cdn-bucket }}
           AWS_CLOUDFRONT_DIST: ${{ inputs.cloudfront-dist }}
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
