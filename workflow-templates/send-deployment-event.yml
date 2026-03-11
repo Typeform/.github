@@ -9,7 +9,7 @@ on:
 jobs:
   release:
     # for private repositories
-    runs-on: [self-hosted, node-12, automated-checks]
+    runs-on: [ci-universal-scale-set]
     # for public repositories
     # runs-on: [ubuntu-latest]
 

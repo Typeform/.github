@@ -56,8 +56,8 @@ jobs:
 | Input | Description | Default |
 |-------|-------------|---------|
 | `node-version` | Node.js version | `'20'` |
-| `runner` | Runner for build/deploy jobs | `'[self-hosted, ci-universal]'` |
-| `e2e-runner` | Runner for E2E/integration tests | `'[self-hosted, ci-e2e]'` |
+| `runner` | Runner for build/deploy jobs | `'[ci-universal-scale-set]'` |
+| `e2e-runner` | Runner for E2E/integration tests | `'[ci-e2e-scale-set]'` |
 | `build-command` | Build command | `'yarn dist:preview'` |
 | `clean-command` | Clean command before build | `'yarn clean'` |
 | `run-unit-tests` | Run unit tests | `false` |
@@ -92,7 +92,7 @@ jobs:
 - Builds assets
 - Uploads artifacts
 
-**Runs on**: `runner` (default: `[self-hosted, ci-universal]`)  
+**Runs on**: `runner` (default: `[ci-universal-scale-set]`)  
 **Timeout**: `build-timeout` (default: 15 min)
 
 ### 2. Unit Tests (🧪)
@@ -112,7 +112,7 @@ jobs:
 - Runs integration tests
 - Uploads test results
 
-**Runs on**: `e2e-runner` (default: `[self-hosted, ci-e2e]`)  
+**Runs on**: `e2e-runner` (default: `[ci-e2e-scale-set]`)  
 **Timeout**: `integration-timeout` (default: 20 min)  
 **Condition**: `run-integration-tests: true`  
 **Parallel with**: Unit tests, Deploy preview
@@ -187,8 +187,8 @@ jobs:
       node-version: '20'
       
       # Runners
-      runner: '[self-hosted, ci-universal]'
-      e2e-runner: '[self-hosted, ci-e2e]'
+      runner: '[ci-universal-scale-set]'
+      e2e-runner: '[ci-e2e-scale-set]'
       
       # Build
       build-command: 'yarn dist:preview'
@@ -274,7 +274,7 @@ with:
 with:
   app-name: 'bob-the-builder'
   build-command: 'yarn turbo run build'
-  runner: '[self-hosted, ci-bob-the-builder-release]'  # Custom runner
+  runner: '[ci-bob-the-builder-release-scale-set]'  # Custom runner
   run-unit-tests: true
 ```
 

@@ -7,14 +7,14 @@ on:
         description: "Self-hosted GHA runner"
         type: string
         required: false
-        default: "ci-universal"
+        default: "ci-universal-scale-set"
     secrets:
       GH_TOKEN:
         required: true
 
 jobs:
   update-allow-list:
-    runs-on: [self-hosted, "${{ inputs.runner }}"]
+    runs-on: ["${{ inputs.runner }}"]
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       GRAPHQL_ENDPOINTS: |
