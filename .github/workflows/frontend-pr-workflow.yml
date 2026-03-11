@@ -183,10 +183,26 @@ on:
         description: 'Deploy command'
         type: string
         default: 'yarn deploy:preview'
+      # Monorepo artifact handling:
+      # - build-output-dir: relative path used by deploy tools (e.g. jarvis deploy --path dist)
+      #   from each app's directory. Single-app repos only need this one.
+      # - build-artifact-path: glob for upload-artifact to capture all app builds
+      #   (e.g. apps/*/dist). Defaults to build-output-dir when not set.
+      # - build-artifact-download-path: extraction dir — upload-artifact strips the
+      #   common prefix (e.g. apps/) from the glob, so we download into that prefix
+      #   to restore the correct directory structure. Defaults to build-output-dir.
       build-output-dir:
         description: 'Build output directory name (dist, build, lib, etc.)'
         type: string
         default: 'dist'
+      build-artifact-path:
+        description: 'Path pattern for build artifacts upload (supports globs for monorepos, e.g. apps/*/dist). Defaults to build-output-dir.'
+        type: string
+        default: ''
+      build-artifact-download-path:
+        description: 'Directory to download build artifacts into. For monorepos where upload-artifact strips the common prefix (e.g. apps/), set this to that prefix. Defaults to build-output-dir.'
+        type: string
+        default: ''
       cdn-bucket:
         description: 'S3 bucket for assets'
         type: string
@@ -217,6 +233,12 @@ on:
         description: 'Datadog environment'
         type: string
         default: 'staging'
+      
+      # Turbo monorepo configuration
+      turbo-scm-base:
+        description: 'Git SHA for Turbo SCM base comparison (enables --affected flag for Turbo monorepos)'
+        type: string
+        default: ''
       
       # Timeout configuration
       build-timeout:
@@ -304,10 +326,13 @@ jobs:
         run: ${{ inputs.pre-build-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Run linting
         if: inputs.run-linting
         run: ${{ inputs.lint-command }}
+        env:
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Clean dist directory
         run: ${{ inputs.clean-command }}
@@ -317,6 +342,7 @@ jobs:
         env:
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
           JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
           JARVIS_DATADOG_SITE: datadoghq.com
@@ -336,7 +362,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ github.run_id }}
-          path: ${{ inputs.build-output-dir }}
+          path: ${{ inputs.build-artifact-path || inputs.build-output-dir }}
           retention-days: 1
   
   # Job 2: Unit Tests (parallel with integration tests)
@@ -371,11 +397,13 @@ jobs:
         run: ${{ inputs.pre-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Run unit tests
         run: ${{ inputs.unit-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Upload coverage
         if: always()
@@ -417,6 +445,7 @@ jobs:
         run: ${{ inputs.pre-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Setup Playwright
         if: inputs.integration-test-framework == 'playwright'
@@ -426,12 +455,13 @@ jobs:
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          output-dir: ${{ inputs.build-output-dir }}
+          output-dir: ${{ inputs.build-artifact-download-path || inputs.build-output-dir }}
       
       - name: Run integration tests
         run: ${{ inputs.integration-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Upload test results
         if: always()
@@ -469,7 +499,7 @@ jobs:
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          output-dir: ${{ inputs.build-output-dir }}
+          output-dir: ${{ inputs.build-artifact-download-path || inputs.build-output-dir }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
@@ -489,6 +519,7 @@ jobs:
         env:
           DEBUG: jarvis
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           AWS_ASSETS_BUCKET: ${{ inputs.cdn-bucket }}
           AWS_CLOUDFRONT_DIST: ${{ inputs.cloudfront-dist }}
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}

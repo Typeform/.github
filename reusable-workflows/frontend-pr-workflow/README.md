@@ -67,6 +67,7 @@ jobs:
 | `run-deep-purple` | Run Deep Purple E2E tests | `false` |
 | `deploy-preview` | Deploy preview environment | `true` |
 | `deploy-command` | Deploy command | `'yarn deploy:preview'` |
+| `turbo-scm-base` | Git SHA for Turbo SCM base comparison (enables `--affected` flag for Turbo monorepos). Sets `TURBO_SCM_BASE` env var on all command steps. | `''` |
 | `jarvis-branch` | Jarvis branch to use | `''` |
 | `jarvis-datadog-enabled` | Enable Jarvis Datadog logging | `true` |
 | `jarvis-datadog-env` | Datadog environment | `'staging'` |
@@ -277,6 +278,22 @@ with:
   run-unit-tests: true
 ```
 
+### performance-analytics (Turbo monorepo with --affected)
+```yaml
+with:
+  app-name: 'performance-analytics'
+  use-asdf: true
+  cache-mode: 'full'
+  turbo-scm-base: ${{ github.event.pull_request.base.sha }}
+  pre-build-command: 'echo "GRAPHQL_SCHEMA_URL=${{ vars.GRAPHQL_SCHEMA_URL }}" >> $GITHUB_ENV'
+  build-command: 'yarn dist:preview --affected'
+  run-unit-tests: true
+  unit-test-command: 'yarn verify --affected --concurrency=1'
+  run-integration-tests: true
+  integration-test-command: 'yarn test:integration --affected && yarn test:visual --affected'
+  run-deep-purple: false  # Handled separately via matrix job
+```
+
 ### hall-of-forms
 ```yaml
 with:
@@ -384,6 +401,7 @@ git push origin main
 - ✅ hall-of-forms
 - ✅ bob-the-builder
 - ✅ chief
+- ✅ performance-analytics (Turbo monorepo with `turbo-scm-base`)
 
 **All frontend applications**
 
