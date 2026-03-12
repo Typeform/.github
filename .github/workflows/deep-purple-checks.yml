@@ -16,12 +16,12 @@ on:
         description: "Self-hosted GHA runner"
         type: string
         required: false
-        default: "ci-universal"
+        default: "ci-universal-scale-set"
 
 jobs:
   run-deep-purple-tests:
     name: Run Deep Purple Tests Against Changes
-    runs-on: [self-hosted, "${{ inputs.runner }}"]
+    runs-on: ["${{ inputs.runner }}"]
 
     steps:
       - name: Check out Git repository

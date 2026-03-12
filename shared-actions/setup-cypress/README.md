@@ -27,7 +27,7 @@ on: [pull_request]
 
 jobs:
   test:
-    runs-on: [self-hosted, ci-e2e]
+    runs-on: [ci-e2e-scale-set]
     steps:
       - uses: actions/checkout@v4
       
