@@ -9,7 +9,7 @@ on:
 jobs:
   release:
     # for private repositories
-    runs-on: [ci-universal-scale-set]
+    runs-on: [automated-checks-scale-set]
     # for public repositories
     # runs-on: [ubuntu-latest]
 
