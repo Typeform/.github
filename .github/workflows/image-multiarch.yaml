@@ -61,6 +61,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Set up QEMU
+        if: ${{ contains(inputs.platforms, ',') }}
         uses: docker/setup-qemu-action@v3
         with:
           image: 567716553783.dkr.ecr.us-east-1.amazonaws.com/docker-hub/tonistiigi/binfmt:latest
