@@ -65,7 +65,8 @@ runs:
         channel-id: ${{ inputs.slack-channel }}
         payload: |
           {
-            "text": "${{ steps.msg.outputs.success_msg }}"
+            "text": "${{ steps.msg.outputs.success_msg }}",
+            "username": "Deploy Notifier"
           }
       env:
         SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
@@ -77,7 +78,8 @@ runs:
         channel-id: ${{ inputs.slack-channel }}
         payload: |
           {
-            "text": "${{ steps.msg.outputs.failure_msg }}"
+            "text": "${{ steps.msg.outputs.failure_msg }}",
+            "username": "Deploy Notifier"
           }
       env:
         SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
