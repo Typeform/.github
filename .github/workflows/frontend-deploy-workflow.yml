@@ -678,7 +678,6 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           app-name: ${{ inputs.app-name }}
           deployment-status: ${{ needs.deploy.result }}
-          cdn-url: ${{ inputs.cdn-url }}
           github-sha: ${{ github.sha }}
           github-actor: ${{ github.actor }}
           github-repository: ${{ github.repository }}
