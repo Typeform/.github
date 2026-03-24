@@ -605,16 +605,20 @@ jobs:
       
       - name: Deploy to production
         run: |
-          # Remove deprecated npm config env vars inherited from the runner environment.
-          # npm 10+ (Node 20.17+/Node 22+) emits warnings to stderr for these legacy keys,
-          # and Jarvis treats any stderr output as a deployment failure.
-          # Using both UPPER and lower-case forms to cover all platforms.
+          # Fix for Node 24 / npm 10+: deprecated npm config env vars cause warnings on stderr.
+          # Yarn 1.x re-injects npm_config_argv into child processes even after unset,
+          # so we must also filter stderr to prevent Jarvis from treating warnings as failures.
+          #
+          # Step 1: Unset known deprecated vars from the shell environment.
           unset NPM_CONFIG_ARGV NPM_CONFIG_VERSION_TAG_PREFIX NPM_CONFIG_VERSION_GIT_MESSAGE \
                 NPM_CONFIG_VERSION_COMMIT_HOOKS NPM_CONFIG__TYPEFORM_REGISTRY 2>/dev/null || true
           unset npm_config_argv npm_config_version_tag_prefix npm_config_version_git_message \
                 npm_config_version_commit_hooks npm_config__typeform_registry 2>/dev/null || true
 
-          ${{ inputs.deploy-command }}
+          # Step 2: Run deploy with stderr filtering to catch any remaining npm warnings
+          # that get re-injected by Yarn 1.x or read from .npmrc.
+          # This preserves real errors while stripping only "npm warn" lines.
+          ${{ inputs.deploy-command }} 2> >(grep -v "^npm warn " >&2)
         env:
           # Jarvis debug logging
           DEBUG: jarvis
