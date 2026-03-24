@@ -249,6 +249,10 @@ on:
         description: 'Slack channel for deployment notifications (e.g., tfprod-deploy)'
         type: string
         default: 'poc-tfprod-admin-deploy'
+      team-slack-handle:
+        description: 'Team Slack handle to mention on deploy failure (e.g., @tech-frontend). Leave empty to skip.'
+        type: string
+        default: ''
     
     secrets:
       GH_TOKEN:
@@ -677,8 +681,8 @@ jobs:
           cdn-url: ${{ inputs.cdn-url }}
           github-sha: ${{ github.sha }}
           github-actor: ${{ github.actor }}
-          github-ref-name: ${{ github.ref_name }}
           github-repository: ${{ github.repository }}
           github-server-url: ${{ github.server_url }}
           github-run-id: ${{ github.run_id }}
+          team-slack-handle: ${{ inputs.team-slack-handle }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
