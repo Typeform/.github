@@ -10,7 +10,7 @@ updates:
         patterns:
           - "*"
     directories:
-      - "/"
+      - "/**"
     commit-message:
       prefix: fix(dependabot)
 
@@ -25,9 +25,15 @@ updates:
     # recursively check in all subdirectories, there are actions
     # references that are not within the .github/ or other root folders
     directories:
-      - "/"
+      - "/**"
+    exclude-paths: # use .github-private workflows unaccessible to dependabot
+      - "/reusable-workflows/frontend-pr-workflow/workflow.yml"
+      - "/workflows/frontend-deploy-workflow.yml"
+      - "/workflows/frontend-pr-workflow.yml"
     ignore:
       - dependency-name: "Typeform/ci-standard-checks"
+      # ignore .github-private dependency. This alone does not prevent errors in dependabot,
+      # the "exclude-paths" is required as well
       - dependency-name: "Typeform/.github-private/actions/aws-auth"
     commit-message:
       prefix: fix(dependabot)
@@ -41,6 +47,6 @@ updates:
         patterns:
           - "*"
     directories:
-      - "/"
+      - "/**"
     commit-message:
       prefix: fix(dependabot)
