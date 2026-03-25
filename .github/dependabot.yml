@@ -26,6 +26,9 @@ updates:
     # references that are not within the .github/ or other root folders
     directories:
       - "/"
+    ignore:
+      - dependency-name: "Typeform/ci-standard-checks"
+      - dependency-name: "Typeform/.github-private/actions/aws-auth"
     commit-message:
       prefix: fix(dependabot)
 
