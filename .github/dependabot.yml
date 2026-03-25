@@ -27,9 +27,9 @@ updates:
     directories:
       - "/**"
     exclude-paths: # use .github-private workflows unaccessible to dependabot
-      - "/reusable-workflows/frontend-pr-workflow/workflow.yml"
-      - "/workflows/frontend-deploy-workflow.yml"
-      - "/workflows/frontend-pr-workflow.yml"
+      - "reusable-workflows/frontend-pr-workflow/workflow.yml"
+      - ".github/workflows/frontend-deploy-workflow.yml"
+      - ".github/workflows/frontend-pr-workflow.yml"
     ignore:
       - dependency-name: "Typeform/ci-standard-checks"
       # ignore .github-private dependency. This alone does not prevent errors in dependabot,
