@@ -20,10 +20,10 @@ jobs:
           echo "Deploy was not successful, deploy workflow exited with status:  ${{ github.event.workflow_run.conclusion}}. You may need to revert your PR."
 
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v6
         with:
           node-version: 12
 
