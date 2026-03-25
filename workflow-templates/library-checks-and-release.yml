@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v1
         with:
           node-version: 12
 
@@ -34,7 +34,7 @@ jobs:
           npm config set @typeform:registry https://npm.pkg.github.com/
 
       - name: Get yarn cache
-        uses: actions/cache@v5
+        uses: actions/cache@v2
         id: yarn-cache
         with:
           path: node_modules
