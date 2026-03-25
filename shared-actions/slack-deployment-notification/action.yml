@@ -25,10 +25,6 @@ inputs:
   github-run-id:
     description: 'GitHub Actions run ID'
     required: true
-  team-slack-handle:
-    description: 'Team Slack handle to mention on failure (e.g., @tech-frontend). Leave empty to skip team mention.'
-    required: false
-    default: ''
   SLACK_BOT_TOKEN:
     description: 'Slack OAuth token for posting messages'
     required: true
@@ -44,16 +40,12 @@ runs:
         APP="${{ inputs.app-name }}"
         ACTOR="${{ inputs.github-actor }}"
         WORKFLOW_URL="${{ inputs.github-server-url }}/${{ inputs.github-repository }}/actions/runs/${{ inputs.github-run-id }}"
-        TEAM="${{ inputs.team-slack-handle }}"
 
         # Success: 🚀 [frontend] `app:sha` was deployed to production by *actor*
         SUCCESS_MSG="🚀 [frontend] \`${APP}:${SHORT_SHA}\` was deployed to production by *${ACTOR}*"
 
-        # Failure: 🔥 [frontend] The deployment of `app:sha` to production by *actor* has failed (<url|logs>) @team
+        # Failure: 🔥 [frontend] The deployment of `app:sha` to production by *actor* has failed (<url|logs>)
         FAILURE_MSG="🔥 [frontend] The deployment of \`${APP}:${SHORT_SHA}\` to production by *${ACTOR}* has failed (<${WORKFLOW_URL}|logs>)"
-        if [ -n "$TEAM" ]; then
-          FAILURE_MSG="${FAILURE_MSG} ${TEAM}"
-        fi
 
         echo "success_msg=${SUCCESS_MSG}" >> $GITHUB_OUTPUT
         echo "failure_msg=${FAILURE_MSG}" >> $GITHUB_OUTPUT
