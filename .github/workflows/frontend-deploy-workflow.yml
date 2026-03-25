@@ -668,7 +668,7 @@ jobs:
     
     steps:
       - name: Send deployment notification
-        uses: Typeform/.github/shared-actions/slack-deployment-notification@v1
+        uses: Typeform/.github/shared-actions/slack-deployment-notification@feat/align-frontend-deploy-notifications
         with:
           slack-channel: ${{ inputs.slack-channel }}
           app-name: ${{ inputs.app-name }}
