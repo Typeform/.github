@@ -1,14 +1,52 @@
 version: 2
 
 updates:
-- package-ecosystem: github-actions
-  directory: "/"
-  schedule:
-    interval: weekly
-    day: sunday
-  groups:
-    dependencies:
-      patterns:
-        - "*"
-  commit-message:
-    prefix: fix(bot)
+  - package-ecosystem: npm
+    schedule:
+      interval: weekly
+      day: sunday
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    directories:
+      - "/**"
+    commit-message:
+      prefix: fix(dependabot)
+
+  - package-ecosystem: github-actions
+    schedule:
+      interval: weekly
+      day: sunday
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    # recursively check in all subdirectories, there are actions
+    # references that are not within the .github/ or other root folders
+    directories:
+      - "/**"
+    exclude-paths: # use .github-private workflows unaccessible to dependabot
+      - "/reusable-workflows/frontend-pr-workflow/workflow.yml"
+      - "/workflows/frontend-deploy-workflow.yml"
+      - "/workflows/frontend-pr-workflow.yml"
+    ignore:
+      - dependency-name: "Typeform/ci-standard-checks"
+      # ignore .github-private dependency. This alone does not prevent errors in dependabot,
+      # the "exclude-paths" is required as well
+      - dependency-name: "Typeform/.github-private/actions/aws-auth"
+    commit-message:
+      prefix: fix(dependabot)
+
+  - package-ecosystem: docker
+    schedule:
+      interval: weekly
+      day: sunday
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    directories:
+      - "/**"
+    commit-message:
+      prefix: fix(dependabot)

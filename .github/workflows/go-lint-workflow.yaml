@@ -54,10 +54,10 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check out repository containing linter config
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ inputs.golangci-lint-config-repo }}
           ref: ${{ inputs.golangci-lint-config-repo-ref }}

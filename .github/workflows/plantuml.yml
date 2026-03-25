@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           # Checkout the Pull Request branch, so that we are not in a detached head state.
           # and can push the re-generated diagrams to the HEAD of the same branch.
