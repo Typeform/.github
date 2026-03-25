@@ -6,11 +6,11 @@ updates:
       interval: weekly
       day: sunday
     groups:
-      dependencies:
+      npm-dependencies:
         patterns:
           - "*"
     directories:
-      - "/**"
+      - "/**/*"
     commit-message:
       prefix: fix(dependabot)
 
@@ -19,34 +19,23 @@ updates:
       interval: weekly
       day: sunday
     groups:
-      dependencies:
+      github-actions-dependencies:
         patterns:
           - "*"
     # recursively check in all subdirectories, there are actions
     # references that are not within the .github/ or other root folders
     directories:
-      - "/**"
+      - "/**/*"
     exclude-paths: # use .github-private workflows unaccessible to dependabot
-      - "/reusable-workflows/frontend-pr-workflow/workflow.yml"
-      - "/workflows/frontend-deploy-workflow.yml"
-      - "/workflows/frontend-pr-workflow.yml"
+      - "reusable-workflows/frontend-pr-workflow/workflow.yml"
+      - ".github/workflows/frontend-deploy-workflow.yml"
+      - ".github/workflows/frontend-pr-workflow.yml"
+      - ".github/workflows/deep-purple-checks.yml"
     ignore:
       - dependency-name: "Typeform/ci-standard-checks"
-      # ignore .github-private dependency. This alone does not prevent errors in dependabot,
-      # the "exclude-paths" is required as well
+      # ignore dependencies from private repos. This alone does not prevent
+      # errors in dependabot, the "exclude-paths" is required as well
       - dependency-name: "Typeform/.github-private/actions/aws-auth"
-    commit-message:
-      prefix: fix(dependabot)
-
-  - package-ecosystem: docker
-    schedule:
-      interval: weekly
-      day: sunday
-    groups:
-      dependencies:
-        patterns:
-          - "*"
-    directories:
-      - "/**"
+      - dependency-name: "Typeform/deep-purple-action"
     commit-message:
       prefix: fix(dependabot)

@@ -52,29 +52,29 @@ runs:
 
     - name: Send success notification
       if: ${{ inputs.deployment-status == 'success' }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v3
       with:
-        channel-id: ${{ inputs.slack-channel }}
+        method: chat.postMessage
+        token: ${{ inputs.SLACK_BOT_TOKEN }}
         payload: |
           {
+            "channel": "${{ inputs.slack-channel }}",
             "text": "${{ steps.msg.outputs.success_msg }}",
             "username": "Deploy Notifier"
           }
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
 
     - name: Send failure notification
       if: ${{ inputs.deployment-status == 'failure' }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v3
       with:
-        channel-id: ${{ inputs.slack-channel }}
+        method: chat.postMessage
+        token: ${{ inputs.SLACK_BOT_TOKEN }}
         payload: |
           {
+            "channel": "${{ inputs.slack-channel }}",
             "text": "${{ steps.msg.outputs.failure_msg }}",
             "username": "Deploy Notifier"
           }
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
 
 branding:
   icon: 'message-circle'
