@@ -39,16 +39,3 @@ updates:
       - dependency-name: "Typeform/deep-purple-action"
     commit-message:
       prefix: fix(dependabot)
-
-  - package-ecosystem: docker
-    schedule:
-      interval: weekly
-      day: sunday
-    groups:
-      docker-dependencies:
-        patterns:
-          - "*"
-    directories:
-      - "**/*"
-    commit-message:
-      prefix: fix(dependabot)
