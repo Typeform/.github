@@ -39,7 +39,7 @@ runs:
   using: 'composite'
   steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 1
     
@@ -55,7 +55,7 @@ runs:
     
     - name: Send success notification
       if: ${{ inputs.deployment-status == 'success' }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v3.0.1
       with:
         channel-id: ${{ inputs.slack-channel }}
         payload: |
@@ -134,7 +134,7 @@ runs:
     
     - name: Send failure notification
       if: ${{ inputs.deployment-status == 'failure' }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v3.0.1
       with:
         channel-id: ${{ inputs.slack-channel }}
         payload: |
