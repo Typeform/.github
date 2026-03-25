@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@actions/core@^3.0.0":
+"@actions/core@3.0.0":
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/@actions/core/-/core-3.0.0.tgz#89cb07c119e9b46a649ad5f355e77de9b3108cf8"
   integrity sha512-zYt6cz+ivnTmiT/ksRVriMBOiuoUpDCJJlZ5KPl2/FRdvwU3f7MPh9qftvbkXJThragzUZieit2nyHUyw53Seg==
@@ -17,7 +17,7 @@
   dependencies:
     "@actions/io" "^3.0.2"
 
-"@actions/github@^9.0.0":
+"@actions/github@9.0.0":
   version "9.0.0"
   resolved "https://registry.yarnpkg.com/@actions/github/-/github-9.0.0.tgz#c86dae4128b2a6987271e2663bee9e766464840a"
   integrity sha512-yJ0RoswsAaKcvkmpCE4XxBRiy/whH2SdTBHWzs0gi4wkqTDhXMChjSdqBz/F4AeiDlP28rQqL33iHb+kjAMX6w==
@@ -139,12 +139,12 @@
     component-type "^1.2.1"
     join-component "^1.1.0"
 
-"@zeit/ncc@^0.22.3":
+"@zeit/ncc@0.22.3":
   version "0.22.3"
   resolved "https://registry.yarnpkg.com/@zeit/ncc/-/ncc-0.22.3.tgz#fca6b86b4454ce7a7e1e7e755165ec06457f16cd"
   integrity sha512-jnCLpLXWuw/PAiJiVbLjA8WBC0IJQbFeUwF4I9M+23MvIxTxk5pD4Q8byQBSPmHQjz5aBoA7AKAElQxMpjrCLQ==
 
-analytics-node@^6.2.0:
+analytics-node@6.2.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/analytics-node/-/analytics-node-6.2.0.tgz#8ae2ebc73d85e5b2aac8d366b974ad36996f629d"
   integrity sha512-NLU4tCHlWt0tzEaFQL7NIoWhq2KmQSmz0JvyS2lYn6fc4fEjTMSabhJUx8H1r5995FX8fE3rZ15uIHU6u+ovlQ==
