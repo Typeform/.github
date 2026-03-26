@@ -16,7 +16,7 @@ on:
         description: "Self-hosted GHA runner"
         type: string
         required: false
-        default: "ci-universal-scale-set"
+        default: "ci-universal-scale-set-scale-set"
 
 jobs:
   run-deep-purple-tests:

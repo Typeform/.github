@@ -31,7 +31,7 @@ on:
       runner:
         description: 'Runner for SonarCloud scan'
         type: string
-        default: '[ci-universal-scale-set]'
+        default: '[ci-universal-scale-set-scale-set]'
       
       # Coverage configuration
       coverage-artifact-name:
