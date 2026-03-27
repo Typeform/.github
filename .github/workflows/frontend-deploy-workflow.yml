@@ -248,7 +248,7 @@ on:
       slack-channel:
         description: 'Slack channel for deployment notifications (e.g., tfprod-deploy)'
         type: string
-        default: 'poc-tfprod-admin-deploy'
+        default: 'tfprod-deploy'
     secrets:
       GH_TOKEN:
         required: true
