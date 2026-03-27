@@ -14,7 +14,7 @@
     "@vercel/ncc": "0.38.4"
   },
   "scripts": {
-    "distribute": "yarn ncc build deployment-frequency-event.js && echo '{\"main\":\"index.js\"}' > dist/package.json",
+    "distribute": "yarn ncc build deployment-frequency-event.js && rm -f dist/package.json",
     "send-deployment-event": "node deployment-frequency-event.js"
   }
 }
