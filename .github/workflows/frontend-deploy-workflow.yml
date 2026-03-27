@@ -249,7 +249,6 @@ on:
         description: 'Slack channel for deployment notifications (e.g., tfprod-deploy)'
         type: string
         default: 'poc-tfprod-admin-deploy'
-    
     secrets:
       GH_TOKEN:
         required: true
@@ -674,10 +673,8 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           app-name: ${{ inputs.app-name }}
           deployment-status: ${{ needs.deploy.result }}
-          cdn-url: ${{ inputs.cdn-url }}
           github-sha: ${{ github.sha }}
           github-actor: ${{ github.actor }}
-          github-ref-name: ${{ github.ref_name }}
           github-repository: ${{ github.repository }}
           github-server-url: ${{ github.server_url }}
           github-run-id: ${{ github.run_id }}
