@@ -1,3 +1,4 @@
+#trigger changes
 name: "Generate persisted operations"
 
 on:
