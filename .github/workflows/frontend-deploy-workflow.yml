@@ -38,11 +38,11 @@ on:
       runner:
         description: 'Runner for build/deploy jobs'
         type: string
-        default: '["ci-universal-scale-set-scale-set"]'
+        default: '["ci-universal-scale-set"]'
       e2e-runner:
         description: 'Runner for E2E/integration tests'
         type: string
-        default: '["ci-e2e-scale-set-scale-set"]'
+        default: '["ci-e2e-scale-set"]'
       
       # Build configuration
       pre-build-command:

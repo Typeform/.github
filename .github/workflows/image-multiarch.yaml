@@ -49,7 +49,7 @@ on:
         description: "Self-hosted GHA runner"
         type: string
         required: false
-        default: "ci-base-scale-set-scale-set"
+        default: "ci-base-scale-set"
 env:
   VERSION_PREFIX: ''
   VERSION_LATEST: latest
