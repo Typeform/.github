@@ -2,7 +2,6 @@
   "name": "@typeform/.github",
   "version": "0.0.1",
   "description": "GitHub Action for sending segment event",
-  "type": "module",
   "main": "deployment-frequency-event.js",
   "repository": "git@github.com:Typeform/.github.git",
   "license": "NOLICENSE",
@@ -15,7 +14,7 @@
     "@vercel/ncc": "0.38.4"
   },
   "scripts": {
-    "distribute": "yarn ncc build deployment-frequency-event.js",
+    "distribute": "yarn ncc build deployment-frequency-event.js && rm -f dist/package.json",
     "send-deployment-event": "node deployment-frequency-event.js"
   }
 }
