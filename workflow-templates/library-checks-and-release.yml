@@ -17,14 +17,14 @@ env:
 jobs:
   main:
     name: Run checks and deploy
-    runs-on: [self-hosted, fear]
+    runs-on: [ci-universtal-scale-set]
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v6
         with:
           node-version: 12
 
@@ -34,7 +34,7 @@ jobs:
           npm config set @typeform:registry https://npm.pkg.github.com/
 
       - name: Get yarn cache
-        uses: actions/cache@v2
+        uses: actions/cache@v5
         id: yarn-cache
         with:
           path: node_modules

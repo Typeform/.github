@@ -1,5 +1,5 @@
 name: 'Slack Deployment Notification'
-description: 'Send deployment success or failure notifications to Slack with detailed information'
+description: 'Send deployment success or failure notifications to Slack, matching the backend deploy message format used in #tfprod-deploy'
 inputs:
   slack-channel:
     description: 'Slack channel ID for notifications (e.g., tfprod-deploy)'
@@ -10,17 +10,11 @@ inputs:
   deployment-status:
     description: 'Deployment status: success or failure'
     required: true
-  cdn-url:
-    description: 'Public CDN URL for the deployed application'
-    required: true
   github-sha:
     description: 'Git commit SHA'
     required: true
   github-actor:
     description: 'GitHub user who triggered the deployment'
-    required: true
-  github-ref-name:
-    description: 'Git branch or tag name'
     required: true
   github-repository:
     description: 'Repository name (owner/repo)'
@@ -38,179 +32,49 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
-    
-    - name: Get commit message
-      id: commit
+    - name: Build notification message
+      id: msg
       shell: bash
       run: |
-        COMMIT_MSG=$(git log -1 --pretty=%B ${{ inputs.github-sha }} 2>/dev/null || echo "Commit message unavailable")
-        # Truncate to 100 chars and escape for JSON
-        COMMIT_MSG=$(echo "$COMMIT_MSG" | head -c 100 | sed 's/"/\\"/g' | tr -d '\n')
-        echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
-        echo "short_sha=$(echo ${{ inputs.github-sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-    
+        SHORT_SHA=$(echo "${{ inputs.github-sha }}" | cut -c1-7)
+        APP="${{ inputs.app-name }}"
+        ACTOR="${{ inputs.github-actor }}"
+        WORKFLOW_URL="${{ inputs.github-server-url }}/${{ inputs.github-repository }}/actions/runs/${{ inputs.github-run-id }}"
+
+        # Success: 🚀 [frontend] `app:sha` was deployed to production by *actor*
+        SUCCESS_MSG="🚀 [frontend] \`${APP}:${SHORT_SHA}\` was deployed to production by *${ACTOR}*"
+
+        # Failure: 🔥 [frontend] The deployment of `app:sha` to production by *actor* has failed (<url|logs>)
+        FAILURE_MSG="🔥 [frontend] The deployment of \`${APP}:${SHORT_SHA}\` to production by *${ACTOR}* has failed (<${WORKFLOW_URL}|logs>)"
+
+        echo "success_msg=${SUCCESS_MSG}" >> $GITHUB_OUTPUT
+        echo "failure_msg=${FAILURE_MSG}" >> $GITHUB_OUTPUT
+
     - name: Send success notification
       if: ${{ inputs.deployment-status == 'success' }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v3
       with:
-        channel-id: ${{ inputs.slack-channel }}
+        method: chat.postMessage
+        token: ${{ inputs.SLACK_BOT_TOKEN }}
         payload: |
           {
-            "text": "✅ Deployment Successful: ${{ inputs.app-name }}",
-            "blocks": [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "✅ Deployment Successful",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "section",
-                "fields": [
-                  {
-                    "type": "mrkdwn",
-                    "text": "*App:*\n${{ inputs.app-name }}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Environment:*\nProduction"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*CDN:*\n<${{ inputs.cdn-url }}|${{ inputs.cdn-url }}>"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Deployed by:*\n${{ inputs.github-actor }}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Commit:*\n<${{ inputs.github-server-url }}/${{ inputs.github-repository }}/commit/${{ inputs.github-sha }}|${{ steps.commit.outputs.short_sha }}>"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Branch:*\n${{ inputs.github-ref-name }}"
-                  }
-                ]
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Commit Message:*\n${{ steps.commit.outputs.message }}"
-                }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": "View Workflow"
-                    },
-                    "url": "${{ inputs.github-server-url }}/${{ inputs.github-repository }}/actions/runs/${{ inputs.github-run-id }}"
-                  },
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": "View Commit"
-                    },
-                    "url": "${{ inputs.github-server-url }}/${{ inputs.github-repository }}/commit/${{ inputs.github-sha }}"
-                  }
-                ]
-              }
-            ]
+            "channel": "${{ inputs.slack-channel }}",
+            "text": "${{ steps.msg.outputs.success_msg }}",
+            "username": "Deploy Notifier"
           }
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
-    
+
     - name: Send failure notification
       if: ${{ inputs.deployment-status == 'failure' }}
-      uses: slackapi/slack-github-action@v1.27.0
+      uses: slackapi/slack-github-action@v3
       with:
-        channel-id: ${{ inputs.slack-channel }}
+        method: chat.postMessage
+        token: ${{ inputs.SLACK_BOT_TOKEN }}
         payload: |
           {
-            "text": "❌ Deployment Failed: ${{ inputs.app-name }}",
-            "blocks": [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "❌ Deployment Failed",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "section",
-                "fields": [
-                  {
-                    "type": "mrkdwn",
-                    "text": "*App:*\n${{ inputs.app-name }}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Environment:*\nProduction"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Failed at:*\nDeploy job"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Deployed by:*\n${{ inputs.github-actor }}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Commit:*\n<${{ inputs.github-server-url }}/${{ inputs.github-repository }}/commit/${{ inputs.github-sha }}|${{ steps.commit.outputs.short_sha }}>"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Branch:*\n${{ inputs.github-ref-name }}"
-                  }
-                ]
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": ":warning: *Action Required:* Check the workflow logs for details."
-                }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": "View Logs"
-                    },
-                    "url": "${{ inputs.github-server-url }}/${{ inputs.github-repository }}/actions/runs/${{ inputs.github-run-id }}",
-                    "style": "danger"
-                  },
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": "View Commit"
-                    },
-                    "url": "${{ inputs.github-server-url }}/${{ inputs.github-repository }}/commit/${{ inputs.github-sha }}"
-                  }
-                ]
-              }
-            ]
+            "channel": "${{ inputs.slack-channel }}",
+            "text": "${{ steps.msg.outputs.failure_msg }}",
+            "username": "Deploy Notifier"
           }
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
 
 branding:
   icon: 'message-circle'

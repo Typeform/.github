@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           # Checkout the Pull Request branch, so that we are not in a detached head state.
           # and can push the re-generated diagrams to the HEAD of the same branch.
@@ -36,12 +36,12 @@ jobs:
       - name: Display environment variable "is-auto-commit"
         run: echo "is-auto-commit=${{ env.is-auto-commit }}"
 
-      - name: Generate PlantUML diagrams
-        if: env.is-auto-commit == false
-        uses: rotaract/plantuml-action@v1
-        with:
-          format: svg
-          pattern: "**.puml"
+      # - name: Generate PlantUML diagrams
+      #   if: env.is-auto-commit == false
+      #   uses: rotaract/plantuml-action@v1
+      #   with:
+      #     format: svg
+      #     pattern: "**.puml"
 
       - name: Set environment variable "changed-diagrams-count"
         if: env.is-auto-commit == false

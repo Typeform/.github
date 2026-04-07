@@ -1,3 +1,4 @@
+#trigger changes
 name: Frontend Deploy Workflow
 
 env:
@@ -38,11 +39,11 @@ on:
       runner:
         description: 'Runner for build/deploy jobs'
         type: string
-        default: '["self-hosted", "ci-universal"]'
+        default: '["ci-universal-scale-set"]'
       e2e-runner:
         description: 'Runner for E2E/integration tests'
         type: string
-        default: '["self-hosted", "ci-e2e"]'
+        default: '["ci-e2e-scale-set"]'
       
       # Build configuration
       pre-build-command:
@@ -57,10 +58,26 @@ on:
         description: 'Clean command before build'
         type: string
         default: 'yarn clean'
+      # Monorepo artifact handling:
+      # - build-output-dir: relative path used by deploy tools (e.g. jarvis deploy --path dist)
+      #   from each app's directory. Single-app repos only need this one.
+      # - build-artifact-path: glob for upload-artifact to capture all app builds
+      #   (e.g. apps/*/dist). Defaults to build-output-dir when not set.
+      # - build-artifact-download-path: extraction dir — upload-artifact strips the
+      #   common prefix (e.g. apps/) from the glob, so we download into that prefix
+      #   to restore the correct directory structure. Defaults to build-output-dir.
       build-output-dir:
         description: 'Build output directory name (dist, build, lib, etc.)'
         type: string
         default: 'dist'
+      build-artifact-path:
+        description: 'Path pattern for build artifacts upload (supports globs for monorepos, e.g. apps/*/dist). Defaults to build-output-dir.'
+        type: string
+        default: ''
+      build-artifact-download-path:
+        description: 'Directory to download build artifacts into. For monorepos where upload-artifact strips the common prefix (e.g. apps/), set this to that prefix. Defaults to build-output-dir.'
+        type: string
+        default: ''
       
       # Deploy configuration
       deploy-command:
@@ -206,6 +223,12 @@ on:
         type: boolean
         default: true
       
+      # Turbo monorepo configuration
+      turbo-scm-base:
+        description: 'Git SHA for Turbo SCM base comparison (enables --affected flag for Turbo monorepos)'
+        type: string
+        default: ''
+      
       # Timeout configuration
       build-timeout:
         description: 'Build job timeout (minutes)'
@@ -226,8 +249,7 @@ on:
       slack-channel:
         description: 'Slack channel for deployment notifications (e.g., tfprod-deploy)'
         type: string
-        default: 'poc-tfprod-admin-deploy'
-    
+        default: 'tfprod-deploy'
     secrets:
       GH_TOKEN:
         required: true
@@ -277,7 +299,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
@@ -299,6 +321,7 @@ jobs:
         run: ${{ inputs.pre-build-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Clean dist directory
         run: ${{ inputs.clean-command }}
@@ -308,6 +331,7 @@ jobs:
         env:
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
           JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
           JARVIS_DATADOG_SITE: datadoghq.com
@@ -323,10 +347,10 @@ jobs:
           echo "📋 Workflow version: ${{ env.WORKFLOW_VERSION }} (${{ env.WORKFLOW_FILE }})"
       
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-${{ github.run_id }}
-          path: ${{ inputs.build-output-dir }}
+          path: ${{ inputs.build-artifact-path || inputs.build-output-dir }}
           retention-days: 1
   
   # Job 2: Unit Tests (runs in parallel with other tests)
@@ -339,7 +363,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Required for SonarCloud
       
@@ -363,15 +387,17 @@ jobs:
         run: ${{ inputs.pre-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Run unit tests
         run: ${{ inputs.unit-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-${{ github.run_id }}
           path: coverage/
@@ -387,7 +413,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
@@ -413,21 +439,28 @@ jobs:
         run: ${{ inputs.pre-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Download Build Artifacts
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          output-dir: ${{ inputs.build-output-dir }}
+          output-dir: ${{ inputs.build-artifact-download-path || inputs.build-output-dir }}
       
       - name: Run integration tests
         run: ${{ inputs.integration-test-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
+          VRT_APIURL: ${{ secrets.VRT_APIURL }}
+          VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
+          VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
+          VRT_BRANCHNAME: ${{ github.head_ref || github.ref_name }}
+          VRT_CIBUILDID: ${{ github.sha }}
       
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integration-test-results-${{ github.run_id }}
           path: playwright-report/
@@ -532,7 +565,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
@@ -555,7 +588,7 @@ jobs:
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:
           artifact-name: ${{ needs.build.outputs.artifact-name }}
-          output-dir: ${{ inputs.build-output-dir }}
+          output-dir: ${{ inputs.build-artifact-download-path || inputs.build-output-dir }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
@@ -571,12 +604,23 @@ jobs:
           output_credentials: true
       
       - name: Deploy to production
-        run: ${{ inputs.deploy-command }}
+        run: |
+          # Remove deprecated npm config env vars inherited from the runner environment.
+          # npm 10+ (Node 20.17+/Node 22+) emits warnings to stderr for these legacy keys,
+          # and Jarvis treats any stderr output as a deployment failure.
+          # Using both UPPER and lower-case forms to cover all platforms.
+          unset NPM_CONFIG_ARGV NPM_CONFIG_VERSION_TAG_PREFIX NPM_CONFIG_VERSION_GIT_MESSAGE \
+                NPM_CONFIG_VERSION_COMMIT_HOOKS NPM_CONFIG__TYPEFORM_REGISTRY 2>/dev/null || true
+          unset npm_config_argv npm_config_version_tag_prefix npm_config_version_git_message \
+                npm_config_version_commit_hooks npm_config__typeform_registry 2>/dev/null || true
+
+          ${{ inputs.deploy-command }}
         env:
           # Jarvis debug logging
           DEBUG: jarvis
           # GitHub
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           # AWS configuration
           AWS_REGION: ${{ inputs.aws-region }}
           AWS_ASSETS_BUCKET: ${{ inputs.cdn-bucket }}
@@ -630,10 +674,8 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           app-name: ${{ inputs.app-name }}
           deployment-status: ${{ needs.deploy.result }}
-          cdn-url: ${{ inputs.cdn-url }}
           github-sha: ${{ github.sha }}
           github-actor: ${{ github.actor }}
-          github-ref-name: ${{ github.ref_name }}
           github-repository: ${{ github.repository }}
           github-server-url: ${{ github.server_url }}
           github-run-id: ${{ github.run_id }}

@@ -1,3 +1,4 @@
+#trigger changes
 name: "Generate persisted operations"
 
 on:
@@ -7,14 +8,14 @@ on:
         description: "Self-hosted GHA runner"
         type: string
         required: false
-        default: "ci-universal"
+        default: "ci-universal-scale-set"
     secrets:
       GH_TOKEN:
         required: true
 
 jobs:
   update-allow-list:
-    runs-on: [self-hosted, "${{ inputs.runner }}"]
+    runs-on: ["${{ inputs.runner }}"]
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       GRAPHQL_ENDPOINTS: |
@@ -25,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
         uses: actions/setup-node@v6

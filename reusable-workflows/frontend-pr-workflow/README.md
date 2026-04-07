@@ -56,8 +56,8 @@ jobs:
 | Input | Description | Default |
 |-------|-------------|---------|
 | `node-version` | Node.js version | `'20'` |
-| `runner` | Runner for build/deploy jobs | `'[self-hosted, ci-universal]'` |
-| `e2e-runner` | Runner for E2E/integration tests | `'[self-hosted, ci-e2e]'` |
+| `runner` | Runner for build/deploy jobs | `'[ci-universal-scale-set]'` |
+| `e2e-runner` | Runner for E2E/integration tests | `'[ci-e2e-scale-set]'` |
 | `build-command` | Build command | `'yarn dist:preview'` |
 | `clean-command` | Clean command before build | `'yarn clean'` |
 | `run-unit-tests` | Run unit tests | `false` |
@@ -67,6 +67,7 @@ jobs:
 | `run-deep-purple` | Run Deep Purple E2E tests | `false` |
 | `deploy-preview` | Deploy preview environment | `true` |
 | `deploy-command` | Deploy command | `'yarn deploy:preview'` |
+| `turbo-scm-base` | Git SHA for Turbo SCM base comparison (enables `--affected` flag for Turbo monorepos). Sets `TURBO_SCM_BASE` env var on all command steps. | `''` |
 | `jarvis-branch` | Jarvis branch to use | `''` |
 | `jarvis-datadog-enabled` | Enable Jarvis Datadog logging | `true` |
 | `jarvis-datadog-env` | Datadog environment | `'staging'` |
@@ -91,7 +92,7 @@ jobs:
 - Builds assets
 - Uploads artifacts
 
-**Runs on**: `runner` (default: `[self-hosted, ci-universal]`)  
+**Runs on**: `runner` (default: `[ci-universal-scale-set]`)  
 **Timeout**: `build-timeout` (default: 15 min)
 
 ### 2. Unit Tests (🧪)
@@ -111,7 +112,7 @@ jobs:
 - Runs integration tests
 - Uploads test results
 
-**Runs on**: `e2e-runner` (default: `[self-hosted, ci-e2e]`)  
+**Runs on**: `e2e-runner` (default: `[ci-e2e-scale-set]`)  
 **Timeout**: `integration-timeout` (default: 20 min)  
 **Condition**: `run-integration-tests: true`  
 **Parallel with**: Unit tests, Deploy preview
@@ -186,8 +187,8 @@ jobs:
       node-version: '20'
       
       # Runners
-      runner: '[self-hosted, ci-universal]'
-      e2e-runner: '[self-hosted, ci-e2e]'
+      runner: '[ci-universal-scale-set]'
+      e2e-runner: '[ci-e2e-scale-set]'
       
       # Build
       build-command: 'yarn dist:preview'
@@ -273,8 +274,24 @@ with:
 with:
   app-name: 'bob-the-builder'
   build-command: 'yarn turbo run build'
-  runner: '[self-hosted, ci-bob-the-builder-release]'  # Custom runner
+  runner: '[ci-bob-the-builder-release-scale-set]'  # Custom runner
   run-unit-tests: true
+```
+
+### performance-analytics (Turbo monorepo with --affected)
+```yaml
+with:
+  app-name: 'performance-analytics'
+  use-asdf: true
+  cache-mode: 'full'
+  turbo-scm-base: ${{ github.event.pull_request.base.sha }}
+  pre-build-command: 'echo "GRAPHQL_SCHEMA_URL=${{ vars.GRAPHQL_SCHEMA_URL }}" >> $GITHUB_ENV'
+  build-command: 'yarn dist:preview --affected'
+  run-unit-tests: true
+  unit-test-command: 'yarn verify --affected --concurrency=1'
+  run-integration-tests: true
+  integration-test-command: 'yarn test:integration --affected && yarn test:visual --affected'
+  run-deep-purple: false  # Handled separately via matrix job
 ```
 
 ### hall-of-forms
@@ -384,6 +401,7 @@ git push origin main
 - ✅ hall-of-forms
 - ✅ bob-the-builder
 - ✅ chief
+- ✅ performance-analytics (Turbo monorepo with `turbo-scm-base`)
 
 **All frontend applications**
 

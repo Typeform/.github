@@ -1,3 +1,4 @@
+#trigger changes
 name: SonarCloud Scan
 
 on:
@@ -31,7 +32,7 @@ on:
       runner:
         description: 'Runner for SonarCloud scan'
         type: string
-        default: '[self-hosted, ci-universal]'
+        default: '[ci-universal-scale-set]'
       
       # Coverage configuration
       coverage-artifact-name:
@@ -62,7 +63,7 @@ jobs:
     
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Required for SonarCloud to analyze git history
       
@@ -77,14 +78,14 @@ jobs:
       
       - name: Download coverage artifacts
         if: inputs.coverage-artifact-name != ''
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.coverage-artifact-name }}
           path: coverage/
         continue-on-error: true
       
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v7
         with:
           args: >
             -Dsonar.projectVersion=${{ github.run_id }}
