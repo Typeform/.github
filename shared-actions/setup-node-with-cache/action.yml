@@ -247,15 +247,17 @@ runs:
             NEEDS_INSTALL=true
           fi
           
-          # 3. Postinstall hook: Any project with postinstall needs it executed
-          #    Examples: building native modules, generating files, running setup scripts
+          # 3. Postinstall hook: install needed so we can run the root postinstall explicitly
+          #    (dependency postinstall scripts are blocked by --ignore-scripts)
           if grep -q '"postinstall"' package.json 2>/dev/null; then
-            echo "🔧 Detected postinstall hook - install needed to execute it"
+            echo "🔧 Detected postinstall hook - install needed to run root postinstall"
             NEEDS_INSTALL=true
+            HAS_POSTINSTALL=true
           fi
         fi
         
         echo "needs-install=$NEEDS_INSTALL" >> $GITHUB_OUTPUT
+        echo "has-postinstall=${HAS_POSTINSTALL:-false}" >> $GITHUB_OUTPUT
     
     - name: Log cache status and decision
       if: ${{ !env.ACT }}
@@ -284,7 +286,16 @@ runs:
     - name: Install Node.js dependencies
       if: ${{ !env.ACT && (steps.yarn-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
       shell: bash
-      run: yarn install --frozen-lockfile
+      run: yarn install --frozen-lockfile --ignore-scripts
       env:
         NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
         PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+
+    - name: Run root postinstall script
+      if: ${{ !env.ACT && steps.check-install-needed.outputs.has-postinstall == 'true' }}
+      shell: bash
+      run: |
+        echo "🔧 Running root postinstall script"
+        yarn run postinstall
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
