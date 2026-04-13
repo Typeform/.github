@@ -149,6 +149,15 @@ on:
         type: string
         default: 'http://localhost:9000'
       
+      run-playwright-visual:
+        description: 'Run Playwright visual regression tests'
+        type: boolean
+        default: false
+      playwright-visual-command:
+        description: 'Playwright visual test command'
+        type: string
+        default: 'yarn test:visual'
+      
       run-cypress-visual:
         description: 'Run Cypress visual regression tests'
         type: boolean
@@ -630,7 +639,38 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
   
-  # Job 9: Cypress Visual Tests
+  # Job 9: Playwright Visual Tests
+  playwright-visual:
+    name: 🎨 Playwright Visual
+    if: inputs.run-playwright-visual
+    needs: build
+    runs-on: ${{ fromJSON(inputs.e2e-runner) }}
+    timeout-minutes: ${{ inputs.integration-timeout }}
+    
+    steps:
+      - name: Run Playwright Visual Tests
+        uses: Typeform/.github/shared-actions/run-playwright-visual@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
+          jarvis-branch: ${{ inputs.jarvis-branch }}
+          pre-test-command: ${{ inputs.pre-test-command }}
+          test-command: ${{ inputs.playwright-visual-command }}
+          build-artifact-name: ${{ needs.build.outputs.artifact-name }}
+          build-artifact-download-path: ${{ inputs.build-artifact-download-path || inputs.build-output-dir }}
+          turbo-scm-base: ${{ inputs.turbo-scm-base }}
+          vrt-branch-name: ${{ github.head_ref || github.ref_name }}
+          vrt-build-id: ${{ github.sha }}
+          artifact-name: 'playwright-visual-results-${{ github.run_id }}'
+          artifact-retention-days: '7'
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          VRT_APIURL: ${{ secrets.VRT_APIURL }}
+          VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
+          VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
+  
+  # Job 10: Cypress Visual Tests
   cypress-visual:
     name: 🎨 Cypress Visual
     if: inputs.run-cypress-visual
