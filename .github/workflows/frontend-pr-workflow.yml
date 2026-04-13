@@ -649,7 +649,8 @@ jobs:
     
     steps:
       - name: Run Playwright Visual Tests
-        uses: Typeform/.github/shared-actions/run-playwright-visual@v1
+        # TODO: Change back to @v1 after this PR is merged and v1 tag is updated
+        uses: Typeform/.github/shared-actions/run-playwright-visual@add-playwright-visual-tests
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
