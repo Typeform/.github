@@ -162,6 +162,53 @@ runs:
         
         set -e  # Re-enable exit on error
     
+    - name: Clean stale nested node_modules on restore-key fallback
+      if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        # When actions/cache reports cache-hit != 'true', it means either:
+        # 1. Complete cache miss (no node_modules directory exists)
+        # 2. Restore-key fallback (stale node_modules from a previous lockfile)
+        #
+        # Case 2 is dangerous: yarn install --frozen-lockfile installs the correct
+        # top-level packages but does NOT delete leftover nested node_modules/ dirs
+        # from the stale cache. This causes version conflicts (e.g., @types/react@17
+        # persisting inside a dependency's node_modules after upgrading to React 18).
+        #
+        # Fix: if node_modules exists (restore-key fallback), purge all nested
+        # node_modules directories inside dependencies before yarn install.
+        
+        if [ -d "node_modules" ]; then
+          echo "=== 🧹 Stale Cache Cleanup ==="
+          echo "Cache was restored via restore-key fallback (not exact match)"
+          echo "Cleaning nested node_modules to prevent version conflicts..."
+          
+          # Count nested node_modules before cleanup
+          NESTED_COUNT=$(find node_modules -mindepth 2 -name node_modules -type d 2>/dev/null | wc -l | tr -d ' ')
+          echo "📦 Found $NESTED_COUNT nested node_modules directories"
+          
+          if [ "$NESTED_COUNT" -gt 0 ]; then
+            # Remove all nested node_modules inside dependencies.
+            # This forces yarn install to re-resolve them correctly based on the
+            # current lockfile, preventing stale transitive dependencies.
+            find node_modules -mindepth 2 -name node_modules -type d -exec rm -rf {} + 2>/dev/null || true
+            
+            # Also clean nested node_modules in workspace packages
+            find packages/*/node_modules -mindepth 2 -name node_modules -type d -exec rm -rf {} + 2>/dev/null || true
+            find apps/*/node_modules -mindepth 2 -name node_modules -type d -exec rm -rf {} + 2>/dev/null || true
+            
+            echo "✅ Cleaned nested node_modules — yarn install will re-resolve them"
+          else
+            echo "✅ No nested node_modules found — nothing to clean"
+          fi
+          
+          # Remove .yarn-integrity so yarn install runs a full resolution
+          rm -f node_modules/.yarn-integrity
+          echo "🔒 Removed .yarn-integrity to force full resolution"
+        else
+          echo "📭 No node_modules directory — clean cache miss, nothing to clean"
+        fi
+    
     - name: Check if yarn install needed on cache hit
       id: check-install-needed
       if: ${{ !env.ACT }}

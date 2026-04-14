@@ -84,6 +84,17 @@ This ensures:
 - **Monorepo support**: `**/yarn.lock` pattern handles nested workspaces
 - **Consistent keys**: Removed `.tool-versions` dependency for reliability
 
+### Stale Cache Cleanup (Restore-Key Fallback)
+
+When the cache key doesn't match exactly (e.g., after a `yarn.lock` change), `actions/cache` may restore a **stale cache** via the restore-key fallback. This is dangerous because `yarn install --frozen-lockfile` installs the correct top-level packages but **does not delete leftover nested `node_modules/`** directories from the old cache. This can cause version conflicts (e.g., `@types/react@17` persisting inside a dependency's `node_modules/` after upgrading to React 18).
+
+The action automatically detects restore-key fallback (cache restored but not an exact match) and:
+1. **Purges all nested `node_modules/`** directories inside dependencies
+2. **Removes `.yarn-integrity`** to force a full resolution
+3. **Logs the cleanup** for debugging
+
+This prevents an entire class of "works locally but fails in CI" issues during major dependency migrations.
+
 ### Cache Integrity Verification
 
 On cache hit, the action performs **automatic verification** to prevent stale cache issues:
