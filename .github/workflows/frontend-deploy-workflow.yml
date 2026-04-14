@@ -480,6 +480,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           jarvis-branch: ${{ inputs.jarvis-branch }}
           pre-test-command: ${{ inputs.pre-test-command }}
           test-command: ${{ inputs.cypress-functional-command }}
@@ -504,6 +506,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
           jarvis-branch: ${{ inputs.jarvis-branch }}
           pre-test-command: ${{ inputs.pre-test-command }}
           test-command: ${{ inputs.cypress-visual-command }}

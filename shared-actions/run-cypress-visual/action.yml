@@ -11,6 +11,14 @@ inputs:
     description: 'Use asdf-vm for version management'
     required: false
     default: 'false'
+  cache-mode:
+    description: 'Cache strategy: "full" (node_modules + yarn cache), "node_modules-only", or "yarn-cache-only"'
+    required: false
+    default: 'full'
+  disable-restore-keys:
+    description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
+    required: false
+    default: 'false'
   jarvis-branch:
     description: 'Jarvis branch to use (empty = npm version)'
     required: false
@@ -88,6 +96,8 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         use-asdf: ${{ inputs.use-asdf }}
+        cache-mode: ${{ inputs.cache-mode }}
+        disable-restore-keys: ${{ inputs.disable-restore-keys }}
         GH_TOKEN: ${{ inputs.GH_TOKEN }}
     
     - name: Setup Jarvis
