@@ -1,0 +1,34 @@
+name: 'Report Python Coverage'
+description: 'Parse pytest coverage output and comment on PR with a formatted coverage table'
+
+inputs:
+  pytest-log-path:
+    description: 'Path to the pytest log file containing coverage output'
+    required: false
+    default: 'pytest.log'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+      uses: actions/github-script@v9
+      with:
+        script: |
+          const { promises: fs } = require('fs')
+          let content = await fs.readFile('${{ inputs.pytest-log-path }}', 'utf8')
+          content = content.split("=")
+          let coverage = content[content.length - 1]
+          coverage = coverage.replace(/ {2,}/g, '|')
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## Coverage Report
+            <details>${coverage}</details>
+            `
+          })
+
+branding:
+  icon: 'bar-chart-2'
+  color: 'green'
