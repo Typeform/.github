@@ -115,7 +115,7 @@ jobs:
             ```
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
-            ${{ steps.dependencies.outputs.result && format('**Dependencies:** {0}', steps.dependencies.outputs.result) || '' }}
+            ${{ steps.dependencies.outputs.result && format('\n**Dependencies:** {0}', steps.dependencies.outputs.result) || '' }}
 
       - name: Update Comment
         uses: peter-evans/create-or-update-comment@v5
@@ -133,6 +133,6 @@ jobs:
             ```
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
-            ${{ steps.dependencies.outputs.result && format('**Dependencies:** {0}', steps.dependencies.outputs.result) || '' }}
+            ${{ steps.dependencies.outputs.result && format('\n**Dependencies:** {0}', steps.dependencies.outputs.result) || '' }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           edit-mode: replace
