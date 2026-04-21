@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Get deploy link(s)
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: set-result
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -85,7 +85,7 @@ jobs:
           body-includes: "Deploy this version of `${{ inputs.service }}` in"
 
       - name: Build dependencies list
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: dependencies
         if: inputs.dependencies != ''
         with:
