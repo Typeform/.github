@@ -20,6 +20,11 @@ on:
         type: boolean
         required: false
         default: false
+      dependencies:
+        description: 'Comma-separated list of services required in the environment before this service can be deployed'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   comment:
@@ -79,6 +84,21 @@ jobs:
           issue-number: ${{ github.event.number }}
           body-includes: "Deploy this version of `${{ inputs.service }}` in"
 
+      - name: Build dependencies list
+        uses: actions/github-script@v8
+        id: dependencies
+        if: inputs.dependencies != ''
+        with:
+          script: |
+            const deps = `${{ inputs.dependencies }}`
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean)
+              .map(dep => `\`${dep}\``)
+              .join(', ')
+            return deps
+          result-encoding: string
+
       - name: Create Comment
         uses: peter-evans/create-or-update-comment@v5
         if: steps.find-comment.outputs.comment-id == ''
@@ -96,6 +116,8 @@ jobs:
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
 
+            ${{ steps.dependencies.outputs.result && format('**Dependencies**: {0}', steps.dependencies.outputs.result) || '' }}
+
       - name: Update Comment
         uses: peter-evans/create-or-update-comment@v5
         if: steps.find-comment.outputs.comment-id != '' && inputs.update-comment
@@ -112,5 +134,7 @@ jobs:
             ```
             🚀 Deploy this version of `${{ inputs.service }}` in an **ephemeral environment** with `--reference`:
             ${{ steps.set-result.outputs.result }}
+
+            ${{ steps.dependencies.outputs.result && format('**Dependencies**: {0}', steps.dependencies.outputs.result) || '' }}
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           edit-mode: replace
