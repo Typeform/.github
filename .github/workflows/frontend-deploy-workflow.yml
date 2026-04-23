@@ -208,6 +208,20 @@ on:
         description: 'Cypress test timeout (minutes)'
         type: number
         default: 20
+
+      # Playwright visual tests
+      run-playwright-visual:
+        description: "Run Playwright visual regression tests before deployment"
+        type: boolean
+        default: false
+      playwright-visual-command:
+        description: "Playwright visual test command"
+        type: string
+        default: "yarn test:visual"
+      playwright-visual-timeout:
+        description: "Playwright visual test timeout (minutes)"
+        type: number
+        default: 20
       
       # SonarCloud configuration
       run-sonarcloud:
@@ -523,7 +537,38 @@ jobs:
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
   
-  # Job 6: SonarCloud Analysis (waits for unit tests if enabled)
+ # Job 6: Playwright Visual Tests (runs in parallel with other tests)
+  playwright-visual:
+    name: 🎨 Playwright Visual
+    if: inputs.run-playwright-visual
+    needs: build
+    runs-on: ${{ fromJSON(inputs.e2e-runner) }}
+    timeout-minutes: ${{ inputs.playwright-visual-timeout }}
+
+    steps:
+      - name: Run Playwright Visual Tests
+        uses: Typeform/.github/shared-actions/run-playwright-visual@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
+          jarvis-branch: ${{ inputs.jarvis-branch }}
+          pre-test-command: ${{ inputs.pre-test-command }}
+          test-command: ${{ inputs.playwright-visual-command }}
+          build-artifact-name: ${{ needs.build.outputs.artifact-name }}
+          build-artifact-download-path: ${{ inputs.build-artifact-download-path || inputs.build-output-dir }}
+          turbo-scm-base: ${{ inputs.turbo-scm-base }}
+          vrt-branch-name: ${{ github.head_ref || github.ref_name }}
+          vrt-build-id: ${{ github.sha }}
+          artifact-name: "playwright-visual-results-${{ github.run_id }}"
+          artifact-retention-days: "7"
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          VRT_APIURL: ${{ secrets.VRT_APIURL }}
+          VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
+          VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
+
+  # Job 7: SonarCloud Analysis (waits for unit tests if enabled)
   sonarcloud:
     name: 🔍 SonarCloud
     if: inputs.run-sonarcloud
@@ -542,7 +587,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
   
-  # Job 7: Deploy to Production (only if all enabled tests pass)
+  # Job 8: Deploy to Production (only if all enabled tests pass)
   deploy:
     name: 🚀 Deploy to Production
     needs: 
@@ -663,7 +708,7 @@ jobs:
           echo "📝 Commit: ${{ github.sha }}"
           echo "📋 Workflow: frontend-deploy-workflow-v2 (v2)"
   
-  # Job 8: Slack Notifications (runs after deploy completes)
+  # Job 9: Slack Notifications (runs after deploy completes)
   notify-slack:
     name: 📢 Notify Slack
     if: always() && inputs.slack-channel != '' && needs.deploy.result != 'cancelled'
