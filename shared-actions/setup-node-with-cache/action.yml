@@ -28,6 +28,20 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # TEMPORARY: install zstd so actions/cache auto-detects it and uses
+    # zstd compression instead of gzip. Runner images (typeform-stack
+    # arc-ci-slim-base) don't ship zstd today — see
+    # https://github.com/Typeform/typeform-stack/pull/2149.
+    # This step goes away once that PR lands and the runner image rebuilds.
+    - name: Install zstd (test)
+      if: ${{ !env.ACT }}
+      shell: bash
+      run: |
+        if ! command -v zstd >/dev/null 2>&1; then
+          sudo apt-get update -qq && sudo apt-get install -y -qq zstd
+        fi
+        zstd --version
+
     # Cache 1: asdf installations (Node.js and Yarn binaries)
     # This cache is separate because it only changes when .tool-versions is updated,
     # which happens infrequently (only when upgrading Node/Yarn versions).
