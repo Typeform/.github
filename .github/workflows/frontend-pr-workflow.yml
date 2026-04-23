@@ -375,11 +375,10 @@ jobs:
           path: ${{ inputs.build-artifact-path || inputs.build-output-dir }}
           retention-days: 1
   
-  # Job 2: Unit Tests (parallel with integration tests)
+  # Job 2: Unit Tests (parallel with build — does not consume build artifacts)
   unit-tests:
     name: 🧪 Unit Tests
     if: inputs.run-unit-tests
-    needs: build
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: ${{ inputs.test-timeout }}
     
