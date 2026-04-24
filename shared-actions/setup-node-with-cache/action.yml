@@ -24,10 +24,60 @@ inputs:
     description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
     required: false
     default: 'false'
+  use-tmpfs:
+    description: 'Mount tmpfs (RAM-backed) at cache target paths to bypass disk I/O and memcg dirty-page accounting (PLT-3439).'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
   steps:
+    # Mount tmpfs at paths that will receive cached content, before any cache
+    # restore runs. On ARC scale-set runners the pod's ephemeral storage is
+    # shared across the k8s node and is IOPS-throttled at the cgroup level;
+    # extracting hundreds of MB of small files into it triggers writeback
+    # backpressure that blocks subsequent syscalls for tens of seconds.
+    # Using tmpfs avoids both the disk and the memcg dirty-page budget.
+    # Graceful: if mount fails (e.g. no CAP_SYS_ADMIN), we log and continue
+    # with disk-backed paths. See https://typeform.atlassian.net/browse/PLT-3439.
+    - name: Mount tmpfs at cache targets
+      if: ${{ inputs.use-tmpfs == 'true' && !env.ACT }}
+      shell: bash
+      run: |
+        set +e
+        mount_tmpfs() {
+          local path="$1"
+          local size="$2"
+          sudo mkdir -p "$path" 2>/dev/null
+          if sudo mount -t tmpfs -o size="$size" tmpfs "$path" 2>/tmp/mount.err; then
+            sudo chown -R "$(id -u):$(id -g)" "$path" 2>/dev/null
+            echo "✓ mounted tmpfs size=$size at $path"
+          else
+            echo "⚠ tmpfs mount failed at $path: $(cat /tmp/mount.err 2>/dev/null)"
+            echo "  Continuing with disk-backed storage."
+          fi
+        }
+
+        if [ "${{ inputs.use-asdf }}" == "true" ]; then
+          mount_tmpfs "$HOME/.asdf/installs" "2g"
+          mount_tmpfs "$HOME/.asdf/plugins" "200m"
+        fi
+
+        case "${{ inputs.cache-mode }}" in
+          full|node_modules-only|"")
+            mount_tmpfs "$GITHUB_WORKSPACE/node_modules" "3g"
+            ;;
+        esac
+
+        case "${{ inputs.cache-mode }}" in
+          full|yarn-cache-only)
+            mount_tmpfs "$HOME/.cache/yarn" "1g"
+            ;;
+        esac
+
+        echo "=== Mounted filesystems ==="
+        mount | grep -E 'tmpfs.*(asdf|node_modules|yarn)' || echo "(no tmpfs mounts present)"
+
     # Cache 1: asdf installations (Node.js and Yarn binaries)
     # This cache is separate because it only changes when .tool-versions is updated,
     # which happens infrequently (only when upgrading Node/Yarn versions).
