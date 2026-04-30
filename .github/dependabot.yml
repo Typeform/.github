@@ -1,5 +1,12 @@
 version: 2
 
+registries:
+  git-github:
+    type: git
+    url: https://github.com
+    username: x-access-token
+    password: '${{ secrets.GH_TOKEN }}'
+
 updates:
   - package-ecosystem: npm
     schedule:
@@ -38,4 +45,6 @@ updates:
       - dependency-name: "Typeform/.github-private/actions/aws-auth"
       - dependency-name: "Typeform/deep-purple-action"
     commit-message:
-      prefix: fix(dependabot)
+      prefix: build(dependabot)
+    registries:
+      - git-github
