@@ -28,6 +28,24 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # PLT-3439: redirect asdf data dir to $RUNNER_TEMP, which sits under
+    # /home/runner/_work and is therefore on the runner pod's tmpfs (where
+    # work_volume_medium == "Memory"). Without this, asdf's installs go to
+    # ~/.asdf — outside the tmpfs mount — and the ~1.5 GB tar extract creates
+    # the dirty-page pressure that produced the 13s + 25s post-extract idle
+    # gaps we measured. Cache key gets a "-tmpfs" infix to invalidate the old
+    # absolute-path-bearing tarballs (actions/cache uses absolute paths in
+    # the tar via -P, so existing caches restore to ~/.asdf regardless).
+    - name: Redirect asdf data dir to tmpfs (PLT-3439 test)
+      if: ${{ inputs.use-asdf == 'true' && !env.ACT }}
+      shell: bash
+      run: |
+        ASDF_DATA_DIR="${RUNNER_TEMP}/asdf"
+        mkdir -p "$ASDF_DATA_DIR/installs" "$ASDF_DATA_DIR/plugins" "$ASDF_DATA_DIR/shims"
+        echo "ASDF_DATA_DIR=$ASDF_DATA_DIR" >> "$GITHUB_ENV"
+        echo "$ASDF_DATA_DIR/shims" >> "$GITHUB_PATH"
+        echo "✓ asdf data dir set to $ASDF_DATA_DIR"
+
     # Cache 1: asdf installations (Node.js and Yarn binaries)
     # This cache is separate because it only changes when .tool-versions is updated,
     # which happens infrequently (only when upgrading Node/Yarn versions).
@@ -38,11 +56,11 @@ runs:
       id: asdf-cache
       with:
         path: |
-          ~/.asdf/installs
-          ~/.asdf/plugins
-        key: ${{ runner.os }}-${{ runner.arch }}-asdf-${{ hashFiles('**/.tool-versions') }}
+          ${{ runner.temp }}/asdf/installs
+          ${{ runner.temp }}/asdf/plugins
+        key: ${{ runner.os }}-${{ runner.arch }}-asdf-tmpfs-${{ hashFiles('**/.tool-versions') }}
         restore-keys: |
-          ${{ runner.os }}-${{ runner.arch }}-asdf-
+          ${{ runner.os }}-${{ runner.arch }}-asdf-tmpfs-
     
     - name: Set up Node.js with asdf
       if: ${{ inputs.use-asdf == 'true' }}

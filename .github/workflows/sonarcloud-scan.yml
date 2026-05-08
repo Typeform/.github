@@ -68,7 +68,7 @@ jobs:
           fetch-depth: 0  # Required for SonarCloud to analyze git history
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@test-asdf-tmpfs-redirect
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
