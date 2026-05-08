@@ -27,7 +27,11 @@ on:
         description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
         type: boolean
         default: false
-      
+      use-tmpfs:
+        description: 'Mount tmpfs at cache target paths (PLT-3439 test).'
+        type: boolean
+        default: false
+
       # Runner configuration
       runner:
         description: 'Runner for SonarCloud scan'
@@ -68,12 +72,13 @@ jobs:
           fetch-depth: 0  # Required for SonarCloud to analyze git history
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@test-tmpfs-cache-extract
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
+          use-tmpfs: ${{ inputs.use-tmpfs }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download coverage artifacts
