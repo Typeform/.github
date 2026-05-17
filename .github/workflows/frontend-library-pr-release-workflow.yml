@@ -114,7 +114,7 @@ jobs:
       
       - name: SonarCloud Scan
         if: inputs.run-sonarcloud
-        uses: SonarSource/sonarqube-scan-action@v7
+        uses: SonarSource/sonarqube-scan-action@v8
         with:
           args: >
             -Dsonar.projectKey=${{ inputs.sonar-project-key != '' && inputs.sonar-project-key || format('{0}_{1}', github.repository_owner, github.event.repository.name) }}
