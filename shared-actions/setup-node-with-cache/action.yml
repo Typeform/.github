@@ -333,7 +333,7 @@ runs:
     - name: Install Node.js dependencies
       if: ${{ !env.ACT && (steps.yarn-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
       shell: bash
-      run: yarn install --frozen-lockfile --ignore-scripts
+      run: yarn install --ignore-scripts
       env:
         NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
         PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
