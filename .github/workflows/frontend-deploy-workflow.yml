@@ -258,6 +258,12 @@ on:
         description: 'Skip tests and linting (for emergency reverts)'
         type: boolean
         default: false
+
+      # Skip verified tests
+      skip-verified-tests:
+        description: 'Skip unit/integration/cypress/sonarcloud on main if the same tree passed on the PR. Requires record-verification job in the PR workflow. Set false to always re-run on main.'
+        type: boolean
+        default: true
       
       # Slack notifications
       slack-channel:
@@ -367,11 +373,44 @@ jobs:
           path: ${{ inputs.build-artifact-path || inputs.build-output-dir }}
           retention-days: 1
   
-  # Job 2: Unit Tests (runs in parallel with other tests)
+  # Job 2: Check PR verification marker
+  # Looks up refs/tests-passed/<tree> to determine whether the suites already passed on
+  # the PR for this exact content. Always runs so test jobs can depend on its output.
+  # Outputs verified=true only when skip-verified-tests is enabled AND the marker exists.
+  # If the marker is missing (hotfix, direct push to main, revert mode) → verified=false
+  # → tests run. Never fail-open.
+  check-verification:
+    name: 🔎 Check PR verification
+    needs: build
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    outputs:
+      verified: ${{ steps.check.outputs.verified }}
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Look up tree-hash marker
+        id: check
+        run: |
+          if [ "${{ inputs.skip-verified-tests }}" != "true" ] || [ "${{ inputs.revert-mode }}" == "true" ]; then
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          TREE=$(git rev-parse HEAD^{tree})
+          if git ls-remote --exit-code origin "refs/tests-passed/$TREE" >/dev/null 2>&1; then
+            echo "✅ tree $TREE verified on PR — skipping redundant suites"
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ℹ️ tree $TREE not verified — running suites"
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Job 3: Unit Tests (runs in parallel with other tests)
   unit-tests:
     name: 🧪 Unit Tests
-    if: inputs.run-unit-tests
-    needs: build
+    if: inputs.run-unit-tests && needs.check-verification.outputs.verified != 'true'
+    needs: [build, check-verification]
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: ${{ inputs.unit-test-timeout }}
     
@@ -420,8 +459,8 @@ jobs:
   # Job 3: Integration Tests (runs in parallel with unit tests)
   integration-tests:
     name: 🔗 Integration Tests
-    if: inputs.run-integration-tests
-    needs: build
+    if: inputs.run-integration-tests && needs.check-verification.outputs.verified != 'true'
+    needs: [build, check-verification]
     runs-on: ${{ fromJSON(inputs.e2e-runner) }}
     timeout-minutes: ${{ inputs.integration-test-timeout }}
     
@@ -483,8 +522,8 @@ jobs:
   # Job 4: Cypress Functional Tests (runs in parallel with other tests)
   cypress-functional:
     name: ⚙️ Cypress Functional
-    if: inputs.run-cypress-functional
-    needs: build
+    if: inputs.run-cypress-functional && needs.check-verification.outputs.verified != 'true'
+    needs: [build, check-verification]
     runs-on: ${{ fromJSON(inputs.cypress-runner != '' && inputs.cypress-runner || inputs.e2e-runner) }}
     timeout-minutes: ${{ inputs.cypress-timeout }}
     
@@ -509,8 +548,8 @@ jobs:
   # Job 5: Cypress Visual Tests (runs in parallel with other tests)
   cypress-visual:
     name: 🎨 Cypress Visual
-    if: inputs.run-cypress-visual
-    needs: build
+    if: inputs.run-cypress-visual && needs.check-verification.outputs.verified != 'true'
+    needs: [build, check-verification]
     runs-on: ${{ fromJSON(inputs.cypress-runner != '' && inputs.cypress-runner || inputs.e2e-runner) }}
     timeout-minutes: ${{ inputs.cypress-timeout }}
     
@@ -537,11 +576,11 @@ jobs:
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
   
- # Job 6: Playwright Visual Tests (runs in parallel with other tests)
+  # Job 6: Playwright Visual Tests (runs in parallel with other tests)
   playwright-visual:
     name: 🎨 Playwright Visual
-    if: inputs.run-playwright-visual
-    needs: build
+    if: inputs.run-playwright-visual && needs.check-verification.outputs.verified != 'true'
+    needs: [build, check-verification]
     runs-on: ${{ fromJSON(inputs.e2e-runner) }}
     timeout-minutes: ${{ inputs.playwright-visual-timeout }}
 
@@ -571,8 +610,8 @@ jobs:
   # Job 7: SonarCloud Analysis (waits for unit tests if enabled)
   sonarcloud:
     name: 🔍 SonarCloud
-    if: inputs.run-sonarcloud
-    needs: [build, unit-tests]
+    if: inputs.run-sonarcloud && needs.check-verification.outputs.verified != 'true'
+    needs: [build, unit-tests, check-verification]
     permissions:
       contents: read
     uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
@@ -587,25 +626,27 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
   
-  # Job 8: Deploy to Production (only if all enabled tests pass)
+  # Job 8: Deploy to Production (only if all enabled tests pass or were skipped as verified)
   deploy:
     name: 🚀 Deploy to Production
-    needs: 
+    needs:
       - build
+      - check-verification
       - unit-tests
       - integration-tests
       - cypress-functional
       - cypress-visual
     # Deploy only if:
     # - Build succeeded
-    # - All enabled tests succeeded (or were skipped if disabled)
+    # - Each test job succeeded, OR was skipped (disabled via input OR skipped as already
+    #   verified on the PR). Failure or cancellation still blocks the deploy.
     if: |
       always() &&
       needs.build.result == 'success' &&
-      (inputs.run-unit-tests == false || needs.unit-tests.result == 'success') &&
-      (inputs.run-integration-tests == false || needs.integration-tests.result == 'success') &&
-      (inputs.run-cypress-functional == false || needs.cypress-functional.result == 'success') &&
-      (inputs.run-cypress-visual == false || needs.cypress-visual.result == 'success')
+      (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
+      (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped') &&
+      (needs.cypress-functional.result == 'success' || needs.cypress-functional.result == 'skipped') &&
+      (needs.cypress-visual.result == 'success' || needs.cypress-visual.result == 'skipped')
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: ${{ inputs.deploy-timeout }}
     permissions:

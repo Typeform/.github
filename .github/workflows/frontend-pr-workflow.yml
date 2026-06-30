@@ -678,7 +678,7 @@ jobs:
     needs: build
     runs-on: ${{ fromJSON(inputs.cypress-runner != '' && inputs.cypress-runner || inputs.e2e-runner) }}
     timeout-minutes: ${{ inputs.cypress-timeout }}
-    
+
     steps:
       - name: Run Cypress Visual Tests
         uses: Typeform/.github/shared-actions/run-cypress-visual@v1
@@ -701,3 +701,35 @@ jobs:
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
+
+  # Job 10: Record PR verification marker
+  # Writes refs/tests-passed/<tree> after all enabled suites pass so the deploy workflow
+  # can skip re-running the same suites on main.
+  #
+  # Safety: marker is keyed on the git tree-hash of the merge ref (refs/pull/N/merge),
+  # which equals the squashed commit's tree when branch protection requires the branch
+  # to be up-to-date before merge. Missing marker = deploy runs tests; never fail-open.
+  record-verification:
+    name: ✅ Record PR verification
+    needs: [unit-tests, integration-tests, cypress-functional, cypress-visual, playwright-visual]
+    if: |
+      always() &&
+      (inputs.run-unit-tests == false || needs.unit-tests.result == 'success') &&
+      (inputs.run-integration-tests == false || needs.integration-tests.result == 'success') &&
+      (inputs.run-cypress-functional == false || needs.cypress-functional.result == 'success') &&
+      (inputs.run-cypress-visual == false || needs.cypress-visual.result == 'success') &&
+      (inputs.run-playwright-visual == false || needs.playwright-visual.result == 'success') &&
+      (inputs.run-unit-tests || inputs.run-integration-tests || inputs.run-cypress-functional || inputs.run-cypress-visual || inputs.run-playwright-visual)
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Push tree-hash marker
+        run: |
+          TREE=$(git rev-parse HEAD^{tree})
+          echo "Marking tree $TREE as tests-verified"
+          git push origin "HEAD:refs/tests-passed/$TREE" --force
