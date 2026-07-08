@@ -27,6 +27,10 @@ on:
         description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
         type: boolean
         default: false
+      package-manager:
+        description: 'Package manager to use: "yarn" or "pnpm"'
+        type: string
+        default: "yarn"
       
       # Runner configuration
       runner:
@@ -75,6 +79,7 @@ jobs:
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Download coverage artifacts
         if: inputs.coverage-artifact-name != ''

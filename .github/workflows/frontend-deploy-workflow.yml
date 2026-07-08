@@ -23,11 +23,15 @@ on:
         description: 'Use asdf-vm for version management (reads from .tool-versions)'
         type: boolean
         default: false
+      package-manager:
+        description: 'Package manager to use: "yarn" or "pnpm". Callers using pnpm must pass all commands explicitly.'
+        type: string
+        default: 'yarn'
       
       # Cache configuration
       # Same options as PR workflow - see frontend-pr-workflow.yml for detailed comments
       cache-mode:
-        description: 'Cache strategy: full, node_modules-only, or yarn-cache-only'
+        description: 'Cache strategy: "full" (node_modules + package manager cache), "node_modules-only", "yarn-cache-only", or "pnpm-store-only"'
         type: string
         default: 'full'
       disable-restore-keys:
@@ -329,12 +333,14 @@ jobs:
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Run pre-build command
         if: inputs.pre-build-command != ''
@@ -428,12 +434,14 @@ jobs:
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Run pre-test command
         if: inputs.pre-test-command != ''
@@ -476,12 +484,14 @@ jobs:
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Playwright
         if: inputs.integration-test-framework == 'playwright'
@@ -544,6 +554,7 @@ jobs:
           artifact-retention-days: '7'
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          package-manager: ${{ inputs.package-manager }}
   
   # Job 5: Cypress Visual Tests (runs in parallel with other tests)
   cypress-visual:
@@ -575,6 +586,7 @@ jobs:
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
+          package-manager: ${{ inputs.package-manager }}
   
   # Job 6: Playwright Visual Tests (runs in parallel with other tests)
   playwright-visual:
@@ -606,6 +618,7 @@ jobs:
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
+          package-manager: ${{ inputs.package-manager }}
 
   # Job 7: SonarCloud Analysis (waits for unit tests if enabled)
   sonarcloud:
@@ -622,6 +635,7 @@ jobs:
       runner: ${{ inputs.runner }}
       coverage-artifact-name: ${{ inputs.run-unit-tests && format('coverage-{0}', github.run_id) || '' }}
       timeout: ${{ inputs.sonarcloud-timeout }}
+      package-manager: ${{ inputs.package-manager }}
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
@@ -673,6 +687,7 @@ jobs:
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Download Build Artifacts
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
@@ -685,6 +700,7 @@ jobs:
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: AWS auth
         uses: Typeform/.github-private/actions/aws-auth@aws-auth-0.0.2

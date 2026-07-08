@@ -12,6 +12,10 @@ inputs:
     description: 'Working directory for the project'
     required: false
     default: '.'
+  package-manager:
+    description: 'Package manager to use: "yarn" or "pnpm"'
+    required: false
+    default: 'yarn'
 
 runs:
   using: 'composite'
@@ -22,12 +26,13 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.GH_TOKEN }}
         JARVIS_BRANCH: ${{ inputs.jarvis-branch }}
+        PM: ${{ inputs.package-manager }}
       run: |
         if [ "$ACT" = "true" ]; then
           # Local testing with act: link local Jarvis
           echo "🔗 Linking local Jarvis from /Users/kevin.barz/code/jarvis"
-          cd /Users/kevin.barz/code/jarvis && yarn link
-          cd $GITHUB_WORKSPACE && yarn link @typeform/jarvis
+          cd /Users/kevin.barz/code/jarvis && $PM link
+          cd $GITHUB_WORKSPACE && $PM link @typeform/jarvis
           echo "✅ Jarvis linked from local development copy"
           ls -la node_modules/@typeform/jarvis
         elif [ -n "$JARVIS_BRANCH" ]; then
@@ -41,24 +46,24 @@ runs:
           
           # Install Jarvis dependencies
           cd "$JARVIS_DIR"
-          yarn install --frozen-lockfile
+          $PM install --frozen-lockfile
           
           # Link Jarvis
-          yarn link
+          $PM link
           
           # Link to this project
           cd $GITHUB_WORKSPACE
-          yarn link @typeform/jarvis
+          $PM link @typeform/jarvis
           
           echo "✅ Jarvis linked from GitHub branch: $JARVIS_BRANCH"
           echo "📍 Jarvis location: $JARVIS_DIR"
           ls -la node_modules/@typeform/jarvis
         else
-          # Default: use npm version from package.json (already installed by yarn install)
+          # Default: use npm version from package.json (already installed by install step)
           echo "📦 Using Jarvis from npm (version from package.json)"
           if [ -f "node_modules/@typeform/jarvis/package.json" ]; then
             echo "✅ Jarvis version: $(node -p "require('./node_modules/@typeform/jarvis/package.json').version")"
           else
-            echo "⚠️ Jarvis not found in node_modules - may need to run yarn install first"
+            echo "⚠️ Jarvis not found in node_modules - may need to run $PM install first"
           fi
         fi

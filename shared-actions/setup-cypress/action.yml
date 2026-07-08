@@ -1,6 +1,12 @@
 name: 'Setup Cypress with Caching'
 description: 'Install and cache Cypress binary for E2E testing'
 
+inputs:
+  package-manager:
+    description: 'Package manager to use: "yarn" or "pnpm"'
+    required: false
+    default: 'yarn'
+
 runs:
   using: 'composite'
   steps:
@@ -40,12 +46,13 @@ runs:
       if: steps.cypress-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        if command -v yarn &> /dev/null && [ -f "package.json" ]; then
-          echo "📦 Installing Cypress binary..."
-          yarn cypress install
+        PM="${{ inputs.package-manager }}"
+        if [ -f "package.json" ]; then
+          echo "📦 Installing Cypress binary via $PM..."
+          $PM cypress install
           echo "✅ Cypress binary installed"
         else
-          echo "⚠️ yarn or package.json not found, skipping Cypress installation"
+          echo "⚠️ package.json not found, skipping Cypress installation"
         fi
     
     - name: Verify Cypress installation

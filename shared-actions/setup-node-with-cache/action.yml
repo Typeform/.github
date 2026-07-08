@@ -24,13 +24,17 @@ inputs:
     description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
     required: false
     default: 'false'
+  package-manager:
+    description: 'Package manager to use: "yarn" or "pnpm"'
+    required: false
+    default: "yarn"
 
 runs:
   using: 'composite'
   steps:
-    # Cache 1: asdf installations (Node.js and Yarn binaries)
+    # Cache 1: asdf installations (Node.js and package manager binaries)
     # This cache is separate because it only changes when .tool-versions is updated,
-    # which happens infrequently (only when upgrading Node/Yarn versions).
+    # which happens infrequently (only when upgrading Node/package manager versions).
     # By caching it separately, we avoid re-downloading binaries on every dependency change.
     - name: Cache asdf installations
       if: ${{ inputs.use-asdf == 'true' && !env.ACT }}
@@ -53,7 +57,11 @@ runs:
       shell: bash
       run: |
         asdf reshim nodejs
-        asdf reshim yarn
+        if [ "${{ inputs.package-manager }}" == "pnpm" ]; then
+          asdf reshim pnpm
+        else
+          asdf reshim yarn
+        fi
     
     - name: Set up Node.js with setup-node
       if: ${{ inputs.use-asdf != 'true' }}
@@ -61,19 +69,34 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
     
+    # pnpm must be installed before Node setup so setup-node can wire pnpm's built-in cache.
+    # Skip when asdf manages pnpm via .tool-versions.
+    - name: Set up pnpm
+      if: ${{ inputs.package-manager == 'pnpm' && inputs.use-asdf != 'true' }}
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+    
     - name: Get yarn cache directory path
+      if: ${{ inputs.package-manager != 'pnpm' }}
       id: yarn-cache-dir-path
       shell: bash
       run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-    
+
+    - name: Get pnpm store path
+      if: ${{ inputs.package-manager == 'pnpm' }}
+      id: pnpm-store-path
+      shell: bash
+      run: echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
     - name: Set GitHub packages registry
       shell: bash
       run: |
         npm config set '//npm.pkg.github.com/:_authToken' ${{ inputs.GH_TOKEN }}
         npm config set @typeform:registry https://npm.pkg.github.com/
     
-    # Cache 2: yarn dependencies (node_modules and yarn global cache)
-    # This cache changes whenever package.json or yarn.lock is modified.
+    # Cache 2: package manager dependencies (node_modules and package-manager global cache)
+    # This cache changes whenever package.json or lockfile is modified.
     # It's separate from the asdf cache so that dependency updates don't invalidate
     # the cached Node.js binaries, making builds more efficient.
     # Note: restore-keys allows partial matches, which can restore stale caches.
@@ -81,8 +104,9 @@ runs:
     # https://github.com/Typeform/<repo>/actions/caches
     
     # Determine cache paths based on cache-mode input
-    - name: Set cache paths
+    - name: Set cache paths (yarn)
       id: cache-paths
+      if: ${{ inputs.package-manager != 'pnpm' }}
       shell: bash
       run: |
         CACHE_MODE="${{ inputs.cache-mode }}"
@@ -114,9 +138,43 @@ runs:
         
         # Set cache key suffix based on mode
         echo "key-suffix=-$CACHE_MODE" >> $GITHUB_OUTPUT
+        
+    - name: Set cache paths (pnpm)
+      id: cache-paths-pnpm
+      if: ${{ inputs.package-manager == 'pnpm' }}
+      shell: bash
+      run: |
+        CACHE_MODE="${{ inputs.cache-mode }}"
+        PNPM_STORE="${{ steps.pnpm-store-path.outputs.dir }}"
+
+        case "$CACHE_MODE" in
+          "node_modules-only")
+            echo "Cache mode: node_modules only (no pnpm store)"
+            PATHS="node_modules
+        apps/**/node_modules
+        packages/**/node_modules"
+            ;;
+          "pnpm-store-only"|"yarn-cache-only")
+            echo "Cache mode: pnpm store only (no node_modules)"
+            PATHS="$PNPM_STORE"
+            ;;
+          "full"|*)
+            echo "Cache mode: full (node_modules + pnpm store)"
+            PATHS="node_modules
+        apps/**/node_modules
+        packages/**/node_modules
+        $PNPM_STORE"
+            ;;
+        esac
+
+        echo "paths<<EOF" >> $GITHUB_OUTPUT
+        echo "$PATHS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+        echo "key-suffix=-$CACHE_MODE" >> $GITHUB_OUTPUT
     
     - name: Get yarn cache
-      if: ${{ !env.ACT }}
+      if: ${{ !env.ACT && inputs.package-manager != 'pnpm' }}
       uses: actions/cache@v6
       id: yarn-cache
       with:
@@ -124,23 +182,42 @@ runs:
         key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}${{ steps.cache-paths.outputs.key-suffix }}
         restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-yarn-', runner.os, runner.arch) || '' }}
     
+    - name: Get pnpm cache
+      if: ${{ !env.ACT && inputs.package-manager == 'pnpm' }}
+      uses: actions/cache@v6
+      id: pnpm-cache
+      with:
+        path: ${{ steps.cache-paths-pnpm.outputs.paths }}
+        key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}${{ steps.cache-paths-pnpm.outputs.key-suffix }}
+        restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-pnpm-', runner.os, runner.arch) || '' }}
+
     - name: Debug cache contents
       id: debug-cache
-      if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit == 'true' }}
+      if: ${{ !env.ACT && (steps.yarn-cache.outputs.cache-hit == 'true' || steps.pnpm-cache.outputs.cache-hit == 'true') }}
       shell: bash
       run: |
         set +e  # Don't exit on error - we want to continue even if find fails
-        
+
+        PM="${{ inputs.package-manager }}"
+
         echo "=== 🔍 Cache Debug Info ==="
-        echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+        if [ "$PM" == "pnpm" ]; then
+          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}"
+        else
+          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+        fi
         echo ""
-        
+    
         echo "=== 📦 Root node_modules Status ==="
         if [ -d "node_modules" ]; then
           MODULE_COUNT=$(ls -1 node_modules 2>/dev/null | wc -l | tr -d ' ')
           echo "✅ node_modules exists"
           echo "📊 Package count: $MODULE_COUNT"
-          echo "🔒 Yarn integrity: $([ -f 'node_modules/.yarn-integrity' ] && echo '✅ present' || echo '❌ missing')"
+          if [ "$PM" == "pnpm" ]; then
+            echo "🔒 pnpm integrity: $([ -f 'node_modules/.modules.yaml' ] && echo '✅ present' || echo '❌ missing')"
+          else
+            echo "🔒 Yarn integrity: $([ -f 'node_modules/.yarn-integrity' ] && echo '✅ present' || echo '❌ missing')"
+          fi
         else
           echo "❌ node_modules directory not found"
         fi
@@ -163,21 +240,23 @@ runs:
         set -e  # Re-enable exit on error
     
     - name: Clean stale nested node_modules on restore-key fallback
-      if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit != 'true' }}
+      if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit != 'true' && steps.pnpm-cache.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
         # When actions/cache reports cache-hit != 'true', it means either:
         # 1. Complete cache miss (no node_modules directory exists)
         # 2. Restore-key fallback (stale node_modules from a previous lockfile)
         #
-        # Case 2 is dangerous: yarn install --frozen-lockfile installs the correct
+        # Case 2 is dangerous: install --frozen-lockfile installs the correct
         # top-level packages but does NOT delete leftover nested node_modules/ dirs
         # from the stale cache. This causes version conflicts (e.g., @types/react@17
         # persisting inside a dependency's node_modules after upgrading to React 18).
         #
         # Fix: if node_modules exists (restore-key fallback), purge all nested
-        # node_modules directories inside dependencies before yarn install.
-        
+        # node_modules directories inside dependencies before install.
+
+        PM="${{ inputs.package-manager }}"
+
         if [ -d "node_modules" ]; then
           echo "=== 🧹 Stale Cache Cleanup ==="
           echo "Cache was restored via restore-key fallback (not exact match)"
@@ -197,26 +276,31 @@ runs:
             find packages/*/node_modules -mindepth 2 -name node_modules -type d -exec rm -rf {} + 2>/dev/null || true
             find apps/*/node_modules -mindepth 2 -name node_modules -type d -exec rm -rf {} + 2>/dev/null || true
             
-            echo "✅ Cleaned nested node_modules — yarn install will re-resolve them"
+            echo "✅ Cleaned nested node_modules — install will re-resolve them"
           else
             echo "✅ No nested node_modules found — nothing to clean"
           fi
           
-          # Remove .yarn-integrity so yarn install runs a full resolution
-          rm -f node_modules/.yarn-integrity
-          echo "🔒 Removed .yarn-integrity to force full resolution"
+          # Remove integrity file so install runs a full resolution
+          if [ "$PM" == "pnpm" ]; then
+            rm -f node_modules/.modules.yaml
+            echo "🔒 Removed .modules.yaml to force full resolution"
+          else
+            rm -f node_modules/.yarn-integrity
+            echo "🔒 Removed .yarn-integrity to force full resolution"
+          fi
         else
           echo "📭 No node_modules directory — clean cache miss, nothing to clean"
         fi
     
-    - name: Check if yarn install needed on cache hit
+    - name: Check if install needed on cache hit
       id: check-install-needed
       if: ${{ !env.ACT }}
       shell: bash
       run: |
         set +e  # Don't exit on error - we want to check all conditions
         
-        # Determine if we need to run yarn install even when cache hits.
+        # Determine if we need to run install even when cache hits.
         #
         # Why this matters:
         # - Cache restores node_modules, but doesn't run postinstall hooks
@@ -226,8 +310,16 @@ runs:
         #
         # We detect scenarios that require yarn install on cache hit:
         
+        PM="${{ inputs.package-manager }}"
         NEEDS_INSTALL=false
-        CACHE_HIT="${{ steps.yarn-cache.outputs.cache-hit }}"
+
+        if [ "$PM" == "pnpm" ]; then
+          CACHE_HIT="${{ steps.pnpm-cache.outputs.cache-hit }}"
+          INTEGRITY_FILE="node_modules/.modules.yaml"
+        else
+          CACHE_HIT="${{ steps.yarn-cache.outputs.cache-hit }}"
+          INTEGRITY_FILE="node_modules/.yarn-integrity"
+        fi
         
         # On cache hit, verify cache integrity before trusting it
         if [ "$CACHE_HIT" == "true" ]; then
@@ -245,9 +337,9 @@ runs:
             fi
           fi
           
-          # Verification 2: Check yarn integrity file
-          if [ "$NEEDS_INSTALL" == "false" ] && [ ! -f "node_modules/.yarn-integrity" ]; then
-            echo "⚠️ Missing .yarn-integrity file - cache may be incomplete, forcing install"
+          # Verification 2: Check integrity file
+          if [ "$NEEDS_INSTALL" == "false" ] && [ ! -f "$INTEGRITY_FILE" ]; then
+            echo "⚠️ Missing $INTEGRITY_FILE - cache may be incomplete, forcing install"
             NEEDS_INSTALL=true
           fi
           
@@ -270,19 +362,19 @@ runs:
         
         # Check for monorepo configurations that need install
         if [ "$NEEDS_INSTALL" == "false" ]; then
-          # 1. Yarn workspaces: Check if workspace node_modules are cached
+          # 1. Workspaces: Check if workspace node_modules are cached
           #    If we cache workspace node_modules explicitly (apps/**/node_modules, packages/**/node_modules),
-          #    then symlinks work correctly and we don't need to run yarn install.
-          #    If workspace node_modules are missing, we must run yarn install to populate them.
+          #    then symlinks work correctly and we don't need to run install.
+          #    If workspace node_modules are missing, we must run install to populate them.
           if grep -q '"workspaces"' package.json 2>/dev/null; then
             # Check if workspace node_modules directories exist (were cached)
             WORKSPACE_MODULES=$(find packages/*/node_modules apps/*/node_modules -maxdepth 0 -type d 2>/dev/null | wc -l | tr -d ' ')
             if [ "$WORKSPACE_MODULES" -gt 0 ]; then
-              echo "✅ Yarn workspaces detected with cached node_modules ($WORKSPACE_MODULES workspaces)"
+              echo "✅ Workspaces detected with cached node_modules ($WORKSPACE_MODULES workspaces)"
               echo "   ✅ Workspace symlinks preserved - install NOT needed"
               NEEDS_INSTALL=false
             else
-              echo "⚠️ Yarn workspaces detected but workspace node_modules missing"
+              echo "⚠️ Workspaces detected but workspace node_modules missing"
               echo "   ⚠️ Install needed to populate workspace directories"
               NEEDS_INSTALL=true
             fi
@@ -310,39 +402,68 @@ runs:
       if: ${{ !env.ACT }}
       shell: bash
       run: |
+        PM="${{ inputs.package-manager }}"
+
+        if [ "$PM" == "pnpm" ]; then
+          CACHE_HIT="${{ steps.pnpm-cache.outputs.cache-hit }}"
+          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}"
+          INSTALL_CMD="pnpm install"
+        else
+          CACHE_HIT="${{ steps.yarn-cache.outputs.cache-hit }}"
+          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          INSTALL_CMD="yarn install"
+        fi
+
         echo "=== 📊 Cache Status Summary ==="
-        if [ "${{ steps.yarn-cache.outputs.cache-hit }}" == "true" ]; then
+        if [ "$CACHE_HIT" == "true" ]; then
           echo "✅ Cache HIT - Dependencies restored from cache"
-          echo "📦 Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          echo "📦 Cache key: $CACHE_KEY"
           echo ""
           if [ "${{ steps.check-install-needed.outputs.needs-install }}" == "true" ]; then
-            echo "🔄 Decision: WILL run yarn install"
+            echo "🔄 Decision: WILL run $INSTALL_CMD"
             echo "Reasons: Cache verification failed, workspace linking needed, or postinstall hooks detected"
           else
-            echo "⚡ Decision: SKIP yarn install"
+            echo "⚡ Decision: SKIP $INSTALL_CMD"
             echo "Reason: Cache verified and no workspace linking or postinstall hooks required"
           fi
         else
           echo "❌ Cache MISS - Fresh installation required"
-          echo "🔍 Looking for key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          echo "🔍 Looking for key: $CACHE_KEY"
           echo ""
-          echo "🔄 Decision: WILL run yarn install"
+          echo "🔄 Decision: WILL run $INSTALL_CMD"
         fi
         echo ""
     
-    - name: Install Node.js dependencies
-      if: ${{ !env.ACT && (steps.yarn-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
+    - name: Install Node.js dependencies (yarn)
+      if: ${{ !env.ACT && inputs.package-manager != 'pnpm' && (steps.yarn-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
       shell: bash
       run: yarn install --frozen-lockfile --ignore-scripts
       env:
         NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
         PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
 
-    - name: Run root postinstall script
-      if: ${{ !env.ACT && steps.check-install-needed.outputs.has-postinstall == 'true' }}
+    - name: Run root postinstall script (yarn)
+      if: ${{ !env.ACT && inputs.package-manager != 'pnpm' && steps.check-install-needed.outputs.has-postinstall == 'true' }}
       shell: bash
       run: |
         echo "🔧 Running root postinstall script"
         yarn run postinstall
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
+
+    - name: Install Node.js dependencies (pnpm)
+      if: ${{ !env.ACT && inputs.package-manager == 'pnpm' && (steps.pnpm-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
+      shell: bash
+      run: pnpm install --frozen-lockfile --ignore-scripts
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
+        PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+
+    - name: Run root postinstall script (pnpm)
+      if: ${{ !env.ACT && inputs.package-manager == 'pnpm' && steps.check-install-needed.outputs.has-postinstall == 'true' }}
+      shell: bash
+      run: |
+        echo "🔧 Running root postinstall script"
+        pnpm run postinstall
       env:
         NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}

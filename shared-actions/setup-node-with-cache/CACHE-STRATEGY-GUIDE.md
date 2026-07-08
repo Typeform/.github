@@ -32,6 +32,8 @@ Is your project a workspace/monorepo?
 
 ## Cache Mode Comparison
 
+### yarn
+
 | Mode | What's Cached | Cache Size | Restore Time | Install on Hit | Install on Miss | Best For |
 |------|---------------|------------|--------------|----------------|-----------------|----------|
 | **full** (default) | `node_modules`<br>`~/.cache/yarn` | Large | Slow | Sometimes* | Fast | Workspaces, general use |
@@ -39,6 +41,18 @@ Is your project a workspace/monorepo?
 | **yarn-cache-only** | `~/.cache/yarn` only | Small | Very Fast | Always | Fast | Frequent dep changes |
 
 \* Workspaces always run install to recreate symlinks
+
+### pnpm
+
+| Mode | What's Cached | Cache Size | Restore Time | Install on Hit | Install on Miss | Best For |
+|------|---------------|------------|--------------|----------------|-----------------|----------|
+| **full** (default) | `node_modules`<br>pnpm store | Large | Slow | Sometimes* | Fast | pnpm workspaces, general use |
+| **node_modules-only** | `node_modules` only | Medium | Fast | Rarely | Slow | Non-workspace pnpm repos |
+| **pnpm-store-only** | pnpm store only | Small | Very Fast | Always | Fast | Frequent dep changes |
+
+\* Workspaces always run install to recreate symlinks
+
+**pnpm store path**: resolved dynamically via `pnpm store path` — typically `~/.local/share/pnpm/store` on Linux runners.
 
 ## Detailed Recommendations
 

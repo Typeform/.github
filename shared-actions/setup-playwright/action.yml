@@ -1,6 +1,12 @@
 name: 'Setup Playwright with Caching'
 description: 'Install and cache Playwright browsers for E2E testing'
 
+inputs:
+  package-manager:
+    description: 'Package manager to use: "yarn" or "pnpm"'
+    required: false
+    default: 'yarn'
+
 runs:
   using: 'composite'
   steps:
@@ -31,15 +37,15 @@ runs:
       if: steps.playwright-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        if command -v yarn &> /dev/null && [ -f "package.json" ]; then
-          # Check if playwright:install script exists
+        PM="${{ inputs.package-manager }}"
+        if [ -f "package.json" ]; then
           if grep -q '"playwright:install"' package.json; then
-            echo "📦 Installing Playwright browsers via yarn script..."
-            yarn playwright:install
+            echo "📦 Installing Playwright browsers via $PM script..."
+            $PM run playwright:install
           else
-            echo "📦 Installing Playwright browsers directly..."
-            yarn playwright install --with-deps
+            echo "📦 Installing Playwright browsers directly via $PM..."
+            $PM exec playwright install --with-deps
           fi
         else
-          echo "⚠️ yarn or package.json not found, skipping Playwright installation"
+          echo "⚠️ package.json not found, skipping Playwright installation"
         fi

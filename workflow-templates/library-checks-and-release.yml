@@ -22,27 +22,14 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v7
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
         with:
-          node-version: 12
+          fetch-depth: 0
 
-      - name: Set GitHub packages registry
-        run: |
-          npm config set '//npm.pkg.github.com/:_authToken' ${{ secrets.GH_TOKEN }}
-          npm config set @typeform:registry https://npm.pkg.github.com/
-
-      - name: Get yarn cache
-        uses: actions/cache@v6
-        id: yarn-cache
+      - name: Setup Node with Cache
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@main
         with:
-          path: node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('.github/workflows/**.yml') }}
-
-      - name: Install Node.js dependencies
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: yarn install --frozen-lockfile
+          node-version: '20'
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Run linting and tests
         run: npx npm-run-all -p test lint
