@@ -721,12 +721,12 @@ jobs:
       (inputs.run-playwright-visual == false || needs.playwright-visual.result == 'success') &&
       (inputs.run-unit-tests || inputs.run-integration-tests || inputs.run-cypress-functional || inputs.run-cypress-visual || inputs.run-playwright-visual)
     runs-on: ${{ fromJSON(inputs.runner) }}
-    permissions:
-      contents: write
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Push tree-hash marker
         run: |
