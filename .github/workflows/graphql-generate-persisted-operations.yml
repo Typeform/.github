@@ -14,6 +14,11 @@ on:
         type: string
         required: false
         default: "yarn"
+      pnpm-version:
+        description: 'pnpm version to install (only used when package-manager is pnpm)'
+        type: string
+        required: false
+        default: "9.15.0"
     secrets:
       GH_TOKEN:
         required: true
@@ -41,7 +46,7 @@ jobs:
       - name: Install package manager
         run: |
           if [ "${{ inputs.package-manager }}" = "pnpm" ]; then
-            npm install -g pnpm
+            npm install -g pnpm@${{ inputs.pnpm-version }}
           else
             npm install -g yarn@1.22.22
           fi

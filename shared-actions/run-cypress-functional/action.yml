@@ -92,7 +92,7 @@ runs:
       with:
         jarvis-branch: ${{ inputs.jarvis-branch }}
         GH_TOKEN: ${{ inputs.GH_TOKEN }}
-          package-manager: ${{ inputs.package-manager }}
+        package-manager: ${{ inputs.package-manager }}
     
     - name: Setup Cypress
       uses: Typeform/.github/shared-actions/setup-cypress@v1

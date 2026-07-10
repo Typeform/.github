@@ -44,7 +44,11 @@ runs:
             $PM run playwright:install
           else
             echo "📦 Installing Playwright browsers directly via $PM..."
-            $PM exec playwright install --with-deps
+            if [ "$PM" = "pnpm" ]; then
+              pnpm exec playwright install --with-deps
+            else
+              yarn playwright install --with-deps
+            fi
           fi
         else
           echo "⚠️ package.json not found, skipping Playwright installation"

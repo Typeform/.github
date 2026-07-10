@@ -31,7 +31,12 @@ runs:
         if [ "$ACT" = "true" ]; then
           # Local testing with act: link local Jarvis
           echo "🔗 Linking local Jarvis from /Users/kevin.barz/code/jarvis"
-          cd /Users/kevin.barz/code/jarvis && $PM link
+          JARVIS_LOCAL="/Users/kevin.barz/code/jarvis"
+          if [ -f "$JARVIS_LOCAL/pnpm-lock.yaml" ]; then
+            cd "$JARVIS_LOCAL" && pnpm link
+          else
+            cd "$JARVIS_LOCAL" && yarn link
+          fi
           cd $GITHUB_WORKSPACE && $PM link @typeform/jarvis
           echo "✅ Jarvis linked from local development copy"
           ls -la node_modules/@typeform/jarvis
@@ -44,14 +49,16 @@ runs:
           git clone --depth 1 --branch "$JARVIS_BRANCH" \
             "https://x-access-token:${GH_TOKEN}@github.com/Typeform/jarvis.git" "$JARVIS_DIR"
           
-          # Install Jarvis dependencies
+          # Install Jarvis using its own lockfile, not the caller's PM
           cd "$JARVIS_DIR"
-          $PM install --frozen-lockfile
-          
-          # Link Jarvis
-          $PM link
-          
-          # Link to this project
+          if [ -f "pnpm-lock.yaml" ]; then
+            pnpm install --frozen-lockfile
+            pnpm link
+          else
+            yarn install --frozen-lockfile
+            yarn link
+          fi
+          # Link to this project using caller's PM
           cd $GITHUB_WORKSPACE
           $PM link @typeform/jarvis
           

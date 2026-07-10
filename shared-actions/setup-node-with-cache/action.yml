@@ -122,6 +122,10 @@ runs:
             echo "Cache mode: yarn cache only (no node_modules)"
             PATHS="~/.cache/yarn"
             ;;
+          "pnpm-store-only")
+            echo "::error::cache-mode 'pnpm-store-only' is invalid when package-manager=yarn. Use 'yarn-cache-only' or 'full'."
+            exit 1
+            ;;
           "full"|*)
             echo "Cache mode: full (node_modules + yarn cache)"
             PATHS="node_modules
@@ -154,9 +158,13 @@ runs:
         apps/**/node_modules
         packages/**/node_modules"
             ;;
-          "pnpm-store-only"|"yarn-cache-only")
+          "pnpm-store-only")
             echo "Cache mode: pnpm store only (no node_modules)"
             PATHS="$PNPM_STORE"
+            ;;
+          "yarn-cache-only")
+            echo "::error::cache-mode 'yarn-cache-only' is invalid when package-manager=pnpm. Use 'pnpm-store-only' or 'full'."
+            exit 1
             ;;
           "full"|*)
             echo "Cache mode: full (node_modules + pnpm store)"
