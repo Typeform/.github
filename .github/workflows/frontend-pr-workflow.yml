@@ -47,6 +47,10 @@ on:
         description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
         type: boolean
         default: false
+      use-tmpfs:
+        description: 'Mount tmpfs at cache target paths (PLT-3439 test). RAM-backed, bypasses memcg dirty accounting.'
+        type: boolean
+        default: false
       
       # Runner configuration
       runner:
@@ -314,12 +318,13 @@ jobs:
         uses: actions/checkout@v6
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@test-tmpfs-cache-extract
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
+          use-tmpfs: ${{ inputs.use-tmpfs }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -387,12 +392,13 @@ jobs:
         uses: actions/checkout@v6
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@test-tmpfs-cache-extract
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
+          use-tmpfs: ${{ inputs.use-tmpfs }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -435,12 +441,13 @@ jobs:
         uses: actions/checkout@v6
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@test-tmpfs-cache-extract
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
+          use-tmpfs: ${{ inputs.use-tmpfs }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Setup Jarvis
@@ -501,12 +508,13 @@ jobs:
         uses: actions/checkout@v6
       
       - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@test-tmpfs-cache-extract
         with:
           node-version: ${{ inputs.node-version }}
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
+          use-tmpfs: ${{ inputs.use-tmpfs }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Download Build Artifacts
@@ -574,13 +582,14 @@ jobs:
     needs: [build, unit-tests]
     permissions:
       contents: read
-    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
+    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@test-tmpfs-cache-extract
     with:
       app-name: ${{ inputs.app-name }}
       node-version: ${{ inputs.node-version }}
       use-asdf: ${{ inputs.use-asdf }}
       cache-mode: ${{ inputs.cache-mode }}
       disable-restore-keys: ${{ inputs.disable-restore-keys }}
+      use-tmpfs: ${{ inputs.use-tmpfs }}
       runner: ${{ inputs.runner }}
       coverage-artifact-name: ${{ inputs.run-unit-tests && format('coverage-{0}', github.run_id) || '' }}
       timeout: ${{ inputs.sonarcloud-timeout }}
