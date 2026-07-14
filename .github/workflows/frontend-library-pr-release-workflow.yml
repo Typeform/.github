@@ -59,6 +59,16 @@ on:
         description: 'Job timeout in minutes'
         type: number
         default: 15
+
+      package-manager:
+        description: 'Package manager to use: "yarn" or "pnpm". Callers using pnpm must pass all commands explicitly.'
+        type: string
+        default: 'yarn'
+
+      semantic-release-command:
+        description: 'Semantic release command. Callers using pnpm must pass all commands explicitly.'
+        type: string
+        default: 'yarn semantic-release'
     
     secrets:
       GH_TOKEN:
@@ -107,7 +117,7 @@ jobs:
         if: |
           inputs.run-semantic-release &&
           contains(fromJSON(inputs.semantic-release-branches), github.ref_name)
-        run: yarn semantic-release
+        run: ${{ inputs.semantic-release-command }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.GH_TOKEN }}

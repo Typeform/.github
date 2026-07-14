@@ -12,6 +12,10 @@ inputs:
     description: 'Working directory for the project'
     required: false
     default: '.'
+  package-manager:
+    description: 'Package manager to use: "yarn" or "pnpm"'
+    required: false
+    default: 'yarn'
 
 runs:
   using: 'composite'
@@ -22,12 +26,18 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.GH_TOKEN }}
         JARVIS_BRANCH: ${{ inputs.jarvis-branch }}
+        PM: ${{ inputs.package-manager }}
       run: |
         if [ "$ACT" = "true" ]; then
           # Local testing with act: link local Jarvis
           echo "🔗 Linking local Jarvis from /Users/kevin.barz/code/jarvis"
-          cd /Users/kevin.barz/code/jarvis && yarn link
-          cd $GITHUB_WORKSPACE && yarn link @typeform/jarvis
+          JARVIS_LOCAL="/Users/kevin.barz/code/jarvis"
+          if [ -f "$JARVIS_LOCAL/pnpm-lock.yaml" ]; then
+            cd "$JARVIS_LOCAL" && pnpm link
+          else
+            cd "$JARVIS_LOCAL" && yarn link
+          fi
+          cd $GITHUB_WORKSPACE && $PM link @typeform/jarvis
           echo "✅ Jarvis linked from local development copy"
           ls -la node_modules/@typeform/jarvis
         elif [ -n "$JARVIS_BRANCH" ]; then
@@ -39,26 +49,28 @@ runs:
           git clone --depth 1 --branch "$JARVIS_BRANCH" \
             "https://x-access-token:${GH_TOKEN}@github.com/Typeform/jarvis.git" "$JARVIS_DIR"
           
-          # Install Jarvis dependencies
+          # Install Jarvis using its own lockfile, not the caller's PM
           cd "$JARVIS_DIR"
-          yarn install --frozen-lockfile
-          
-          # Link Jarvis
-          yarn link
-          
-          # Link to this project
+          if [ -f "pnpm-lock.yaml" ]; then
+            pnpm install --frozen-lockfile
+            pnpm link
+          else
+            yarn install --frozen-lockfile
+            yarn link
+          fi
+          # Link to this project using caller's PM
           cd $GITHUB_WORKSPACE
-          yarn link @typeform/jarvis
+          $PM link @typeform/jarvis
           
           echo "✅ Jarvis linked from GitHub branch: $JARVIS_BRANCH"
           echo "📍 Jarvis location: $JARVIS_DIR"
           ls -la node_modules/@typeform/jarvis
         else
-          # Default: use npm version from package.json (already installed by yarn install)
+          # Default: use npm version from package.json (already installed by install step)
           echo "📦 Using Jarvis from npm (version from package.json)"
           if [ -f "node_modules/@typeform/jarvis/package.json" ]; then
             echo "✅ Jarvis version: $(node -p "require('./node_modules/@typeform/jarvis/package.json').version")"
           else
-            echo "⚠️ Jarvis not found in node_modules - may need to run yarn install first"
+            echo "⚠️ Jarvis not found in node_modules - may need to run $PM install first"
           fi
         fi

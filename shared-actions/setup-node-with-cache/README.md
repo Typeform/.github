@@ -1,11 +1,12 @@
 # Setup Node with Enhanced Caching
 
-Standardized Node.js setup with enhanced yarn caching and GitHub packages registry configuration.
+Standardized Node.js setup with enhanced yarn/pnpm caching and GitHub packages registry configuration.
 
 ## Features
 
 - ✅ Node.js setup with configurable version
-- ✅ Multi-layer caching (node_modules + yarn global cache)
+- ✅ **pnpm and yarn support** — opt-in via `package-manager` input
+- ✅ Multi-layer caching (node_modules + yarn global cache / pnpm store)
 - ✅ Architecture-specific cache keys (ARM/x86)
 - ✅ Restore-keys for fallback caching (85%+ hit rate)
 - ✅ GitHub packages registry configuration
@@ -32,8 +33,9 @@ Standardized Node.js setup with enhanced yarn caching and GitHub packages regist
 | `node-version` | Node.js version to use (ignored if use-asdf is true) | No | `'20'` |
 | `use-asdf` | Use asdf-vm for version management | No | `'false'` |
 | `GH_TOKEN` | GitHub token for private packages | Yes | - |
+| `package-manager` | Package manager: `yarn` or `pnpm` | No | `'yarn'` |
 | `enable-yarn-cache` | Enable yarn global cache (~/.cache/yarn) | No | `'true'` |
-| `cache-mode` | Cache strategy: `full`, `node_modules-only`, or `yarn-cache-only` | No | `'full'` |
+| `cache-mode` | Cache strategy: `full`, `node_modules-only`, `yarn-cache-only`, or `pnpm-store-only` | No | `'full'` |
 | `disable-restore-keys` | Disable restore-keys to avoid restoring stale caches | No | `'false'` |
 
 **📖 Need help choosing the right cache mode?** See the [Cache Strategy Guide](./CACHE-STRATEGY-GUIDE.md) for detailed recommendations.
@@ -45,44 +47,49 @@ None
 ## What It Does
 
 1. **Sets up Node.js** with the specified version (or uses asdf-vm)
-2. **Caches asdf installations** (when using asdf-vm) to avoid re-downloading Node.js
-3. **Configures GitHub packages registry** for @typeform scope
-4. **Caches dependencies** with multi-layer strategy:
+2. **Installs pnpm** via `pnpm/action-setup` when `package-manager: pnpm` (skipped if asdf manages it)
+3. **Caches asdf installations** (when using asdf-vm) to avoid re-downloading Node.js
+4. **Configures GitHub packages registry** for @typeform scope
+5. **Caches dependencies** with multi-layer strategy:
    - `node_modules/` - Installed dependencies
-   - `~/.cache/yarn` - Yarn global cache (always enabled for better performance)
+   - `~/.cache/yarn` - Yarn global cache (yarn) / `~/.local/share/pnpm/store` - pnpm store
    - `~/.asdf/installs` - asdf tool installations (when using asdf)
-5. **Uses restore-keys** for fallback caching when exact match not found
-6. **Verifies cache integrity** on cache hit:
+6. **Uses restore-keys** for fallback caching when exact match not found
+7. **Verifies cache integrity** on cache hit:
    - Checks if `node_modules/` exists and has content
-   - Validates `.yarn-integrity` file presence
+   - Validates `.yarn-integrity` (yarn) / `.modules.yaml` (pnpm) file presence
    - Verifies workspace packages have `node_modules/`
    - Forces fresh install if cache is incomplete or corrupted
-7. **Logs cache status** with detailed debug information
-8. **Installs dependencies** automatically on cache miss or verification failure
-9. **Smart install detection** on cache hit (after verification):
-   - **Yarn workspaces**: ALWAYS runs install (needs workspace symlink creation)
-   - **Lerna monorepos**: Runs install (needs lerna bootstrap)
-   - **Postinstall hooks**: Runs install (needs hook execution)
-   - **Note**: Even Turbo monorepos need install for workspace linking
+8. **Logs cache status** with detailed debug information
+9. **Installs dependencies** automatically on cache miss or verification failure
+10. **Smart install detection** on cache hit (after verification):
+    - **Workspaces**: ALWAYS runs install (needs workspace symlink creation)
+    - **Lerna monorepos**: Runs install (needs lerna bootstrap)
+    - **Postinstall hooks**: Runs install (needs hook execution)
+    - **Note**: Even Turbo monorepos need install for workspace linking
 
 ## Cache Strategy
 
-### Cache Key
+### Cache Keys
+
+**yarn:**
 ```
-${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}
+${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}-<mode>
 ```
 
-### Restore Keys (Fallback)
+**pnpm:**
 ```
-${{ runner.os }}-${{ runner.arch }}-yarn-
+${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}-<mode>
 ```
+
+Cache keys are isolated per package manager — no cross-PM cache pollution.
 
 This ensures:
-- **Exact match**: Uses cached dependencies if yarn.lock or package.json unchanged
+- **Exact match**: Uses cached dependencies if lockfile or package.json unchanged
 - **Partial match**: Uses most recent cache if dependencies changed
 - **Architecture-specific**: Prevents ARM/x86 cache conflicts
-- **Monorepo support**: `**/yarn.lock` pattern handles nested workspaces
-- **Consistent keys**: Removed `.tool-versions` dependency for reliability
+- **Monorepo support**: `**` pattern handles nested workspaces
+- **PM-isolated**: `yarn-` vs `pnpm-` prefix prevents cache collisions
 
 ### Stale Cache Cleanup (Restore-Key Fallback)
 
@@ -160,12 +167,22 @@ act pull_request -j build
 
 ## Examples
 
-### Basic Usage
+### Basic Usage (yarn — default)
 ```yaml
 - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
     GH_TOKEN: ${{ secrets.GH_TOKEN }}
 ```
+
+### pnpm Usage
+```yaml
+- uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+  with:
+    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    package-manager: 'pnpm'
+    cache-mode: 'node_modules-only'  # or 'full' for pnpm workspaces
+```
+**Note**: pnpm callers must pass all commands explicitly in the workflow (`build-command: 'pnpm run dist'`, etc.) — workflow input defaults use `yarn`.
 
 ### Custom Node Version
 ```yaml

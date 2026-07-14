@@ -9,6 +9,16 @@ on:
         type: string
         required: false
         default: "ci-universal-scale-set"
+      package-manager:
+        description: 'Package manager to use: "yarn" or "pnpm"'
+        type: string
+        required: false
+        default: "yarn"
+      pnpm-version:
+        description: 'pnpm version to install (only used when package-manager is pnpm)'
+        type: string
+        required: false
+        default: "9.15.0"
     secrets:
       GH_TOKEN:
         required: true
@@ -33,8 +43,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Yarn
-        run: npm install -g yarn@1.22.22
+      - name: Install package manager
+        run: |
+          if [ "${{ inputs.package-manager }}" = "pnpm" ]; then
+            npm install -g pnpm@${{ inputs.pnpm-version }}
+          else
+            npm install -g yarn@1.22.22
+          fi
 
       - name: Set GitHub packages registry
         run: |
@@ -59,12 +74,22 @@ jobs:
         run: |
           mkdir persisted-ops-generator
           cd persisted-ops-generator
-          yarn init -y
-          yarn add --no-lockfile --non-interactive --dev \
-            @typeform/generate-persisted-operations-manifest \
-            @apollo/generate-persisted-query-manifest@^1.2.2 \
-            @apollo/client@^3.7.0 \
-            graphql@^16.0.0
+          PM="${{ inputs.package-manager }}"
+          if [ "$PM" = "pnpm" ]; then
+            pnpm init
+            pnpm add --save-dev \
+              @typeform/generate-persisted-operations-manifest \
+              @apollo/generate-persisted-query-manifest@^1.2.2 \
+              @apollo/client@^3.7.0 \
+              graphql@^16.0.0
+          else
+            yarn init -y
+            yarn add --no-lockfile --non-interactive --dev \
+              @typeform/generate-persisted-operations-manifest \
+              @apollo/generate-persisted-query-manifest@^1.2.2 \
+              @apollo/client@^3.7.0 \
+              graphql@^16.0.0
+          fi
           cd ..
 
       - name: Generate Persisted Operations

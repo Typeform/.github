@@ -23,6 +23,10 @@ inputs:
     description: 'Jarvis branch to use (empty = npm version)'
     required: false
     default: ''
+  package-manager:
+    description: 'Package manager to use: "yarn" or "pnpm"'
+    required: false
+    default: "yarn"
   
   # Pre-test setup
   pre-test-command:
@@ -81,15 +85,19 @@ runs:
         cache-mode: ${{ inputs.cache-mode }}
         disable-restore-keys: ${{ inputs.disable-restore-keys }}
         GH_TOKEN: ${{ inputs.GH_TOKEN }}
+        package-manager: ${{ inputs.package-manager }}
     
     - name: Setup Jarvis
       uses: Typeform/.github/shared-actions/setup-jarvis@v1
       with:
         jarvis-branch: ${{ inputs.jarvis-branch }}
         GH_TOKEN: ${{ inputs.GH_TOKEN }}
+        package-manager: ${{ inputs.package-manager }}
     
     - name: Setup Cypress
       uses: Typeform/.github/shared-actions/setup-cypress@v1
+      with:
+        package-manager: ${{ inputs.package-manager }}
     
     - name: Run pre-test command
       if: inputs.pre-test-command != ''

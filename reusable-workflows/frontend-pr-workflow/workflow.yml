@@ -100,6 +100,12 @@ on:
         type: string
         default: 'staging'
       
+      # Package manager configuration
+      package-manager:
+        description: 'Package manager to use: "yarn" or "pnpm". Callers using pnpm must pass all commands explicitly.'
+        type: string
+        default: 'yarn'
+
       # Timeout configuration
       build-timeout:
         description: 'Build job timeout (minutes)'
@@ -151,12 +157,14 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@main
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Clean dist directory
         run: ${{ inputs.clean-command }}
@@ -201,6 +209,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Run unit tests
         run: ${{ inputs.unit-test-command }}
@@ -230,9 +239,12 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Playwright
         uses: Typeform/.github/shared-actions/setup-playwright@main
+        with:
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Download Build Artifacts
         uses: Typeform/.github/shared-actions/download-build-artifacts@main
@@ -271,6 +283,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: Download Build Artifacts
         uses: Typeform/.github/shared-actions/download-build-artifacts@main
@@ -283,6 +296,7 @@ jobs:
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
       
       - name: AWS auth
         continue-on-error: true
