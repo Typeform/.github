@@ -113,13 +113,15 @@ on:
         type: string
         default: 'none'
       
-      # SonarCloud configuration
+      # SonarCloud configuration (DEPRECATED — SonarCloud has been decommissioned;
+      # these inputs are retained as no-ops for backward compatibility and will be
+      # removed in a future major version).
       run-sonarcloud:
-        description: 'Run SonarCloud analysis'
+        description: 'DEPRECATED — SonarCloud is decommissioned. Input is a no-op.'
         type: boolean
-        default: true
+        default: false
       sonarcloud-timeout:
-        description: 'SonarCloud job timeout (minutes)'
+        description: 'DEPRECATED — SonarCloud is decommissioned. Input is a no-op.'
         type: number
         default: 10
       
@@ -276,6 +278,7 @@ on:
       GH_TOKEN:
         required: true
       SONAR_CLOUD_TOKEN:
+        # DEPRECATED — SonarCloud is decommissioned. Secret is no longer consumed.
         required: false
       DATADOG_API_KEY:
         required: false
@@ -579,28 +582,10 @@ jobs:
           echo "The commit SHA is ${{ github.sha }}"
           echo "📋 Workflow: frontend-pr-workflow (v2)"
   
-  # Job 5: SonarCloud Analysis (waits for unit tests if enabled, otherwise runs immediately)
-  sonarcloud:
-    name: 🔍 SonarCloud
-    if: inputs.run-sonarcloud
-    needs: [build, unit-tests]
-    permissions:
-      contents: read
-    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
-    with:
-      app-name: ${{ inputs.app-name }}
-      node-version: ${{ inputs.node-version }}
-      use-asdf: ${{ inputs.use-asdf }}
-      cache-mode: ${{ inputs.cache-mode }}
-      disable-restore-keys: ${{ inputs.disable-restore-keys }}
-      runner: ${{ inputs.runner }}
-      coverage-artifact-name: ${{ inputs.run-unit-tests && format('coverage-{0}', github.run_id) || '' }}
-      timeout: ${{ inputs.sonarcloud-timeout }}
-      package-manager: ${{ inputs.package-manager }}
-    secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
-  
+  # Job 5: SonarCloud Analysis — REMOVED (SonarCloud has been decommissioned).
+  # The `run-sonarcloud`, `sonarcloud-timeout` inputs and `SONAR_CLOUD_TOKEN`
+  # secret above are retained as no-ops for backward compatibility.
+
   # Job 6: GraphQL Persisted Operations (parallel with tests)
   graphql-persisted-operations:
     name: 🔐 GraphQL Persisted Operations

@@ -227,17 +227,19 @@ on:
         type: number
         default: 20
       
-      # SonarCloud configuration
+      # SonarCloud configuration (DEPRECATED — SonarCloud has been decommissioned;
+      # these inputs are retained as no-ops for backward compatibility and will be
+      # removed in a future major version).
       run-sonarcloud:
-        description: 'Run SonarCloud analysis'
+        description: 'DEPRECATED — SonarCloud is decommissioned. Input is a no-op.'
         type: boolean
-        default: true
+        default: false
       sonarcloud-timeout:
-        description: 'SonarCloud job timeout (minutes)'
+        description: 'DEPRECATED — SonarCloud is decommissioned. Input is a no-op.'
         type: number
         default: 10
       sonarcloud-wait-for-tests:
-        description: 'Wait for unit tests to complete before running SonarCloud'
+        description: 'DEPRECATED — SonarCloud is decommissioned. Input is a no-op.'
         type: boolean
         default: true
       
@@ -265,7 +267,7 @@ on:
 
       # Skip verified tests
       skip-verified-tests:
-        description: 'Skip unit/integration/cypress/sonarcloud on main if the same tree passed on the PR. Requires record-verification job in the PR workflow. Set false to always re-run on main.'
+        description: 'Skip unit/integration/cypress on main if the same tree passed on the PR. Requires record-verification job in the PR workflow. Set false to always re-run on main.'
         type: boolean
         default: true
       
@@ -278,6 +280,7 @@ on:
       GH_TOKEN:
         required: true
       SONAR_CLOUD_TOKEN:
+        # DEPRECATED — SonarCloud is decommissioned. Secret is no longer consumed.
         required: false
       DATADOG_API_KEY:
         required: false
@@ -423,9 +426,7 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0  # Required for SonarCloud
-      
+
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
         with:
@@ -620,26 +621,11 @@ jobs:
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
           package-manager: ${{ inputs.package-manager }}
 
-  # Job 7: SonarCloud Analysis (waits for unit tests if enabled)
-  sonarcloud:
-    name: 🔍 SonarCloud
-    if: inputs.run-sonarcloud && needs.check-verification.outputs.verified != 'true'
-    needs: [build, unit-tests, check-verification]
-    permissions:
-      contents: read
-    uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1
-    with:
-      app-name: ${{ inputs.app-name }}
-      node-version: ${{ inputs.node-version }}
-      use-asdf: ${{ inputs.use-asdf }}
-      runner: ${{ inputs.runner }}
-      coverage-artifact-name: ${{ inputs.run-unit-tests && format('coverage-{0}', github.run_id) || '' }}
-      timeout: ${{ inputs.sonarcloud-timeout }}
-      package-manager: ${{ inputs.package-manager }}
-    secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      SONAR_CLOUD_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
-  
+  # Job 7: SonarCloud Analysis — REMOVED (SonarCloud has been decommissioned).
+  # The `run-sonarcloud`, `sonarcloud-timeout`, `sonarcloud-wait-for-tests` inputs
+  # and `SONAR_CLOUD_TOKEN` secret above are retained as no-ops for backward
+  # compatibility.
+
   # Job 8: Deploy to Production (only if all enabled tests pass or were skipped as verified)
   deploy:
     name: 🚀 Deploy to Production
