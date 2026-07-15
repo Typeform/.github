@@ -37,6 +37,7 @@ Standardized Node.js setup with enhanced yarn/pnpm caching and GitHub packages r
 | `enable-yarn-cache` | Enable yarn global cache (~/.cache/yarn) | No | `'true'` |
 | `cache-mode` | Cache strategy: `full`, `node_modules-only`, `yarn-cache-only`, or `pnpm-store-only` | No | `'full'` |
 | `disable-restore-keys` | Disable restore-keys to avoid restoring stale caches | No | `'false'` |
+| `force-install` | Force install even on cache hit (required for deploy jobs that need tooling dependencies) | No | `'false'` |
 
 **📖 Need help choosing the right cache mode?** See the [Cache Strategy Guide](./CACHE-STRATEGY-GUIDE.md) for detailed recommendations.
 
@@ -63,6 +64,7 @@ None
 8. **Logs cache status** with detailed debug information
 9. **Installs dependencies** automatically on cache miss or verification failure
 10. **Smart install detection** on cache hit (after verification):
+    - **force-install=true**: ALWAYS runs install (needed for deploy jobs with tooling dependencies)
     - **Workspaces**: ALWAYS runs install (needs workspace symlink creation)
     - **Lerna monorepos**: Runs install (needs lerna bootstrap)
     - **Postinstall hooks**: Runs install (needs hook execution)
@@ -218,6 +220,15 @@ act pull_request -j build
     disable-restore-keys: 'true'
 ```
 **Use when**: You want to avoid restoring large stale caches. Only exact cache key matches will be restored.
+
+### Force Install (Deploy Jobs)
+```yaml
+- uses: Typeform/.github/shared-actions/setup-node-with-cache@main
+  with:
+    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    force-install: true  # Always run install, needed for deploy jobs with tooling dependencies
+```
+**Use when**: Your job runs deployment commands that depend on tooling packages (e.g., `@datadog/datadog-ci` for sourcemap uploads). Deploy jobs in shared workflows automatically set this to `true`.
 
 ### Disable Yarn Global Cache
 ```yaml

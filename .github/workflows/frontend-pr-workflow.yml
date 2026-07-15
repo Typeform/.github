@@ -509,7 +509,7 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v6
-      
+
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
         with:
@@ -519,7 +519,8 @@ jobs:
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
-      
+          force-install: true  # Deploy jobs need tooling dependencies (e.g., @datadog/datadog-ci)
+
       - name: Download Build Artifacts
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
         with:

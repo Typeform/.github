@@ -28,6 +28,10 @@ inputs:
     description: 'Package manager to use: "yarn" or "pnpm"'
     required: false
     default: "yarn"
+  force-install:
+    description: 'Force install even on cache hit (required for deploy jobs that need tooling dependencies)'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -307,7 +311,7 @@ runs:
       shell: bash
       run: |
         set +e  # Don't exit on error - we want to check all conditions
-        
+
         # Determine if we need to run install even when cache hits.
         #
         # Why this matters:
@@ -315,11 +319,18 @@ runs:
         # - Monorepos need workspace linking even with cached node_modules
         # - Some projects have critical postinstall scripts (e.g., building native modules)
         # - Cached node_modules might be incomplete or corrupted
+        # - Deploy jobs need tooling dependencies (e.g., @datadog/datadog-ci) to be available
         #
         # We detect scenarios that require yarn install on cache hit:
-        
+
         PM="${{ inputs.package-manager }}"
         NEEDS_INSTALL=false
+
+        # Force install if explicitly requested (deploy jobs, etc.)
+        if [ "${{ inputs.force-install }}" == "true" ]; then
+          echo "🔄 force-install=true - install will run even on cache hit"
+          NEEDS_INSTALL=true
+        fi
 
         if [ "$PM" == "pnpm" ]; then
           CACHE_HIT="${{ steps.pnpm-cache.outputs.cache-hit }}"
