@@ -43,14 +43,16 @@ on:
         type: string
         default: '["main", "beta", "alpha", "next"]'
       
-      # SonarCloud
+      # SonarCloud (DEPRECATED — SonarCloud has been decommissioned; these inputs
+      # are retained as no-ops for backward compatibility and will be removed in a
+      # future major version).
       run-sonarcloud:
-        description: 'Run SonarCloud scan'
+        description: 'DEPRECATED — SonarCloud is decommissioned. Input is a no-op.'
         type: boolean
-        default: true
-      
+        default: false
+
       sonar-project-key:
-        description: 'SonarCloud project key (defaults to repository name)'
+        description: 'DEPRECATED — SonarCloud is decommissioned. Input is a no-op.'
         type: string
         default: ''
       
@@ -74,6 +76,7 @@ on:
       GH_TOKEN:
         required: true
       SONAR_CLOUD_TOKEN:
+        # DEPRECATED — SonarCloud is decommissioned. Secret is no longer consumed.
         required: false
 
 permissions:
@@ -95,7 +98,7 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0  # Required for SonarCloud and semantic-release
+          fetch-depth: 0  # Required for semantic-release
       
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@main
@@ -122,14 +125,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.GH_TOKEN }}
       
-      - name: SonarCloud Scan
-        if: inputs.run-sonarcloud
-        uses: SonarSource/sonarqube-scan-action@v8
-        with:
-          args: >
-            -Dsonar.projectKey=${{ inputs.sonar-project-key != '' && inputs.sonar-project-key || format('{0}_{1}', github.repository_owner, github.event.repository.name) }}
-            -Dsonar.projectVersion=${{ github.run_id }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
-          LC_ALL: "C.UTF-8"
+      # SonarCloud Scan — REMOVED (SonarCloud has been decommissioned).
+      # The `run-sonarcloud`, `sonar-project-key` inputs and `SONAR_CLOUD_TOKEN`
+      # secret above are retained as no-ops for backward compatibility.

@@ -1,100 +1,57 @@
 #trigger changes
-name: SonarCloud Scan
+name: SonarCloud Scan (DEPRECATED)
+
+# DEPRECATED — SonarCloud has been decommissioned. This workflow is kept as a
+# no-op for backward compatibility with any external caller still referencing
+# `Typeform/.github/.github/workflows/sonarcloud-scan.yml@v1`. It logs a
+# deprecation notice and exits successfully.
 
 on:
   workflow_call:
     inputs:
-      # Project identification
       app-name:
-        description: 'Application name (must match sonar.projectKey in sonar-project.properties)'
         type: string
-        required: true
-      
-      # Node configuration
+        required: false
       node-version:
-        description: 'Node.js version (ignored if use-asdf is true)'
         type: string
-        default: '20'
+        required: false
       use-asdf:
-        description: 'Use asdf-vm for version management (reads from .tool-versions)'
         type: boolean
-        default: false
+        required: false
       cache-mode:
-        description: 'Cache strategy: full, node_modules-only, or yarn-cache-only'
         type: string
-        default: 'full'
+        required: false
       disable-restore-keys:
-        description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
         type: boolean
-        default: false
+        required: false
       package-manager:
-        description: 'Package manager to use: "yarn" or "pnpm"'
         type: string
-        default: "yarn"
-      
-      # Runner configuration
+        required: false
       runner:
-        description: 'Runner for SonarCloud scan'
         type: string
-        default: '[ci-universal-scale-set]'
-      
-      # Coverage configuration
+        required: false
       coverage-artifact-name:
-        description: 'Name of coverage artifact to download (optional, e.g., coverage-12345)'
         type: string
-        default: ''
-      
-      # Timeout configuration
+        required: false
       timeout:
-        description: 'Job timeout (minutes)'
         type: number
-        default: 10
-    
+        required: false
+
     secrets:
       GH_TOKEN:
-        required: true
+        required: false
       SONAR_CLOUD_TOKEN:
-        required: true
+        required: false
 
 permissions:
   contents: read
 
 jobs:
   sonarcloud:
-    name: 🔍 SonarCloud Analysis
-    runs-on: ${{ fromJSON(inputs.runner) }}
-    timeout-minutes: ${{ inputs.timeout }}
-    
+    name: 🔍 SonarCloud Analysis (deprecated no-op)
+    runs-on: ubuntu-latest
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0  # Required for SonarCloud to analyze git history
-      
-      - name: Setup Node with Cache
-        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
-        with:
-          node-version: ${{ inputs.node-version }}
-          use-asdf: ${{ inputs.use-asdf }}
-          cache-mode: ${{ inputs.cache-mode }}
-          disable-restore-keys: ${{ inputs.disable-restore-keys }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          package-manager: ${{ inputs.package-manager }}
-      
-      - name: Download coverage artifacts
-        if: inputs.coverage-artifact-name != ''
-        uses: actions/download-artifact@v8
-        with:
-          name: ${{ inputs.coverage-artifact-name }}
-          path: coverage/
-        continue-on-error: true
-      
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v8
-        with:
-          args: >
-            -Dsonar.projectVersion=${{ github.run_id }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN }}
-          LC_ALL: "C.UTF-8"
+      - name: Deprecation notice
+        run: |
+          echo "::warning::SonarCloud has been decommissioned. This workflow is a no-op."
+          echo "::warning::Remove any 'uses: Typeform/.github/.github/workflows/sonarcloud-scan.yml' entry from your workflows."
