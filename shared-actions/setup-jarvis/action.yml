@@ -33,11 +33,20 @@ runs:
           echo "🔗 Linking local Jarvis from /Users/kevin.barz/code/jarvis"
           JARVIS_LOCAL="/Users/kevin.barz/code/jarvis"
           if [ -f "$JARVIS_LOCAL/pnpm-lock.yaml" ]; then
-            cd "$JARVIS_LOCAL" && pnpm link
+            cd "$JARVIS_LOCAL"
+            pnpm install --frozen-lockfile
+            pnpm link
           else
-            cd "$JARVIS_LOCAL" && yarn link
+            cd "$JARVIS_LOCAL"
+            yarn install --frozen-lockfile
+            yarn link
           fi
-          cd $GITHUB_WORKSPACE && $PM link @typeform/jarvis
+          cd "$GITHUB_WORKSPACE"
+          if [ "$PM" = "pnpm" ]; then
+            pnpm link "$JARVIS_LOCAL"
+          else
+            yarn link @typeform/jarvis
+          fi
           echo "✅ Jarvis linked from local development copy"
           ls -la node_modules/@typeform/jarvis
         elif [ -n "$JARVIS_BRANCH" ]; then
@@ -59,8 +68,12 @@ runs:
             yarn link
           fi
           # Link to this project using caller's PM
-          cd $GITHUB_WORKSPACE
-          $PM link @typeform/jarvis
+          cd "$GITHUB_WORKSPACE"
+          if [ "$PM" = "pnpm" ]; then
+            pnpm link "$JARVIS_DIR"
+          else
+            yarn link @typeform/jarvis
+          fi
           
           echo "✅ Jarvis linked from GitHub branch: $JARVIS_BRANCH"
           echo "📍 Jarvis location: $JARVIS_DIR"
@@ -74,3 +87,9 @@ runs:
             echo "⚠️ Jarvis not found in node_modules - may need to run $PM install first"
           fi
         fi
+
+    - name: Install datadog-ci globally
+      shell: bash
+      run: |
+        npm install -g @datadog/datadog-ci@5.21.0
+        echo "$(npm prefix -g)/bin" >> $GITHUB_PATH

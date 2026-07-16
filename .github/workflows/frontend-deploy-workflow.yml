@@ -736,7 +736,7 @@ jobs:
         if: inputs.jarvis-datadog-enabled
         continue-on-error: true
         run: |
-          npx --yes @datadog/datadog-ci@5.21.0 tag --level pipeline \
+          datadog-ci tag --level pipeline \
             --tags "workflow_version:${{ env.WORKFLOW_VERSION }}" \
             --tags "workflow_file:${{ env.WORKFLOW_FILE }}"
         env:
