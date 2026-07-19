@@ -11,7 +11,7 @@
     "@actions/core": "3.0.1"
   },
   "devDependencies": {
-    "@vercel/ncc": "0.44.0"
+    "@vercel/ncc": "0.44.1"
   },
   "scripts": {
     "distribute": "yarn ncc build deployment-frequency-event.js && rm -f dist/package.json",
