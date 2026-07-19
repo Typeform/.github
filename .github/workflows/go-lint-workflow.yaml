@@ -73,21 +73,21 @@ jobs:
 
       - name: Setup Go (provided only go-version input, or both)
         if: "${{ (inputs.go-version != '' && inputs.go-version-file == '') || (inputs.go-version != '' && inputs.go-version-file != '') }}"
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ inputs.go-version }}
           cache: false
 
       - name: Setup Go (provided only go-version-file input)
         if: "${{ inputs.go-version == '' && inputs.go-version-file != '' }}"
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: ${{ inputs.go-version-file }}
           cache: false
 
       - name: Setup Go (provided neither go-version-file nor go-version input)
         if: "${{ inputs.go-version == '' && inputs.go-version-file == '' }}"
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: "stable"
           cache: false
