@@ -560,8 +560,8 @@ jobs:
   # Job 5: Cypress Visual Tests (runs in parallel with other tests)
   cypress-visual:
     name: 🎨 Cypress Visual
-    if: inputs.run-cypress-visual && needs.check-verification.outputs.verified != 'true'
-    needs: [build, check-verification]
+    if: inputs.run-cypress-visual
+    needs: [build]
     runs-on: ${{ fromJSON(inputs.cypress-runner != '' && inputs.cypress-runner || inputs.e2e-runner) }}
     timeout-minutes: ${{ inputs.cypress-timeout }}
     
@@ -592,8 +592,8 @@ jobs:
   # Job 6: Playwright Visual Tests (runs in parallel with other tests)
   playwright-visual:
     name: 🎨 Playwright Visual
-    if: inputs.run-playwright-visual && needs.check-verification.outputs.verified != 'true'
-    needs: [build, check-verification]
+    if: inputs.run-playwright-visual
+    needs: [build]
     runs-on: ${{ fromJSON(inputs.e2e-runner) }}
     timeout-minutes: ${{ inputs.playwright-visual-timeout }}
 
