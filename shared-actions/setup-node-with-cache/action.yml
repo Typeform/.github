@@ -24,6 +24,19 @@ inputs:
     description: 'Disable restore-keys to avoid restoring stale caches (forces exact key match)'
     required: false
     default: 'false'
+  lockfile-only-cache-key:
+    description: >-
+      Derive the dependency cache key from the lockfile alone, ignoring package.json
+      files. Defaults to false, which preserves the existing behaviour of hashing the
+      lockfile plus every package.json.
+
+      In a workspace repo with many packages, hashing every package.json means edits
+      that cannot change what gets installed (a description, a version bump, a script)
+      still invalidate the whole cache. Keying on the lockfile alone is safe because it
+      already pins the fully resolved tree, and yarn/pnpm update it whenever a manifest
+      edit actually changes resolution.
+    required: false
+    default: 'false'
   package-manager:
     description: 'Package manager to use: "yarn" or "pnpm"'
     required: false
@@ -181,22 +194,43 @@ runs:
 
         echo "key-suffix=-$CACHE_MODE" >> $GITHUB_OUTPUT
     
+    # hashFiles() cannot take a variable glob, so both candidate hashes are computed
+    # here and the requested one is exported for the cache steps below to consume.
+    - name: Compute dependency cache hash
+      id: dep-hash
+      shell: bash
+      env:
+        HASH_WITH_MANIFESTS_YARN: ${{ hashFiles('**/yarn.lock', '**/package.json') }}
+        HASH_LOCKFILE_ONLY_YARN: ${{ hashFiles('**/yarn.lock') }}
+        HASH_WITH_MANIFESTS_PNPM: ${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}
+        HASH_LOCKFILE_ONLY_PNPM: ${{ hashFiles('**/pnpm-lock.yaml') }}
+      run: |
+        if [ "${{ inputs.lockfile-only-cache-key }}" == "true" ]; then
+          echo "yarn=$HASH_LOCKFILE_ONLY_YARN" >> $GITHUB_OUTPUT
+          echo "pnpm=$HASH_LOCKFILE_ONLY_PNPM" >> $GITHUB_OUTPUT
+          echo "Cache key source: lockfile only"
+        else
+          echo "yarn=$HASH_WITH_MANIFESTS_YARN" >> $GITHUB_OUTPUT
+          echo "pnpm=$HASH_WITH_MANIFESTS_PNPM" >> $GITHUB_OUTPUT
+          echo "Cache key source: lockfile + all package.json (default)"
+        fi
+
     - name: Get yarn cache
       if: ${{ !env.ACT && inputs.package-manager != 'pnpm' }}
       uses: actions/cache@v6
       id: yarn-cache
       with:
         path: ${{ steps.cache-paths.outputs.paths }}
-        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}${{ steps.cache-paths.outputs.key-suffix }}
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ steps.dep-hash.outputs.yarn }}${{ steps.cache-paths.outputs.key-suffix }}
         restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-yarn-', runner.os, runner.arch) || '' }}
-    
+
     - name: Get pnpm cache
       if: ${{ !env.ACT && inputs.package-manager == 'pnpm' }}
       uses: actions/cache@v6
       id: pnpm-cache
       with:
         path: ${{ steps.cache-paths-pnpm.outputs.paths }}
-        key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}${{ steps.cache-paths-pnpm.outputs.key-suffix }}
+        key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ steps.dep-hash.outputs.pnpm }}${{ steps.cache-paths-pnpm.outputs.key-suffix }}
         restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-pnpm-', runner.os, runner.arch) || '' }}
 
     - name: Debug cache contents
@@ -210,9 +244,9 @@ runs:
 
         echo "=== 🔍 Cache Debug Info ==="
         if [ "$PM" == "pnpm" ]; then
-          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}"
+          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ steps.dep-hash.outputs.pnpm }}"
         else
-          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ steps.dep-hash.outputs.yarn }}"
         fi
         echo ""
     
@@ -414,11 +448,11 @@ runs:
 
         if [ "$PM" == "pnpm" ]; then
           CACHE_HIT="${{ steps.pnpm-cache.outputs.cache-hit }}"
-          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}"
+          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-pnpm-${{ steps.dep-hash.outputs.pnpm }}"
           INSTALL_CMD="pnpm install"
         else
           CACHE_HIT="${{ steps.yarn-cache.outputs.cache-hit }}"
-          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-yarn-${{ steps.dep-hash.outputs.yarn }}"
           INSTALL_CMD="yarn install"
         fi
 

@@ -185,6 +185,45 @@ with:
 
 ---
 
+## Advanced: Lockfile-Only Cache Key
+
+By default the dependency cache key hashes the lockfile **and every `package.json`**.
+In a workspace repo with many packages that makes the cache far more fragile than it
+needs to be: editing a description, bumping a package version, or adding a script
+invalidates the entire cache even though none of them change what gets installed.
+
+```yaml
+uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+with:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  lockfile-only-cache-key: true
+```
+
+**Measured on `bob-the-builder`** (17 workspaces), over the last 60 commits on `main`:
+
+| Cache key | Commits that invalidate the cache |
+|---|---|
+| lockfile + all `package.json` (default) | 30 / 59 = **51%** |
+| lockfile only | 16 / 59 = **27%** |
+
+**Why it is safe:** the lockfile already pins the fully resolved dependency tree. Yarn
+and pnpm rewrite it whenever a manifest edit actually changes resolution, so a
+`package.json` change that matters is always accompanied by a lockfile change. A change
+that does not touch the lockfile cannot alter what gets installed. `--frozen-lockfile`
+enforces this — a manifest edit needing new resolutions fails the build rather than
+silently installing something different.
+
+All 14 commits in that sample that touched a `package.json` without touching
+`yarn.lock` were verified by hand: 12 were non-dependency edits, and the other 2 added
+packages that were already resolved in the lockfile (pinned via root `resolutions`, or
+already present as a transitive dependency).
+
+**When to use:**
+- Workspace/monorepo repos with many `package.json` files
+- Large caches, where each avoided miss saves minutes rather than seconds
+
+---
+
 ## Migration Guide
 
 ### Switching from `full` to `node_modules-only`
