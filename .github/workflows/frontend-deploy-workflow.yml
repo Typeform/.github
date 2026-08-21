@@ -810,15 +810,3 @@ jobs:
           github-run-id: ${{ github.run_id }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
 
-      - name: Send incident result to #war-room
-        if: inputs.incident-number != ''
-        uses: slackapi/slack-github-action@v3
-        with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_OAUTH_TOKEN }}
-          payload: |
-            {
-              "channel": "war-room",
-              "text": "${{ needs.deploy.result == 'success' && '✅' || '❌' }} Incident deployment ${{ needs.deploy.result }} — `${{ inputs.app-name }}` (${{ inputs.incident-number }}) (<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|logs>)",
-              "username": "Deploy Notifier"
-            }
