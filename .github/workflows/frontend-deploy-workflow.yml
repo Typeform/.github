@@ -770,9 +770,11 @@ jobs:
 
     steps:
       - name: Validate incident number
+        env:
+          INCIDENT_NUMBER: ${{ inputs.incident-number }}
         run: |
-          if [[ ! "${{ inputs.incident-number }}" =~ ^[Ii][Nn][Cc]- ]]; then
-            echo "::error::incident-number must start with 'INC-' (got: ${{ inputs.incident-number }})"
+          if [[ ! "$INCIDENT_NUMBER" =~ ^[Ii][Nn][Cc]-[0-9]+$ ]]; then
+            echo "::error::incident-number must match INC-<digits> (got: $INCIDENT_NUMBER)"
             exit 1
           fi
 
