@@ -776,7 +776,7 @@ jobs:
             exit 1
           fi
 
-      - name: Post to #war-room
+      - name: Post to war-room
         uses: slackapi/slack-github-action@v3
         with:
           method: chat.postMessage
