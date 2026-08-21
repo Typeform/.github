@@ -276,6 +276,12 @@ on:
         description: 'Slack channel for deployment notifications (e.g., tfprod-deploy)'
         type: string
         default: 'tfprod-deploy'
+
+      # Incident hotfix
+      incident-number:
+        description: 'Incident ticket number (e.g. INC-1234). When set, validates INC-* format and posts a war-room notification before deploying.'
+        type: string
+        default: ''
     secrets:
       GH_TOKEN:
         required: true
@@ -636,17 +642,20 @@ jobs:
       - integration-tests
       - cypress-functional
       - cypress-visual
+      - war-room-notification
     # Deploy only if:
     # - Build succeeded
     # - Each test job succeeded, OR was skipped (disabled via input OR skipped as already
     #   verified on the PR). Failure or cancellation still blocks the deploy.
+    # - War-room notification succeeded (when incident-number is set), or was skipped (normal deploy)
     if: |
       always() &&
       needs.build.result == 'success' &&
       (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') &&
       (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped') &&
       (needs.cypress-functional.result == 'success' || needs.cypress-functional.result == 'skipped') &&
-      (needs.cypress-visual.result == 'success' || needs.cypress-visual.result == 'skipped')
+      (needs.cypress-visual.result == 'success' || needs.cypress-visual.result == 'skipped') &&
+      (needs.war-room-notification.result == 'success' || needs.war-room-notification.result == 'skipped')
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: ${{ inputs.deploy-timeout }}
     permissions:
@@ -751,14 +760,44 @@ jobs:
           echo "📝 Commit: ${{ github.sha }}"
           echo "📋 Workflow: frontend-deploy-workflow-v2 (v2)"
   
-  # Job 9: Slack Notifications (runs after deploy completes)
+  # Job 9: War-room notification (incident hotfix deploys only)
+  war-room-notification:
+    name: 🚨 War-room notification
+    if: inputs.incident-number != ''
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Validate incident number
+        env:
+          INCIDENT_NUMBER: ${{ inputs.incident-number }}
+        run: |
+          if [[ ! "$INCIDENT_NUMBER" =~ ^[Ii][Nn][Cc]-[0-9]+$ ]]; then
+            echo "::error::incident-number must match INC-<digits> (got: $INCIDENT_NUMBER)"
+            exit 1
+          fi
+
+      - name: Post to war-room
+        uses: slackapi/slack-github-action@v3
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_OAUTH_TOKEN }}
+          payload: |
+            {
+              "channel": "war-room",
+              "text": "🚨🚨🚨 Deployment due to incident ${{ inputs.incident-number }} of `${{ inputs.app-name }}@${{ github.sha }}` (branch `${{ github.ref_name }}`) to production by *${{ github.actor }}* (<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|logs>) <@tech-delivery-experience>",
+              "username": "Deploy Notifier"
+            }
+
+  # Job 10: Slack Notifications (runs after deploy completes)
   notify-slack:
     name: 📢 Notify Slack
     if: always() && inputs.slack-channel != '' && needs.deploy.result != 'cancelled'
     needs: [deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    
+
     steps:
       - name: Send deployment notification
         uses: Typeform/.github/shared-actions/slack-deployment-notification@v1
@@ -772,3 +811,4 @@ jobs:
           github-server-url: ${{ github.server_url }}
           github-run-id: ${{ github.run_id }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
+
