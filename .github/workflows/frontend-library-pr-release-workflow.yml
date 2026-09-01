@@ -104,7 +104,7 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@main
         with:
           node-version: ${{ inputs.node-version }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       
       - name: Run linters
         run: ${{ inputs.lint-command }}
@@ -122,8 +122,8 @@ jobs:
           contains(fromJSON(inputs.semantic-release-branches), github.ref_name)
         run: ${{ inputs.semantic-release-command }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
+          NPM_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       
       # SonarCloud Scan — REMOVED (SonarCloud has been decommissioned).
       # The `run-sonarcloud`, `sonar-project-key` inputs and `SONAR_CLOUD_TOKEN`

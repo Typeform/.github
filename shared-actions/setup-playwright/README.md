@@ -96,7 +96,7 @@ jobs:
       # 1. Setup Node and install dependencies (includes Playwright)
       - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
         with:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       
       # 2. Setup Playwright browsers (cached)
       - uses: Typeform/.github/shared-actions/setup-playwright@main

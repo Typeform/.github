@@ -341,21 +341,21 @@ jobs:
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
       - name: Run pre-build command
         if: inputs.pre-build-command != ''
         run: ${{ inputs.pre-build-command }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Clean dist directory
@@ -365,7 +365,7 @@ jobs:
         run: ${{ inputs.build-command }}
         env:
           PUBLIC_CDN_URL: ${{ inputs.cdn-url }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           JARVIS_DATADOG_LOGS_ENABLED: ${{ inputs.jarvis-datadog-enabled }}
           JARVIS_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || secrets.DATADOG_API_KEY_FRONTEND_METRICS }}
@@ -440,27 +440,27 @@ jobs:
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
       - name: Run pre-test command
         if: inputs.pre-test-command != ''
         run: ${{ inputs.pre-test-command }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Run unit tests
         run: ${{ inputs.unit-test-command }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Upload coverage
@@ -490,14 +490,14 @@ jobs:
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
       - name: Setup Playwright
@@ -508,7 +508,7 @@ jobs:
         if: inputs.pre-test-command != ''
         run: ${{ inputs.pre-test-command }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
       
       - name: Download Build Artifacts
@@ -520,7 +520,7 @@ jobs:
       - name: Run integration tests
         run: ${{ inputs.integration-test-command }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
@@ -559,7 +559,7 @@ jobs:
           wait-on-url: ${{ inputs.cypress-functional-wait-on }}
           artifact-name: 'cypress-functional-results-${{ github.run_id }}'
           artifact-retention-days: '7'
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           package-manager: ${{ inputs.package-manager }}
   
@@ -588,7 +588,7 @@ jobs:
           vrt-build-id: ${{ github.sha }}
           artifact-name: 'cypress-visual-results-${{ github.run_id }}'
           artifact-retention-days: '7'
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
@@ -621,7 +621,7 @@ jobs:
           vrt-build-id: ${{ github.sha }}
           artifact-name: "playwright-visual-results-${{ github.run_id }}"
           artifact-retention-days: "7"
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           VRT_APIURL: ${{ secrets.VRT_APIURL }}
           VRT_APIKEY: ${{ secrets.VRT_APIKEY }}
           VRT_PROJECT: ${{ secrets.VRT_PROJECT }}
@@ -666,7 +666,7 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v6
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.JENKINS_PAT_TOKEN }}
           fetch-depth: 0
       
       - name: Configure Git
@@ -681,7 +681,7 @@ jobs:
           use-asdf: ${{ inputs.use-asdf }}
           cache-mode: ${{ inputs.cache-mode }}
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
       - name: Download Build Artifacts
@@ -694,7 +694,7 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
         with:
           jarvis-branch: ${{ inputs.jarvis-branch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
       - name: AWS auth
@@ -720,7 +720,7 @@ jobs:
           # Jarvis debug logging
           DEBUG: jarvis
           # GitHub
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
           TURBO_SCM_BASE: ${{ inputs.turbo-scm-base }}
           # AWS configuration
           AWS_REGION: ${{ inputs.aws-region }}

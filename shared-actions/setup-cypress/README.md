@@ -35,7 +35,7 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
         with:
           use-asdf: true
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       
       - name: Setup Cypress
         uses: Typeform/.github/shared-actions/setup-cypress@v1

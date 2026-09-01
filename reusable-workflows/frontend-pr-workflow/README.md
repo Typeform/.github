@@ -35,7 +35,7 @@ jobs:
       cdn-url: 'https://public-assets.typeform.com/demo-app'
       jarvis-datadog-service: 'demo-app'
     secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
 ```
 
@@ -173,7 +173,7 @@ jobs:
       cdn-url: 'https://public-assets.typeform.com/demo-app'
       jarvis-datadog-service: 'demo-app'
     secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
 ```
 
 ### Full Configuration
@@ -222,7 +222,7 @@ jobs:
       integration-timeout: 20
       deploy-timeout: 10
     secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
 ```
 
@@ -245,7 +245,7 @@ jobs:
       jarvis-branch: ${{ inputs.jarvis-branch || '' }}
       # ... other inputs ...
     secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
 ```
 
 ## Project-Specific Configurations
@@ -347,7 +347,7 @@ jobs:
       app-name: 'your-app-name'
       # ... configure inputs ...
     secrets:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
 ```
 
 ### Step 3: Test on Feature Branch

@@ -17,7 +17,7 @@ Centralized Jarvis setup with support for npm, GitHub branches, and local develo
 - name: Setup Jarvis
   uses: Typeform/.github/shared-actions/setup-jarvis@main
   with:
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
 ```
 
 ### Testing (GitHub branch)
@@ -26,7 +26,7 @@ Centralized Jarvis setup with support for npm, GitHub branches, and local develo
   uses: Typeform/.github/shared-actions/setup-jarvis@main
   with:
     jarvis-branch: 'fix/deployment-timeout'
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
 ```
 
 ### Local Development (act)
@@ -123,12 +123,12 @@ jobs:
       
       - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
         with:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       
       - uses: Typeform/.github/shared-actions/setup-jarvis@main
         with:
           jarvis-branch: ${{ env.JARVIS_BRANCH }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       
       - run: yarn dist
 ```

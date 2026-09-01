@@ -62,11 +62,11 @@ jobs:
           repository: ${{ inputs.golangci-lint-config-repo }}
           ref: ${{ inputs.golangci-lint-config-repo-ref }}
           path: ${{ inputs.golangci-lint-config-repo-path }}
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.JENKINS_PAT_TOKEN }}
 
       - name: Configure git for private modules
         env:
-          TOKEN: ${{ secrets.GH_TOKEN }}
+          TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
         run: |
           git config --global url."https://${TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
           export GOPRIVATE=github.com/Typeform/*
