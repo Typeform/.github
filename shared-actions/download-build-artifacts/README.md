@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
         with:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
       
       - run: yarn dist
       

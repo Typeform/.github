@@ -22,7 +22,7 @@ Standardized Node.js setup with enhanced yarn/pnpm caching and GitHub packages r
   uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
     node-version: '20'
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
     enable-yarn-cache: 'true'
 ```
 
@@ -171,14 +171,14 @@ act pull_request -j build
 ```yaml
 - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
 ```
 
 ### pnpm Usage
 ```yaml
 - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
     package-manager: 'pnpm'
     cache-mode: 'node_modules-only'  # or 'full' for pnpm workspaces
 ```
@@ -189,14 +189,14 @@ act pull_request -j build
 - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
     node-version: '18'
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
 ```
 
 ### Cache node_modules Only (Faster for Non-Workspace Repos)
 ```yaml
 - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
     cache-mode: 'node_modules-only'
 ```
 **Use when**: Your `node_modules` cache is small and you want to skip yarn install entirely on cache hit. Best for non-workspace repos like Chief where the full cache (node_modules + yarn cache) is large.
@@ -205,7 +205,7 @@ act pull_request -j build
 ```yaml
 - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
     cache-mode: 'yarn-cache-only'
 ```
 **Use when**: You expect frequent cache misses or want to reduce cache restore time. Yarn install will run every time but will be faster because tarballs are cached.
@@ -214,7 +214,7 @@ act pull_request -j build
 ```yaml
 - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
     disable-restore-keys: 'true'
 ```
 **Use when**: You want to avoid restoring large stale caches. Only exact cache key matches will be restored.
@@ -223,7 +223,7 @@ act pull_request -j build
 ```yaml
 - uses: Typeform/.github/shared-actions/setup-node-with-cache@main
   with:
-    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
     enable-yarn-cache: 'false'
 ```
 

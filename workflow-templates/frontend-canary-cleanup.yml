@@ -29,10 +29,10 @@ jobs:
 
       - name: Set GitHub packages registry
         run: |
-          npm config set '//npm.pkg.github.com/:_authToken' ${{ secrets.GH_TOKEN }}
+          npm config set '//npm.pkg.github.com/:_authToken' ${{ secrets.JENKINS_PAT_TOKEN }}
           npm config set @typeform:registry https://npm.pkg.github.com/
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
 
       - name: Install jarvis
         run: npm install @typeform/jarvis
