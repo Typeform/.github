@@ -56,18 +56,21 @@ jobs:
 | Input | Description | Default |
 |-------|-------------|---------|
 | `node-version` | Node.js version | `'20'` |
-| `runner` | Runner for build/deploy jobs | `'[ci-universal-scale-set]'` |
-| `e2e-runner` | Runner for E2E/integration tests | `'[ci-e2e-scale-set]'` |
+| `runner` | Runner for build/deploy jobs (JSON array) | `'["ci-universal-scale-set"]'` |
+| `e2e-runner` | Runner for E2E/integration tests (JSON array) | `'["ci-e2e-scale-set"]'` |
 | `build-command` | Build command | `'yarn dist:preview'` |
 | `clean-command` | Clean command before build | `'yarn clean'` |
 | `run-unit-tests` | Run unit tests | `false` |
 | `unit-test-command` | Unit test command | `'yarn test:unit:coverage'` |
+| `coverage-path` | Coverage directory to upload. Newline-separated globs are supported for monorepos (e.g. `packages/*/coverage`) | `'coverage/'` |
+| `coverage-report` | Post a sticky PR comment with one row per `coverage-summary.json` under `coverage-path`. Needs the `json-summary` coverage reporter and `pull-requests: write` granted by the caller. Never fails the job | `false` |
 | `run-integration-tests` | Run integration tests | `false` |
 | `integration-test-command` | Integration test command | `'yarn test:integration'` |
 | `run-deep-purple` | Run Deep Purple E2E tests | `false` |
 | `deploy-preview` | Deploy preview environment | `true` |
 | `deploy-command` | Deploy command | `'yarn deploy:preview'` |
 | `turbo-scm-base` | Git SHA for Turbo SCM base comparison (enables `--affected` flag for Turbo monorepos). Sets `TURBO_SCM_BASE` env var on all command steps. | `''` |
+| `turbo-cache` | Share the Turbo task cache across jobs and runs through the GitHub Actions cache ([rharkor/caching-for-turbo](https://github.com/rharkor/caching-for-turbo)). Unchanged packages replay cached outputs instead of re-running | `false` |
 | `jarvis-branch` | Jarvis branch to use | `''` |
 | `jarvis-datadog-enabled` | Enable Jarvis Datadog logging | `true` |
 | `jarvis-datadog-env` | Datadog environment | `'staging'` |
@@ -98,7 +101,8 @@ jobs:
 ### 2. Unit Tests (🧪)
 - Downloads dependencies (cached)
 - Runs unit tests
-- Uploads coverage
+- Uploads coverage (`coverage-path`)
+- Optionally posts a coverage PR comment (`coverage-report`)
 
 **Runs on**: `runner`  
 **Timeout**: `test-timeout` (default: 10 min)  
@@ -187,8 +191,8 @@ jobs:
       node-version: '20'
       
       # Runners
-      runner: '[ci-universal-scale-set]'
-      e2e-runner: '[ci-e2e-scale-set]'
+      runner: '["ci-universal-scale-set"]'
+      e2e-runner: '["ci-e2e-scale-set"]'
       
       # Build
       build-command: 'yarn dist:preview'
@@ -274,8 +278,23 @@ with:
 with:
   app-name: 'bob-the-builder'
   build-command: 'yarn turbo run build'
-  runner: '[ci-bob-the-builder-release-scale-set]'  # Custom runner
+  runner: '["ci-bob-the-builder-release-scale-set"]'  # Custom runner
   run-unit-tests: true
+```
+
+### Turbo monorepo with cached, per-package coverage
+Unchanged packages replay from the Turbo cache (including `coverage/`), so only changed ones run.
+Also trigger on `push` to `main` so PRs have a cache to restore from, and grant
+`pull-requests: write` for the comment.
+
+```yaml
+with:
+  turbo-cache: true
+  unit-test-command: 'pnpm turbo run test:coverage'
+  coverage-path: |
+    packages/*/coverage
+    apps/*/coverage
+  coverage-report: true
 ```
 
 ### performance-analytics (Turbo monorepo with --affected)
