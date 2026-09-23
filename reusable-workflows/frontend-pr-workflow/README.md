@@ -62,12 +62,15 @@ jobs:
 | `clean-command` | Clean command before build | `'yarn clean'` |
 | `run-unit-tests` | Run unit tests | `false` |
 | `unit-test-command` | Unit test command | `'yarn test:unit:coverage'` |
+| `coverage-path` | Coverage directory to upload. Newline-separated globs are supported for monorepos (e.g. `packages/*/coverage`) | `'coverage/'` |
+| `coverage-report` | Sticky PR comment with one row per `coverage-summary.json` under `coverage-path`: `off`, `always`, or `on-failure` (created only when unit tests fail, then kept updated so a fix shows ✅). Needs the `json-summary` coverage reporter and `pull-requests: write` granted by the caller. Never fails the job | `'off'` |
 | `run-integration-tests` | Run integration tests | `false` |
 | `integration-test-command` | Integration test command | `'yarn test:integration'` |
 | `run-deep-purple` | Run Deep Purple E2E tests | `false` |
 | `deploy-preview` | Deploy preview environment | `true` |
 | `deploy-command` | Deploy command | `'yarn deploy:preview'` |
 | `turbo-scm-base` | Git SHA for Turbo SCM base comparison (enables `--affected` flag for Turbo monorepos). Sets `TURBO_SCM_BASE` env var on all command steps. | `''` |
+| `turbo-cache` | Share the Turbo task cache across jobs and runs through the GitHub Actions cache ([rharkor/caching-for-turbo](https://github.com/rharkor/caching-for-turbo)). Unchanged packages replay cached outputs instead of re-running | `false` |
 | `jarvis-branch` | Jarvis branch to use | `''` |
 | `jarvis-datadog-enabled` | Enable Jarvis Datadog logging | `true` |
 | `jarvis-datadog-env` | Datadog environment | `'staging'` |
@@ -98,7 +101,8 @@ jobs:
 ### 2. Unit Tests (🧪)
 - Downloads dependencies (cached)
 - Runs unit tests
-- Uploads coverage
+- Uploads coverage (`coverage-path`)
+- Optionally builds a coverage PR comment (`coverage-report`), posted by the 📊 Coverage Comment job
 
 **Runs on**: `runner`  
 **Timeout**: `test-timeout` (default: 10 min)  
@@ -276,6 +280,21 @@ with:
   build-command: 'yarn turbo run build'
   runner: '["ci-bob-the-builder-release-scale-set"]'  # Custom runner
   run-unit-tests: true
+```
+
+### Turbo monorepo with cached, per-package coverage
+Unchanged packages replay from the Turbo cache (including `coverage/`), so only changed ones run.
+Also trigger on `push` to `main` so PRs have a cache to restore from, and grant
+`pull-requests: write` for the comment.
+
+```yaml
+with:
+  turbo-cache: true
+  unit-test-command: 'pnpm turbo run test:coverage'
+  coverage-path: |
+    packages/*/coverage
+    apps/*/coverage
+  coverage-report: on-failure
 ```
 
 ### performance-analytics (Turbo monorepo with --affected)
