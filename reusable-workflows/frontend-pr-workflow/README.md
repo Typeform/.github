@@ -102,7 +102,7 @@ jobs:
 - Downloads dependencies (cached)
 - Runs unit tests
 - Uploads coverage (`coverage-path`)
-- Optionally posts a coverage PR comment (`coverage-report`)
+- Optionally builds a coverage PR comment (`coverage-report`), posted by the 📊 Coverage Comment job
 
 **Runs on**: `runner`  
 **Timeout**: `test-timeout` (default: 10 min)  

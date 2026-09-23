@@ -406,6 +406,8 @@ jobs:
     if: inputs.run-unit-tests
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: ${{ inputs.test-timeout }}
+    outputs:
+      coverage-comment: ${{ steps.coverage-comment.outputs.result }}
     
     steps:
       - name: Check out Git repository
@@ -454,7 +456,9 @@ jobs:
           retention-days: 7
 
       # Reporting only; never fails the job. Thresholds are enforced by the test command.
-      - name: Report coverage
+      # Builds the comment body; the coverage-comment job posts it.
+      - name: Build coverage comment
+        id: coverage-comment
         if: always() && inputs.coverage-report && github.event_name == 'pull_request'
         continue-on-error: true
         uses: actions/github-script@v9
@@ -462,6 +466,7 @@ jobs:
           APP_NAME: ${{ inputs.app-name }}
           COVERAGE_PATH: ${{ inputs.coverage-path }}
         with:
+          result-encoding: string
           script: |
             const fs = require('fs');
             const path = require('path');
@@ -480,17 +485,36 @@ jobs:
               const { total } = JSON.parse(fs.readFileSync(file, 'utf8'));
               return `| ${label(file)} | ${pct(total.lines)} | ${pct(total.statements)} | ${pct(total.functions)} | ${pct(total.branches)} |`;
             });
-            const body = [
+            return [
               marker,
               '### Coverage',
               '| Package | Lines | Statements | Functions | Branches |',
               '|---|---|---|---|---|',
               ...rows,
             ].join('\n');
-
+  
+  # Separate job so only it gets pull-requests: write; the workflow-level
+  # permissions above don't include it, and unit-tests shouldn't need it.
+  coverage-comment:
+    name: 📊 Coverage Comment
+    needs: unit-tests
+    if: always() && needs.unit-tests.outputs.coverage-comment != ''
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      pull-requests: write
+    
+    steps:
+      - name: Post coverage comment
+        uses: actions/github-script@v9
+        env:
+          BODY: ${{ needs.unit-tests.outputs.coverage-comment }}
+        with:
+          script: |
+            const body = process.env.BODY;
+            const marker = body.split('\n')[0];
             const issue = { ...context.repo, issue_number: context.issue.number };
             const comments = await github.paginate(github.rest.issues.listComments, issue);
-            const existing = comments.find((c) => c.body?.includes(marker));
+            const existing = comments.find((c) => c.body?.startsWith(marker));
             if (existing) {
               await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
             } else {
