@@ -99,6 +99,14 @@ on:
         description: 'Unit test command'
         type: string
         default: 'yarn test:unit:coverage'
+      coverage-path:
+        description: 'Coverage directory to upload. Newline-separated globs are supported for monorepos (e.g. packages/*/coverage)'
+        type: string
+        default: 'coverage/'
+      coverage-report:
+        description: 'Sticky PR comment with one row per coverage-summary.json under coverage-path: off, always, or on-failure (created only when unit tests fail, then kept updated). Needs the json-summary reporter, and pull-requests: write granted by the caller'
+        type: string
+        default: 'off'
       
       run-integration-tests:
         description: 'Run integration tests'
@@ -255,6 +263,10 @@ on:
         description: 'Git SHA for Turbo SCM base comparison (enables --affected flag for Turbo monorepos)'
         type: string
         default: ''
+      turbo-cache:
+        description: 'Share the Turbo task cache across jobs and runs through the GitHub Actions cache. Unchanged packages replay their cached outputs (e.g. coverage/) instead of re-running'
+        type: boolean
+        default: false
       
       # Timeout configuration
       build-timeout:
@@ -337,6 +349,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
+      - name: Setup Turbo cache
+        if: inputs.turbo-cache
+        uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
+
       # Runs before linting AND build so that generated files (e.g. GraphQL
       # codegen) are available for both TypeScript-aware lint rules and
       # build tools like fork-ts-checker-webpack-plugin.
@@ -390,6 +406,8 @@ jobs:
     if: inputs.run-unit-tests
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: ${{ inputs.test-timeout }}
+    outputs:
+      coverage-comment: ${{ steps.coverage-comment.outputs.result }}
     
     steps:
       - name: Check out Git repository
@@ -412,6 +430,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
       
+      - name: Setup Turbo cache
+        if: inputs.turbo-cache
+        uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
+
       - name: Run pre-test command
         if: inputs.pre-test-command != ''
         run: ${{ inputs.pre-test-command }}
@@ -430,8 +452,80 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: coverage-${{ github.run_id }}
-          path: coverage/
+          path: ${{ inputs.coverage-path }}
           retention-days: 7
+
+      # Reporting only; never fails the job. Thresholds are enforced by the test command.
+      # Builds the comment body; the coverage-comment job posts it.
+      - name: Build coverage comment
+        id: coverage-comment
+        if: always() && inputs.coverage-report != 'off' && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          APP_NAME: ${{ inputs.app-name }}
+          COVERAGE_PATH: ${{ inputs.coverage-path }}
+        with:
+          result-encoding: string
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const cwd = process.cwd();
+            const marker = `<!-- frontend-pr-workflow:coverage:${process.env.APP_NAME} -->`;
+
+            const patterns = process.env.COVERAGE_PATH.split('\n').map((p) => p.trim()).filter(Boolean)
+              .map((p) => path.posix.join(p, 'coverage-summary.json'));
+            const files = (await (await glob.create(patterns.join('\n'))).glob()).sort();
+
+            // packages/hooks/coverage/coverage-summary.json -> packages/hooks
+            const label = (file) => path.relative(cwd, path.dirname(path.dirname(file)));
+            const pct = ({ pct }) => (typeof pct === 'number' ? `${pct}%` : '–');
+
+            const rows = files.map((file) => {
+              const { total } = JSON.parse(fs.readFileSync(file, 'utf8'));
+              return `| ${label(file)} | ${pct(total.lines)} | ${pct(total.statements)} | ${pct(total.functions)} | ${pct(total.branches)} |`;
+            });
+            return [
+              marker,
+              '### Coverage',
+              '| Package | Lines | Statements | Functions | Branches |',
+              '|---|---|---|---|---|',
+              ...rows,
+            ].join('\n');
+  
+  # Separate job so only it gets pull-requests: write; the workflow-level
+  # permissions above don't include it, and unit-tests shouldn't need it.
+  coverage-comment:
+    name: 📊 Coverage Comment
+    needs: unit-tests
+    if: always() && needs.unit-tests.outputs.coverage-comment != ''
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      pull-requests: write
+    
+    steps:
+      - name: Post coverage comment
+        uses: actions/github-script@v9
+        env:
+          BODY: ${{ needs.unit-tests.outputs.coverage-comment }}
+          MODE: ${{ inputs.coverage-report }}
+          PASSED: ${{ needs.unit-tests.result == 'success' }}
+        with:
+          script: |
+            const passed = process.env.PASSED === 'true';
+            const [marker, ...table] = process.env.BODY.split('\n');
+            const status = passed ? '✅ Unit tests passed' : '❌ Unit tests failed: a test or a coverage threshold, see the 🧪 Unit Tests log';
+            const body = [marker, status, ...table].join('\n');
+            const issue = { ...context.repo, issue_number: context.issue.number };
+            const comments = await github.paginate(github.rest.issues.listComments, issue);
+            const existing = comments.find((c) => c.body?.startsWith(marker));
+            // on-failure: stay quiet on green PRs, but keep an existing comment current so a fix shows ✅
+            if (!existing && passed && process.env.MODE === 'on-failure') return;
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...issue, body });
+            }
   
   # Job 3: Integration Tests (parallel with unit tests)
   integration-tests:
