@@ -56,8 +56,8 @@ jobs:
 | Input | Description | Default |
 |-------|-------------|---------|
 | `node-version` | Node.js version | `'20'` |
-| `runner` | Runner for build/deploy jobs | `'[ci-universal-scale-set]'` |
-| `e2e-runner` | Runner for E2E/integration tests | `'[ci-e2e-scale-set]'` |
+| `runner` | Runner for build/deploy jobs | `'["ci-universal-scale-set"]'` |
+| `e2e-runner` | Runner for E2E/integration tests | `'["ci-e2e-scale-set"]'` |
 | `build-command` | Build command | `'yarn dist:preview'` |
 | `clean-command` | Clean command before build | `'yarn clean'` |
 | `run-unit-tests` | Run unit tests | `false` |
@@ -187,8 +187,8 @@ jobs:
       node-version: '20'
       
       # Runners
-      runner: '[ci-universal-scale-set]'
-      e2e-runner: '[ci-e2e-scale-set]'
+      runner: '["ci-universal-scale-set"]'
+      e2e-runner: '["ci-e2e-scale-set"]'
       
       # Build
       build-command: 'yarn dist:preview'
@@ -274,7 +274,7 @@ with:
 with:
   app-name: 'bob-the-builder'
   build-command: 'yarn turbo run build'
-  runner: '[ci-bob-the-builder-release-scale-set]'  # Custom runner
+  runner: '["ci-bob-the-builder-release-scale-set"]'  # Custom runner
   run-unit-tests: true
 ```
 
