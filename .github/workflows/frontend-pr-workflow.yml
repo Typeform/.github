@@ -136,6 +136,10 @@ on:
         description: 'Run Deep Purple E2E tests'
         type: boolean
         default: false
+      deep-purple-apps:
+        description: 'JSON array of app names for Deep Purple; defaults to app-name'
+        type: string
+        default: ''
       
       # Cypress configuration
       run-cypress-functional:
@@ -599,15 +603,18 @@ jobs:
   
   # Job 7: Deep Purple E2E Tests
   deep-purple:
-    name: 🔮 Deep Purple E2E
+    name: 🔮 Deep Purple E2E (${{ matrix.app }})
     if: inputs.run-deep-purple
     needs: deploy-preview
+    strategy:
+      matrix:
+        app: ${{ fromJSON(inputs.deep-purple-apps != '' && inputs.deep-purple-apps || format('["{0}"]', inputs.app-name)) }}
     permissions:
       pull-requests: write
       contents: read
     uses: Typeform/.github/.github/workflows/deep-purple-checks.yml@v1
     with:
-      app: ${{ inputs.app-name }}
+      app: ${{ matrix.app }}
     secrets:
       JENKINS_OKTA_USERNAME: ${{ secrets.JENKINS_OKTA_USERNAME }}
       JENKINS_USER_TOKEN: ${{ secrets.JENKINS_USER_TOKEN }}
