@@ -45,6 +45,10 @@ on:
         type: string
         required: false
         default: "lint-config"
+      cache:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   lint:
@@ -76,21 +80,21 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{ inputs.go-version }}
-          cache: false
+          cache: ${{ inputs.cache }}
 
       - name: Setup Go (provided only go-version-file input)
         if: "${{ inputs.go-version == '' && inputs.go-version-file != '' }}"
         uses: actions/setup-go@v6
         with:
           go-version-file: ${{ inputs.go-version-file }}
-          cache: false
+          cache: ${{ inputs.cache }}
 
       - name: Setup Go (provided neither go-version-file nor go-version input)
         if: "${{ inputs.go-version == '' && inputs.go-version-file == '' }}"
         uses: actions/setup-go@v6
         with:
           go-version: "stable"
-          cache: false
+          cache: ${{ inputs.cache }}
 
       - name: golangci-lint
         id: runlint
