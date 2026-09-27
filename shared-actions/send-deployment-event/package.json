@@ -7,11 +7,15 @@
   "license": "NOLICENSE",
   "private": false,
   "dependencies": {
+    "@actions/core": "3.0.1",
     "analytics-node": "6.2.0",
-    "@actions/core": "3.0.1"
+    "axios": "^1.18.0"
   },
   "devDependencies": {
     "@vercel/ncc": "0.44.0"
+  },
+  "resolutions": {
+    "axios": "^1.18.0"
   },
   "scripts": {
     "distribute": "yarn ncc build deployment-frequency-event.js && rm -f dist/package.json",
