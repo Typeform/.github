@@ -181,13 +181,26 @@ runs:
 
         echo "key-suffix=-$CACHE_MODE" >> $GITHUB_OUTPUT
     
+    # Hash once, before the cache restore. After node_modules is restored, '**/package.json'
+    # also matches every package.json inside it: re-hashing then takes seconds per call and
+    # yields a different key than the one the cache was restored with.
+    - name: Compute dependency cache hash
+      id: dep-hash
+      shell: bash
+      env:
+        YARN_HASH: ${{ hashFiles('**/yarn.lock', '**/package.json') }}
+        PNPM_HASH: ${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}
+      run: |
+        echo "yarn=$YARN_HASH" >> $GITHUB_OUTPUT
+        echo "pnpm=$PNPM_HASH" >> $GITHUB_OUTPUT
+
     - name: Get yarn cache
       if: ${{ !env.ACT && inputs.package-manager != 'pnpm' }}
       uses: actions/cache@v6
       id: yarn-cache
       with:
         path: ${{ steps.cache-paths.outputs.paths }}
-        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}${{ steps.cache-paths.outputs.key-suffix }}
+        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ steps.dep-hash.outputs.yarn }}${{ steps.cache-paths.outputs.key-suffix }}
         restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-yarn-', runner.os, runner.arch) || '' }}
     
     - name: Get pnpm cache
@@ -196,7 +209,7 @@ runs:
       id: pnpm-cache
       with:
         path: ${{ steps.cache-paths-pnpm.outputs.paths }}
-        key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}${{ steps.cache-paths-pnpm.outputs.key-suffix }}
+        key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ steps.dep-hash.outputs.pnpm }}${{ steps.cache-paths-pnpm.outputs.key-suffix }}
         restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-pnpm-', runner.os, runner.arch) || '' }}
 
     - name: Debug cache contents
@@ -210,9 +223,9 @@ runs:
 
         echo "=== 🔍 Cache Debug Info ==="
         if [ "$PM" == "pnpm" ]; then
-          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}"
+          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ steps.dep-hash.outputs.pnpm }}"
         else
-          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ steps.dep-hash.outputs.yarn }}"
         fi
         echo ""
     
@@ -414,11 +427,11 @@ runs:
 
         if [ "$PM" == "pnpm" ]; then
           CACHE_HIT="${{ steps.pnpm-cache.outputs.cache-hit }}"
-          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}"
+          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-pnpm-${{ steps.dep-hash.outputs.pnpm }}"
           INSTALL_CMD="pnpm install"
         else
           CACHE_HIT="${{ steps.yarn-cache.outputs.cache-hit }}"
-          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
+          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-yarn-${{ steps.dep-hash.outputs.yarn }}"
           INSTALL_CMD="yarn install"
         fi
 
