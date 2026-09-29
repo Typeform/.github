@@ -38,10 +38,10 @@
     component-type "^1.2.1"
     join-component "^1.1.0"
 
-"@vercel/ncc@0.44.0":
-  version "0.44.0"
-  resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.44.0.tgz#636984de122de042dc9c2b8ac571237f64958e37"
-  integrity sha512-pHyI+bZokSgIscTKFSmpNk5vZzmOrb9RW0Vu4SRyqUvkJ0kgg3PzaZLLDVTFXhbUiCqg0/Eu8L4fKtgViA92kg==
+"@vercel/ncc@0.45.0":
+  version "0.45.0"
+  resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.45.0.tgz#e1e2424d9eb0dbb3a8fa7067e36e0da96d42a316"
+  integrity sha512-8zPi1yO2mHpoKTD+e+Bf0ZT3e+sWHSOyGapm9s7b5R0gxJi3CiFTqmeQiMEyu6ejrz2s09M8JkEoUaTWjBJPQQ==
 
 analytics-node@6.2.0:
   version "6.2.0"
