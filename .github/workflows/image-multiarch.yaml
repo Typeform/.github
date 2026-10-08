@@ -51,6 +51,11 @@ on:
         type: string
         required: false
         default: "ci-base-scale-set"
+      codeartifact:
+        description: "Pass an AWS CodeArtifact token to the build as the CODEARTIFACT_TOKEN secret"
+        type: boolean
+        required: false
+        default: false
 env:
   VERSION_PREFIX: ''
   VERSION_LATEST: latest
@@ -61,6 +66,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Get CodeArtifact token
+        id: codeartifact
+        if: ${{ inputs.codeartifact }}
+        uses: Typeform/.github/shared-actions/codeartifact-token@v1
+        with:
+          export-env: "false"
       - name: Set up QEMU
         if: ${{ contains(inputs.platforms, ',') }}
         uses: docker/setup-qemu-action@v4
@@ -89,7 +100,9 @@ jobs:
           tags: |
             ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{env.VERSION_PREFIX}}${{ inputs.version }}
             ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{env.VERSION_PREFIX}}${{ github.sha }}
-          secrets: ${{ secrets.build-secrets }}
+          secrets: |
+            ${{ secrets.build-secrets }}
+            ${{ inputs.codeartifact && format('CODEARTIFACT_TOKEN={0}', steps.codeartifact.outputs.token) || '' }}
           file: ${{ inputs.file }}
       - name: Set configured prefix on latest tag
         if: ${{ inputs.prefix != '' }}
@@ -105,5 +118,7 @@ jobs:
           push: true
           tags: |
             ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{ env.VERSION_LATEST }}
-          secrets: ${{ secrets.build-secrets }}
+          secrets: |
+            ${{ secrets.build-secrets }}
+            ${{ inputs.codeartifact && format('CODEARTIFACT_TOKEN={0}', steps.codeartifact.outputs.token) || '' }}
           file: ${{ inputs.file }}

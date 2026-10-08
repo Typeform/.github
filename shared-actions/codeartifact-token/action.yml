@@ -1,0 +1,75 @@
+name: 'CodeArtifact token'
+description: 'Get an AWS CodeArtifact authorization token using the job AWS credentials, without the aws CLI'
+inputs:
+  domain:
+    description: 'CodeArtifact domain'
+    required: false
+    default: 'typeform'
+  domain-owner:
+    description: 'AWS account ID that owns the domain'
+    required: false
+    default: '567716553783'
+  region:
+    description: 'AWS region of the domain'
+    required: false
+    default: 'us-east-1'
+  repository:
+    description: 'PyPI repository used for the index URL outputs and env vars'
+    required: false
+    default: 'pypi'
+  duration-seconds:
+    description: 'Token lifetime in seconds (900-43200)'
+    required: false
+    default: '3600'
+  export-env:
+    description: 'Export CODEARTIFACT_TOKEN, PIP_INDEX_URL and UV_INDEX_URL to later steps'
+    required: false
+    default: 'true'
+
+outputs:
+  token:
+    description: 'CodeArtifact authorization token (masked)'
+    value: ${{ steps.token.outputs.token }}
+  pypi-index-url:
+    description: 'PyPI simple index URL of the repository, without credentials'
+    value: ${{ steps.token.outputs.pypi-index-url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v6
+    - name: Get CodeArtifact token
+      id: token
+      shell: bash
+      env:
+        CA_DOMAIN: ${{ inputs.domain }}
+        CA_OWNER: ${{ inputs.domain-owner }}
+        CA_REGION: ${{ inputs.region }}
+        CA_REPOSITORY: ${{ inputs.repository }}
+        CA_DURATION: ${{ inputs.duration-seconds }}
+        CA_EXPORT_ENV: ${{ inputs.export-env }}
+      run: |
+        set -euo pipefail
+        token=$(uv run --no-project --quiet --with 'boto3>=1.34' python -c '
+        import os, boto3
+        print(boto3.client("codeartifact", region_name=os.environ["CA_REGION"]).get_authorization_token(
+            domain=os.environ["CA_DOMAIN"],
+            domainOwner=os.environ["CA_OWNER"],
+            durationSeconds=int(os.environ["CA_DURATION"]),
+        )["authorizationToken"])
+        ')
+        echo "::add-mask::${token}"
+        host="${CA_DOMAIN}-${CA_OWNER}.d.codeartifact.${CA_REGION}.amazonaws.com"
+        path="pypi/${CA_REPOSITORY}/simple/"
+        {
+          echo "token=${token}"
+          echo "pypi-index-url=https://${host}/${path}"
+        } >> "$GITHUB_OUTPUT"
+        if [ "${CA_EXPORT_ENV}" = "true" ]; then
+          {
+            echo "CODEARTIFACT_TOKEN=${token}"
+            echo "PIP_INDEX_URL=https://aws:${token}@${host}/${path}"
+            echo "UV_INDEX_URL=https://aws:${token}@${host}/${path}"
+          } >> "$GITHUB_ENV"
+        fi
