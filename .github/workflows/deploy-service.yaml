@@ -1,0 +1,54 @@
+name: Deploy service
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        description: "Name of the service to deploy"
+        type: string
+        required: true
+      version:
+        description: "Version to deploy (commit SHA, tag, etc.). Defaults to the commit SHA if not provided."
+        type: string
+        required: false
+      pre-prod-checks:
+        description: "Enable pre-production checks"
+        type: string
+        required: false
+        default: "true"
+      runner:
+        description: "Self-hosted GHA runner"
+        type: string
+        required: false
+        default: "ci-base"
+      timeout-minutes:
+        description: "Timeout in minutes for the deployment job"
+        type: number
+        required: false
+        default: 45
+    secrets:
+      JENKINS_OKTA_USERNAME:
+        description: "Jenkins OKTA username for triggering deployments"
+        required: true
+      JENKINS_USER_TOKEN:
+        description: "Jenkins user token for authentication"
+        required: true
+
+concurrency:
+  group: deploy-${{ inputs.service-name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy service
+    runs-on: [self-hosted, "${{ inputs.runner }}"]
+    steps:
+      - name: Trigger deployment and wait for the result
+        timeout-minutes: ${{ inputs.timeout-minutes }}
+        uses: Typeform/jenkins-job-result-checker-action@v3
+        with:
+          VERSION: ${{ inputs.version || github.sha }}
+          JENKINS_OKTA_USERNAME: ${{ secrets.JENKINS_OKTA_USERNAME }}
+          JENKINS_USER_TOKEN: ${{ secrets.JENKINS_USER_TOKEN }}
+          SERVICE_NAME: ${{ inputs.service-name }}
+          PRE_PROD_CHECKS: ${{ inputs.pre-prod-checks }}
