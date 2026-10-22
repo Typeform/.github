@@ -48,7 +48,6 @@ on:
 
 jobs:
   lint:
-    if: ${{ !contains('Bot', github.event.pull_request.user.type) }}
     name: Run linter
     runs-on: 'ubuntu-latest'
 
