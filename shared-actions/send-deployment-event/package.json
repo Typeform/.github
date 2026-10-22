@@ -13,6 +13,9 @@
   "devDependencies": {
     "@vercel/ncc": "0.44.0"
   },
+  "resolutions": {
+    "uuid": "11.1.1"
+  },
   "scripts": {
     "distribute": "yarn ncc build deployment-frequency-event.js && rm -f dist/package.json",
     "send-deployment-event": "node deployment-frequency-event.js"
