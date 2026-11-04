@@ -1,0 +1,29 @@
+name: claude-code-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: [ci-universal-scale-set]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Review the code
+        uses: Typeform/.github-private/actions/claude-code-review@v1
+        with:
+          aws_role_arn: ${{ secrets.CLAUDE_CODE_AWS_ROLE_ARN }}
+          datadog_api_key: ${{ secrets.DATADOG_CLAUDE_GHA }}
+          output_mode: inline-with-summary
