@@ -25,6 +25,11 @@ on:
       go-version-file:
         type: string
         required: false
+      go-cache:
+        description: "Enable actions/setup-go module and build caching. Off by default to preserve existing behavior."
+        type: boolean
+        required: false
+        default: false
       golangci-lint-version:
         type: string
         required: false
@@ -75,21 +80,21 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{ inputs.go-version }}
-          cache: false
+          cache: ${{ inputs.go-cache }}
 
       - name: Setup Go (provided only go-version-file input)
         if: "${{ inputs.go-version == '' && inputs.go-version-file != '' }}"
         uses: actions/setup-go@v6
         with:
           go-version-file: ${{ inputs.go-version-file }}
-          cache: false
+          cache: ${{ inputs.go-cache }}
 
       - name: Setup Go (provided neither go-version-file nor go-version input)
         if: "${{ inputs.go-version == '' && inputs.go-version-file == '' }}"
         uses: actions/setup-go@v6
         with:
           go-version: "stable"
-          cache: false
+          cache: ${{ inputs.go-cache }}
 
       - name: golangci-lint
         id: runlint
