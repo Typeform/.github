@@ -13,6 +13,9 @@
   "devDependencies": {
     "@vercel/ncc": "0.44.0"
   },
+  "resolutions": {
+    "axios": "1.20.0"
+  },
   "scripts": {
     "distribute": "yarn ncc build deployment-frequency-event.js && rm -f dist/package.json",
     "send-deployment-event": "node deployment-frequency-event.js"
