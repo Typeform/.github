@@ -53,6 +53,8 @@ on:
 
 jobs:
   lint:
+    # Dependabot runs get a read-only GITHUB_TOKEN, which can't publish the lint comment.
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: Run linter
     runs-on: 'ubuntu-latest'
 
