@@ -100,6 +100,13 @@ jobs:
         with:
           fetch-depth: 0  # Required for semantic-release
       
+      - name: Debug reusable workflow inputs
+        shell: bash
+        run: |
+          echo "DEBUG inputs.package-manager=${{ inputs.package-manager }}"
+          echo "DEBUG github.workflow_sha=${{ github.workflow_sha }}"
+          echo "DEBUG github.workflow_ref=${{ github.workflow_ref }}"
+
       - name: Setup Node with Cache
         uses: Typeform/.github/shared-actions/setup-node-with-cache@main
         with:
