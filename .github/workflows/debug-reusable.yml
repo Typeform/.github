@@ -1,7 +1,9 @@
 name: Debug reusable workflow
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - chore/debug-reusable-workflow-inputs
 
 jobs:
   debug:
