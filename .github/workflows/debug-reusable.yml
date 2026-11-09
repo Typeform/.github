@@ -1,0 +1,16 @@
+name: Debug reusable workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    uses: ./.github/workflows/frontend-library-pr-release-workflow.yml
+    with:
+      node-version: '22'
+      package-manager: 'pnpm'
+      lint-command: 'true'
+      test-command: 'true'
+      run-semantic-release: false
+    secrets:
+      GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
