@@ -104,6 +104,7 @@ jobs:
         uses: Typeform/.github/shared-actions/setup-node-with-cache@main
         with:
           node-version: ${{ inputs.node-version }}
+          package-manager: ${{ inputs.package-manager }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Run linters
