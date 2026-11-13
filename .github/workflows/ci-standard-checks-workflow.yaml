@@ -26,13 +26,10 @@ on:
 
 jobs:
   ci-standard-checks:
-    # The action skips every check on Dependabot PRs (BOT_USERS in Typeform/ci-standard-checks),
-    # so don't take a runner for them. A skipped job still satisfies a required check.
+    # Must stay a job-level skip: a skipped job passes required checks, a skipped workflow stays pending.
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]') }}
     runs-on: [ "${{ inputs.runner }}" ]
-    # A newer pull_request event on the same PR supersedes the run in progress. Events without a PR (push,
-    # merge_group) get a group of their own, so they are never cancelled or queued. Keep the
-    # prefix different from any group a caller sets: an equal group cancels the caller's run.
+    # The prefix must differ from any group a caller sets: an equal group cancels the caller's run.
     concurrency:
       group: reusable-ci-standard-checks-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -42,8 +39,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
-        # Only validate-openapi needs node (npx), and only for the openapi.yaml files it looks for
-        # (find -maxdepth 3). The runner image has no node on PATH.
+        # The runner image has no node on PATH; validate-openapi needs npx (it finds openapi.yaml with -maxdepth 3).
         if: ${{ hashFiles('openapi.yaml', '*/openapi.yaml', '*/*/openapi.yaml') != '' }}
         with:
           node-version: 20
