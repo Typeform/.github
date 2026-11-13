@@ -9,6 +9,8 @@ Standardized Node.js setup with enhanced yarn/pnpm caching and GitHub packages r
 - ✅ Multi-layer caching (node_modules + yarn global cache / pnpm store)
 - ✅ Architecture-specific cache keys (ARM/x86)
 - ✅ Restore-keys for fallback caching (85%+ hit rate)
+- ✅ **Cache key ignores version bumps** — changesets releases keep hitting the cache
+- ✅ **Save policy** (`save-cache`) — keep multi-GB cache saves off the PR critical path
 - ✅ GitHub packages registry configuration
 - ✅ Automatic dependency installation on cache miss
 - ✅ **Cache integrity verification** to prevent stale cache issues
@@ -26,6 +28,32 @@ Standardized Node.js setup with enhanced yarn/pnpm caching and GitHub packages r
     enable-yarn-cache: 'true'
 ```
 
+### Recommended: save on main, restore on PRs
+
+Saving a large `node_modules` cache takes minutes (6–13 min for bob-the-builder's ~3 GB
+archive) and, on a miss, every job that runs this action pays it on its critical path.
+Caches saved on a PR are scoped to that PR and nothing else can read them. Caches saved on
+the default branch can be read by every PR and merge queue. So save once on main and
+restore everywhere else:
+
+```yaml
+# Workflow on push to main (deploy, release, or a dedicated cache-warming job)
+- uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+  with:
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
+    save-cache: 'default-branch'
+
+# PR jobs that run in parallel or after another job (tests, lint, e2e, deploy preview)
+- uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+  with:
+    GH_TOKEN: ${{ secrets.JENKINS_PAT_TOKEN }}
+    save-cache: 'never'
+```
+
+Use `save-cache: 'default-branch'` everywhere if the repo runs this action on every push to
+the default branch. A PR that changes dependencies then installs for itself until it merges,
+and pays no save cost. Leave the default (`auto`) if the repo never runs it on the default branch.
+
 ## Inputs
 
 | Input | Description | Required | Default |
@@ -37,12 +65,18 @@ Standardized Node.js setup with enhanced yarn/pnpm caching and GitHub packages r
 | `enable-yarn-cache` | Enable yarn global cache (~/.cache/yarn) | No | `'true'` |
 | `cache-mode` | Cache strategy: `full`, `node_modules-only`, `yarn-cache-only`, or `pnpm-store-only` | No | `'full'` |
 | `disable-restore-keys` | Disable restore-keys to avoid restoring stale caches | No | `'false'` |
+| `save-cache` | When to save the cache after a miss: `auto`, `default-branch`, `never` or `always` (see [Saving the cache](#saving-the-cache)) | No | `'auto'` |
+| `cache-key-strategy` | `dependencies` (lockfile + dependency fields of each `package.json`) or `legacy` (`hashFiles` of lockfile + every `package.json`) | No | `'dependencies'` |
 
 **📖 Need help choosing the right cache mode?** See the [Cache Strategy Guide](./CACHE-STRATEGY-GUIDE.md) for detailed recommendations.
 
 ## Outputs
 
-None
+| Output | Description |
+|--------|-------------|
+| `cache-hit` | `'true'` when `node_modules` was restored from an exact key match |
+| `cache-key` | Primary key of the dependency cache |
+| `cache-matched-key` | Key of the cache that was restored (exact or restore-key match), empty on a cold miss |
 
 ## What It Does
 
@@ -55,14 +89,15 @@ None
    - `~/.cache/yarn` - Yarn global cache (yarn) / `~/.local/share/pnpm/store` - pnpm store
    - `~/.asdf/installs` - asdf tool installations (when using asdf)
 6. **Uses restore-keys** for fallback caching when exact match not found
-7. **Verifies cache integrity** on cache hit:
+7. **Saves the cache after a miss** only where `save-cache` allows it (default: the default branch, or a cold miss)
+8. **Verifies cache integrity** on cache hit:
    - Checks if `node_modules/` exists and has content
    - Validates `.yarn-integrity` (yarn) / `.modules.yaml` (pnpm) file presence
    - Verifies workspace packages have `node_modules/`
    - Forces fresh install if cache is incomplete or corrupted
-8. **Logs cache status** with detailed debug information
-9. **Installs dependencies** automatically on cache miss or verification failure
-10. **Smart install detection** on cache hit (after verification):
+9. **Logs cache status** with detailed debug information
+10. **Installs dependencies** automatically on cache miss or verification failure
+11. **Smart install detection** on cache hit (after verification):
     - **Workspaces**: ALWAYS runs install (needs workspace symlink creation)
     - **Lerna monorepos**: Runs install (needs lerna bootstrap)
     - **Postinstall hooks**: Runs install (needs hook execution)
@@ -72,24 +107,80 @@ None
 
 ### Cache Keys
 
-**yarn:**
+**`cache-key-strategy: dependencies` (default):**
 ```
-${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}-<mode>
-```
-
-**pnpm:**
-```
-${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}-<mode>
+<runner.os>-<runner.arch>-<yarn|pnpm>-deps-<hash>-<mode>
 ```
 
-Cache keys are isolated per package manager — no cross-PM cache pollution.
+`<hash>` comes from [`dependency-cache-key.mjs`](./dependency-cache-key.mjs). It hashes the git-tracked
+files that decide what the install puts in `node_modules`:
+
+- the lockfiles (`yarn.lock` or `pnpm-lock.yaml`, at any depth)
+- `.npmrc`, `.yarnrc`, `.yarnrc.yml`, `pnpm-workspace.yaml`, `.pnpmfile.cjs`
+- every `package.json` outside `node_modules`, reduced to the fields that change the install:
+  `name`, `bin`, `workspaces`, `resolutions`, `overrides`, `pnpm`, `packageManager`,
+  `*DependenciesMeta`, `bundle(d)Dependencies` and the dependency ranges
+
+It ignores `version`, `scripts` and other metadata, and the ranges of dependencies on packages
+that live in the repo (workspaces). So a changesets release, which bumps versions and internal
+ranges, keeps the same key. This is safe because:
+
+- If an internal range stops matching the local package, the package manager installs it from
+  the registry, which changes the lockfile and so the key.
+- Ranges of external dependencies are still hashed, so editing `package.json` without updating
+  the lockfile still misses and `install --frozen-lockfile` fails as before.
+
+Only tracked files count, so files generated before this step (build output, downloaded
+artifacts) cannot change the key. Outside a git checkout the script walks the tree, skipping
+`node_modules`.
+
+**`cache-key-strategy: legacy`:**
+```
+<runner.os>-<runner.arch>-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}-<mode>
+<runner.os>-<runner.arch>-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}-<mode>
+```
+Any `package.json` change, including a version bump, misses.
+
+Both strategies share the restore-key prefix `<runner.os>-<runner.arch>-<yarn|pnpm>-`. A new key
+therefore falls back to the most recent cache of either strategy (followed by the
+[stale cache cleanup](#stale-cache-cleanup-restore-key-fallback)).
 
 This ensures:
-- **Exact match**: Uses cached dependencies if lockfile or package.json unchanged
+- **Exact match**: Uses cached dependencies if the lockfile and dependency fields are unchanged
 - **Partial match**: Uses most recent cache if dependencies changed
 - **Architecture-specific**: Prevents ARM/x86 cache conflicts
-- **Monorepo support**: `**` pattern handles nested workspaces
+- **Monorepo support**: every tracked `package.json` is included
 - **PM-isolated**: `yarn-` vs `pnpm-` prefix prevents cache collisions
+
+### Saving the cache
+
+The action restores with `actions/cache/restore` and, after a miss, saves with `actions/cache/save`
+right after the install (not in a post-job step). The saved cache holds a clean install, and it
+is written even if later steps of the job fail. Whether it saves depends on `save-cache`:
+
+| `save-cache` | Saves after a miss when… | Use for |
+|--------------|---------------------------|---------|
+| `auto` (default) | on the default branch, **or** anywhere when nothing at all was restored (cold miss) | Safe default: repos that warm the cache on main stop saving on PRs. Repos that never run on main still get a cache |
+| `default-branch` | only on the default branch | Repos that run this action on every push to main |
+| `never` | never (restore-only) | Downstream or parallel jobs, so only one job pays the save |
+| `always` | after every miss | The behaviour before this input existed |
+
+`'true'` and `'false'` are accepted as aliases of `always` and `never`. The asdf cache follows the same policy.
+
+**Cache scope.** A PR, and the merge queue (`gh-readonly-queue/...`), can read caches saved on
+its own ref and on the default branch. The default branch cannot read PR caches, and PRs cannot
+read each other's. A PR save only helps later pushes of that same PR, and it fills the 10 GB repo
+quota, which can evict the default-branch entry that every PR relies on.
+
+**Trade-offs.**
+- With `auto` or `default-branch`, a PR that changes dependencies restores the closest older
+  cache and installs the difference on every push, instead of saving once. That is much cheaper
+  than saving a multi-GB cache in every job. Use `always` for a repo where it is not.
+- Right after main changes dependencies, PRs miss until main's run saves the new key.
+- The first run after upgrading misses the exact key once, because the key format changed. The
+  restore-key prefix still restores the old cache, so it is an incremental install, not a cold one.
+- `disable-restore-keys: 'true'` turns every PR miss into a cold miss, which `auto` saves.
+  Pair it with `save-cache: 'default-branch'` if main warms the cache.
 
 ### Stale Cache Cleanup (Restore-Key Fallback)
 
@@ -269,6 +360,12 @@ If you see "❌ Cache MISS" on every run:
 4. **Review cache logs**:
    - Look for "✅ Cache HIT" or "❌ Cache MISS" in workflow logs
    - Check the cache key being used
+
+5. **Check the save policy**:
+   - The log prints `💾 Save policy: <mode> (on default branch: <true|false>)` on a miss
+   - With the default `auto`, PRs do not save when an older cache was restored. Make sure a
+     workflow on the default branch runs this action, or set `save-cache: 'always'`
+   - A job that sets `save-cache: 'never'` never writes the cache
 
 ### Cache Hits But Still Runs Install?
 

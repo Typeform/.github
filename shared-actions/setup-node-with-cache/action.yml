@@ -28,17 +28,86 @@ inputs:
     description: 'Package manager to use: "yarn" or "pnpm"'
     required: false
     default: "yarn"
+  save-cache:
+    description: >
+      When to save the dependency (and asdf) cache after a miss.
+      "auto" saves on the default branch, and elsewhere only when no cache at all was
+      restored (so a repo that never runs this on main still gets a cache).
+      "default-branch" saves only on the default branch (restore-only on PRs and merge queues).
+      "never" is restore-only (use it in downstream/parallel jobs).
+      "always" saves after every miss (the behaviour before this input existed).
+    required: false
+    default: 'auto'
+  cache-key-strategy:
+    description: >
+      "dependencies" keys the cache on the lockfile plus the dependency fields of every
+      package.json, so version bumps (changesets releases) keep hitting the cache.
+      "legacy" keys on hashFiles of the lockfile and every package.json, as before.
+    required: false
+    default: 'dependencies'
+
+outputs:
+  cache-hit:
+    description: '"true" when node_modules was restored from an exact key match'
+    value: ${{ steps.restore-cache.outputs.cache-hit }}
+  cache-key:
+    description: 'Primary key of the dependency cache'
+    value: ${{ steps.cache-key.outputs.key }}
+  cache-matched-key:
+    description: 'Key of the cache that was restored (exact or restore-key match), empty on a cold miss'
+    value: ${{ steps.restore-cache.outputs.cache-matched-key }}
 
 runs:
   using: 'composite'
   steps:
+    # Caches are restored with actions/cache/restore and saved explicitly with
+    # actions/cache/save, so the save (minutes for a multi-GB node_modules) only happens
+    # where it pays off. See the save-cache input and the README.
+    - name: Resolve cache save policy
+      id: save-policy
+      shell: bash
+      env:
+        SAVE_CACHE: ${{ inputs.save-cache }}
+        KEY_STRATEGY: ${{ inputs.cache-key-strategy }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        REF: ${{ github.ref }}
+      run: |
+        case "$SAVE_CACHE" in
+          ''|auto) MODE=auto ;;  # empty: forwarded from an unset reusable-workflow input
+          always|default-branch|never) MODE="$SAVE_CACHE" ;;
+          true) MODE=always ;;
+          false) MODE=never ;;
+          *)
+            echo "::error::save-cache must be one of auto, always, default-branch, never (got '$SAVE_CACHE')"
+            exit 1
+            ;;
+        esac
+        case "$KEY_STRATEGY" in
+          ''|dependencies|legacy) ;;
+          *)
+            echo "::error::cache-key-strategy must be 'dependencies' or 'legacy' (got '$KEY_STRATEGY')"
+            exit 1
+            ;;
+        esac
+
+        # Some events (e.g. schedule) carry no repository payload: assume main/master.
+        if [ -n "$DEFAULT_BRANCH" ]; then
+          [ "$REF" == "refs/heads/$DEFAULT_BRANCH" ] && ON_DEFAULT=true || ON_DEFAULT=false
+        else
+          case "$REF" in refs/heads/main|refs/heads/master) ON_DEFAULT=true ;; *) ON_DEFAULT=false ;; esac
+        fi
+
+        echo "Cache save policy: $MODE (ref: $REF, default branch: ${DEFAULT_BRANCH:-unknown}, on default branch: $ON_DEFAULT)"
+        echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+        echo "on-default-branch=$ON_DEFAULT" >> "$GITHUB_OUTPUT"
+
     # Cache 1: asdf installations (Node.js and package manager binaries)
     # This cache is separate because it only changes when .tool-versions is updated,
     # which happens infrequently (only when upgrading Node/package manager versions).
     # By caching it separately, we avoid re-downloading binaries on every dependency change.
-    - name: Cache asdf installations
+    - name: Restore asdf installations
       if: ${{ inputs.use-asdf == 'true' && !env.ACT }}
-      uses: actions/cache@v6
+      uses: actions/cache/restore@v6
       id: asdf-cache
       with:
         path: |
@@ -47,11 +116,25 @@ runs:
         key: ${{ runner.os }}-${{ runner.arch }}-asdf-${{ hashFiles('**/.tool-versions') }}
         restore-keys: |
           ${{ runner.os }}-${{ runner.arch }}-asdf-
-    
+
     - name: Set up Node.js with asdf
       if: ${{ inputs.use-asdf == 'true' }}
       uses: asdf-vm/actions/install@v4
-    
+
+    - name: Save asdf installations
+      if: >-
+        ${{ inputs.use-asdf == 'true' && !env.ACT && steps.asdf-cache.outputs.cache-hit != 'true' && (
+          steps.save-policy.outputs.mode == 'always' ||
+          (steps.save-policy.outputs.mode != 'never' && steps.save-policy.outputs.on-default-branch == 'true') ||
+          (steps.save-policy.outputs.mode == 'auto' && steps.asdf-cache.outputs.cache-matched-key == '')
+        ) }}
+      uses: actions/cache/save@v6
+      with:
+        path: |
+          ~/.asdf/installs
+          ~/.asdf/plugins
+        key: ${{ steps.asdf-cache.outputs.cache-primary-key }}
+
     - name: Reshim asdf after cache restore
       if: ${{ inputs.use-asdf == 'true' && steps.asdf-cache.outputs.cache-hit == 'true' }}
       shell: bash
@@ -96,7 +179,8 @@ runs:
         npm config set @typeform:registry https://npm.pkg.github.com/
     
     # Cache 2: package manager dependencies (node_modules and package-manager global cache)
-    # This cache changes whenever package.json or lockfile is modified.
+    # This cache changes whenever the lockfile or a dependency field of a package.json is
+    # modified (see dependency-cache-key.mjs; cache-key-strategy: legacy keys on every package.json).
     # It's separate from the asdf cache so that dependency updates don't invalidate
     # the cached Node.js binaries, making builds more efficient.
     # Note: restore-keys allows partial matches, which can restore stale caches.
@@ -181,27 +265,40 @@ runs:
 
         echo "key-suffix=-$CACHE_MODE" >> $GITHUB_OUTPUT
     
-    - name: Get yarn cache
-      if: ${{ !env.ACT && inputs.package-manager != 'pnpm' }}
-      uses: actions/cache@v6
-      id: yarn-cache
+    - name: Compute dependency cache key
+      id: cache-key
+      if: ${{ !env.ACT }}
+      shell: bash
+      env:
+        PM: ${{ inputs.package-manager == 'pnpm' && 'pnpm' || 'yarn' }}
+        KEY_STRATEGY: ${{ inputs.cache-key-strategy }}
+        KEY_SUFFIX: ${{ steps.cache-paths.outputs.key-suffix || steps.cache-paths-pnpm.outputs.key-suffix }}
+        # Only evaluated for the legacy strategy (&& short-circuits).
+        LEGACY_HASH: ${{ inputs.cache-key-strategy == 'legacy' && (inputs.package-manager == 'pnpm' && hashFiles('**/pnpm-lock.yaml', '**/package.json') || hashFiles('**/yarn.lock', '**/package.json')) || '' }}
+      run: |
+        PREFIX="${RUNNER_OS}-${RUNNER_ARCH}-${PM}-"
+        if [ "${KEY_STRATEGY:-dependencies}" == "legacy" ]; then
+          KEY="${PREFIX}${LEGACY_HASH}${KEY_SUFFIX}"
+        else
+          HASH=$(node "$GITHUB_ACTION_PATH/dependency-cache-key.mjs" "$PM")
+          KEY="${PREFIX}deps-${HASH}${KEY_SUFFIX}"
+        fi
+        echo "Dependency cache key (${KEY_STRATEGY:-dependencies}): $KEY"
+        echo "key=$KEY" >> "$GITHUB_OUTPUT"
+        echo "restore-prefix=$PREFIX" >> "$GITHUB_OUTPUT"
+
+    - name: Restore dependency cache
+      if: ${{ !env.ACT }}
+      uses: actions/cache/restore@v6
+      id: restore-cache
       with:
-        path: ${{ steps.cache-paths.outputs.paths }}
-        key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}${{ steps.cache-paths.outputs.key-suffix }}
-        restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-yarn-', runner.os, runner.arch) || '' }}
-    
-    - name: Get pnpm cache
-      if: ${{ !env.ACT && inputs.package-manager == 'pnpm' }}
-      uses: actions/cache@v6
-      id: pnpm-cache
-      with:
-        path: ${{ steps.cache-paths-pnpm.outputs.paths }}
-        key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}${{ steps.cache-paths-pnpm.outputs.key-suffix }}
-        restore-keys: ${{ inputs.disable-restore-keys != 'true' && format('{0}-{1}-pnpm-', runner.os, runner.arch) || '' }}
+        path: ${{ steps.cache-paths.outputs.paths || steps.cache-paths-pnpm.outputs.paths }}
+        key: ${{ steps.cache-key.outputs.key }}
+        restore-keys: ${{ inputs.disable-restore-keys != 'true' && steps.cache-key.outputs.restore-prefix || '' }}
 
     - name: Debug cache contents
       id: debug-cache
-      if: ${{ !env.ACT && (steps.yarn-cache.outputs.cache-hit == 'true' || steps.pnpm-cache.outputs.cache-hit == 'true') }}
+      if: ${{ !env.ACT && steps.restore-cache.outputs.cache-hit == 'true' }}
       shell: bash
       run: |
         set +e  # Don't exit on error - we want to continue even if find fails
@@ -209,11 +306,7 @@ runs:
         PM="${{ inputs.package-manager }}"
 
         echo "=== 🔍 Cache Debug Info ==="
-        if [ "$PM" == "pnpm" ]; then
-          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}"
-        else
-          echo "Cache key: ${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
-        fi
+        echo "Cache key: ${{ steps.cache-key.outputs.key }}"
         echo ""
     
         echo "=== 📦 Root node_modules Status ==="
@@ -248,7 +341,7 @@ runs:
         set -e  # Re-enable exit on error
     
     - name: Clean stale nested node_modules on restore-key fallback
-      if: ${{ !env.ACT && steps.yarn-cache.outputs.cache-hit != 'true' && steps.pnpm-cache.outputs.cache-hit != 'true' }}
+      if: ${{ !env.ACT && steps.restore-cache.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
         # When actions/cache reports cache-hit != 'true', it means either:
@@ -321,11 +414,10 @@ runs:
         PM="${{ inputs.package-manager }}"
         NEEDS_INSTALL=false
 
+        CACHE_HIT="${{ steps.restore-cache.outputs.cache-hit }}"
         if [ "$PM" == "pnpm" ]; then
-          CACHE_HIT="${{ steps.pnpm-cache.outputs.cache-hit }}"
           INTEGRITY_FILE="node_modules/.modules.yaml"
         else
-          CACHE_HIT="${{ steps.yarn-cache.outputs.cache-hit }}"
           INTEGRITY_FILE="node_modules/.yarn-integrity"
         fi
         
@@ -412,13 +504,14 @@ runs:
       run: |
         PM="${{ inputs.package-manager }}"
 
+        # Read the key from the step output: re-running hashFiles('**/package.json') here,
+        # after the restore, would glob every package.json inside node_modules (~30 s in big repos).
+        CACHE_HIT="${{ steps.restore-cache.outputs.cache-hit }}"
+        CACHE_KEY="${{ steps.cache-key.outputs.key }}"
+        MATCHED_KEY="${{ steps.restore-cache.outputs.cache-matched-key }}"
         if [ "$PM" == "pnpm" ]; then
-          CACHE_HIT="${{ steps.pnpm-cache.outputs.cache-hit }}"
-          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json') }}"
           INSTALL_CMD="pnpm install"
         else
-          CACHE_HIT="${{ steps.yarn-cache.outputs.cache-hit }}"
-          CACHE_KEY="${{ runner.os }}-${{ runner.arch }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}"
           INSTALL_CMD="yarn install"
         fi
 
@@ -437,13 +530,17 @@ runs:
         else
           echo "❌ Cache MISS - Fresh installation required"
           echo "🔍 Looking for key: $CACHE_KEY"
+          if [ -n "$MATCHED_KEY" ]; then
+            echo "♻️ Restored fallback cache: $MATCHED_KEY"
+          fi
           echo ""
           echo "🔄 Decision: WILL run $INSTALL_CMD"
+          echo "💾 Save policy: ${{ steps.save-policy.outputs.mode }} (on default branch: ${{ steps.save-policy.outputs.on-default-branch }})"
         fi
         echo ""
     
     - name: Install Node.js dependencies (yarn)
-      if: ${{ !env.ACT && inputs.package-manager != 'pnpm' && (steps.yarn-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
+      if: ${{ !env.ACT && inputs.package-manager != 'pnpm' && (steps.restore-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
       shell: bash
       run: yarn install --frozen-lockfile --ignore-scripts
       env:
@@ -460,7 +557,7 @@ runs:
         NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
 
     - name: Install Node.js dependencies (pnpm)
-      if: ${{ !env.ACT && inputs.package-manager == 'pnpm' && (steps.pnpm-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
+      if: ${{ !env.ACT && inputs.package-manager == 'pnpm' && (steps.restore-cache.outputs.cache-hit != 'true' || steps.check-install-needed.outputs.needs-install == 'true') }}
       shell: bash
       run: pnpm install --frozen-lockfile --ignore-scripts
       env:
@@ -475,3 +572,23 @@ runs:
         pnpm run postinstall
       env:
         NODE_AUTH_TOKEN: ${{ inputs.GH_TOKEN }}
+
+    # Saved right after install (not in a post-job step), so the cache holds a clean install
+    # and is written even if later steps fail. On a miss this is the slow part of the action,
+    # which is why it is gated by save-cache:
+    #   always         -> every miss
+    #   default-branch -> only on the default branch
+    #   auto           -> default branch, or anywhere when nothing at all was restored
+    #   never          -> restore-only
+    # PR and merge-queue refs can read caches saved on the default branch, never the reverse.
+    - name: Save dependency cache
+      if: >-
+        ${{ !env.ACT && steps.restore-cache.outputs.cache-hit != 'true' && (
+          steps.save-policy.outputs.mode == 'always' ||
+          (steps.save-policy.outputs.mode != 'never' && steps.save-policy.outputs.on-default-branch == 'true') ||
+          (steps.save-policy.outputs.mode == 'auto' && steps.restore-cache.outputs.cache-matched-key == '')
+        ) }}
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ steps.cache-paths.outputs.paths || steps.cache-paths-pnpm.outputs.paths }}
+        key: ${{ steps.cache-key.outputs.key }}
