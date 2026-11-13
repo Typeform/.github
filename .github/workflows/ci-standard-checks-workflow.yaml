@@ -30,12 +30,12 @@ jobs:
     # so don't take a runner for them. A skipped job still satisfies a required check.
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]') }}
     runs-on: [ "${{ inputs.runner }}" ]
-    # A newer event on the same PR supersedes the run in progress. Events without a PR (push,
+    # A newer pull_request event on the same PR supersedes the run in progress. Events without a PR (push,
     # merge_group) get a group of their own, so they are never cancelled or queued. Keep the
     # prefix different from any group a caller sets: an equal group cancels the caller's run.
     concurrency:
-      group: reusable-ci-standard-checks-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
-      cancel-in-progress: true
+      group: reusable-ci-standard-checks-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Check Out Source Code
         uses: actions/checkout@v7
