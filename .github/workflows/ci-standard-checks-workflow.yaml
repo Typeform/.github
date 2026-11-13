@@ -26,13 +26,21 @@ on:
 
 jobs:
   ci-standard-checks:
+    # Must stay a job-level skip: a skipped job passes required checks, a skipped workflow stays pending.
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]') }}
     runs-on: [ "${{ inputs.runner }}" ]
+    # The prefix must differ from any group a caller sets: an equal group cancels the caller's run.
+    concurrency:
+      group: reusable-ci-standard-checks-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Check Out Source Code
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
+        # The runner image has no node on PATH; validate-openapi needs npx (it finds openapi.yaml with -maxdepth 3).
+        if: ${{ hashFiles('openapi.yaml', '*/openapi.yaml', '*/*/openapi.yaml') != '' }}
         with:
           node-version: 20
       - name: CI Standard Checks
