@@ -27,6 +27,10 @@ on:
 jobs:
   ci-standard-checks:
     runs-on: [ "${{ inputs.runner }}" ]
+    # Prefixed so it never matches a caller's workflow-level group (same group at both levels deadlocks).
+    concurrency:
+      group: ci-standard-checks-${{ github.event.pull_request.number || github.sha }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Check Out Source Code
         uses: actions/checkout@v7
