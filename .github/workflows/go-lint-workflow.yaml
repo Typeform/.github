@@ -30,6 +30,11 @@ on:
         type: boolean
         required: false
         default: false
+      lint-on-push:
+        description: "Also run the linter on push events (e.g. merges to main). Off by default: the pull_request run already lints the change. The job is skipped (not missing) on push, so required checks are unaffected."
+        type: boolean
+        required: false
+        default: false
       golangci-lint-version:
         type: string
         required: false
@@ -53,7 +58,7 @@ on:
 
 jobs:
   lint:
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: ${{ github.actor != 'dependabot[bot]' && (github.event_name != 'push' || inputs.lint-on-push) }}
     name: Run linter
     runs-on: 'ubuntu-latest'
 
