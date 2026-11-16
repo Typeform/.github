@@ -71,6 +71,7 @@ jobs:
 | `deploy-command` | Deploy command | `'yarn deploy:preview'` |
 | `turbo-scm-base` | Git SHA for Turbo SCM base comparison (enables `--affected` flag for Turbo monorepos). Sets `TURBO_SCM_BASE` env var on all command steps. | `''` |
 | `turbo-cache` | Share the Turbo task cache across jobs and runs through the GitHub Actions cache ([rharkor/caching-for-turbo](https://github.com/rharkor/caching-for-turbo)). Unchanged packages replay cached outputs instead of re-running | `false` |
+| `save-node-cache` | When the Build job saves the Node dependency cache after a miss: `auto` (on the default branch, or on a cold miss elsewhere), `default-branch`, `never` or `always`. All other jobs restore only, so parallel jobs never race to save the same key. Also trigger on `push` to `main` so PRs have a cache to restore from | `'auto'` |
 | `jarvis-branch` | Jarvis branch to use | `''` |
 | `jarvis-datadog-enabled` | Enable Jarvis Datadog logging | `true` |
 | `jarvis-datadog-env` | Datadog environment | `'staging'` |
