@@ -166,6 +166,14 @@ on:
         description: 'Integration test timeout (minutes)'
         type: number
         default: 20
+      warm-playwright-cache:
+        description: >-
+          Save the Playwright browser cache on main when integration tests do not run here
+          (disabled, or skipped because the tree was verified on its PR). PRs can only read
+          caches from their own ref and the default branch, so without this every PR saves
+          its own ~1 GB copy. Enable in repos whose PR workflow uses integration-test-framework: playwright.
+        type: boolean
+        default: false
       
       # Cypress functional tests
       run-cypress-functional:
@@ -535,6 +543,36 @@ jobs:
           name: integration-test-results-${{ github.run_id }}
           path: playwright-report/
           retention-days: 7
+
+  # Job 3b: keep a Playwright browser cache on main for PRs to restore.
+  # Runs only when the integration-tests job above does not (that job saves the cache itself).
+  # Nothing depends on it, so it never delays or blocks the deploy.
+  warm-playwright-cache:
+    name: 🎭 Warm Playwright cache
+    if: inputs.warm-playwright-cache && github.ref_name == github.event.repository.default_branch && (!inputs.run-integration-tests || needs.check-verification.outputs.verified == 'true')
+    needs: [check-verification]
+    # Same runner as PR integration tests: the cache key includes runner.os and runner.arch.
+    runs-on: ${{ fromJSON(inputs.e2e-runner) }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node with Cache
+        uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          use-asdf: ${{ inputs.use-asdf }}
+          cache-mode: ${{ inputs.cache-mode }}
+          disable-restore-keys: ${{ inputs.disable-restore-keys }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          package-manager: ${{ inputs.package-manager }}
+
+      - name: Setup Playwright
+        uses: Typeform/.github/shared-actions/setup-playwright@v1
+        with:
+          package-manager: ${{ inputs.package-manager }}
+          lookup-only: 'true'
   
   # Job 4: Cypress Functional Tests (runs in parallel with other tests)
   cypress-functional:

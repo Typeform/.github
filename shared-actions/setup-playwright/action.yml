@@ -6,6 +6,10 @@ inputs:
     description: 'Package manager to use: "yarn" or "pnpm"'
     required: false
     default: 'yarn'
+  lookup-only:
+    description: 'Only check whether the cache exists; skip the download on a hit. A miss still installs and saves. Use in cache warm-up jobs, not in jobs that run tests.'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -32,6 +36,7 @@ runs:
         key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright-version.outputs.version }}
         restore-keys: |
           ${{ runner.os }}-${{ runner.arch }}-playwright-
+        lookup-only: ${{ inputs.lookup-only }}
     
     - name: Install Playwright browsers
       if: steps.playwright-cache.outputs.cache-hit != 'true'

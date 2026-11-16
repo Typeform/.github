@@ -20,7 +20,19 @@ Install and cache Playwright browsers with version-specific caching for E2E test
 
 ## Inputs
 
-None - automatically detects Playwright version from `node_modules`
+The Playwright version is detected from `node_modules`.
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `package-manager` | `yarn` | `yarn` or `pnpm` |
+| `lookup-only` | `false` | Only check that the cache exists, skip the download on a hit. A miss still installs and saves. For cache warm-up jobs only. |
+
+## Keep one copy on main
+
+A PR can only restore caches saved on its own ref or on the default branch. If no run on main
+ever calls this action, every PR saves its own ~1 GB copy of the same key, which pushes other caches
+out of the repo's 10 GB. If your deploy workflow skips integration tests on main, set
+`warm-playwright-cache: true` in `frontend-deploy-workflow.yml`.
 
 ## Outputs
 
