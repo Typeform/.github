@@ -38,6 +38,10 @@ on:
         description: 'Disable restore-keys to avoid restoring stale caches'
         type: boolean
         default: false
+      save-node-cache:
+        description: 'When the Build job saves the Node dependency cache after a miss: "auto" (default branch, or a cold miss elsewhere), "default-branch", "never" or "always". Every other job restores only (save-cache: never), so parallel jobs never race to save the same key.'
+        type: string
+        default: 'auto'
       
       # Runner configuration
       runner:
@@ -343,6 +347,7 @@ jobs:
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
+          save-cache: ${{ inputs.save-node-cache }}
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
@@ -442,6 +447,7 @@ jobs:
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
+          save-cache: 'never'
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
@@ -492,6 +498,7 @@ jobs:
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
+          save-cache: 'never'
       
       - name: Setup Jarvis
         uses: Typeform/.github/shared-actions/setup-jarvis@v1
@@ -683,6 +690,7 @@ jobs:
           disable-restore-keys: ${{ inputs.disable-restore-keys }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           package-manager: ${{ inputs.package-manager }}
+          save-cache: 'never'
       
       - name: Download Build Artifacts
         uses: Typeform/.github/shared-actions/download-build-artifacts@v1
