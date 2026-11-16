@@ -546,19 +546,64 @@ jobs:
 
   # Job 3b: keep a Playwright browser cache on main for PRs to restore.
   # Runs only when the integration-tests job above does not (that job saves the cache itself).
-  # Nothing depends on it, so it never delays or blocks the deploy.
+  # Nothing depends on it, so it never blocks the deploy.
+  # Common path (cache already on main): sparse checkout, read the version from the lockfile,
+  # lookup-only check, done. Node, node_modules and browsers are only set up on a miss, or when
+  # the lockfile does not resolve exactly one @playwright/test version.
   warm-playwright-cache:
     name: 🎭 Warm Playwright cache
     if: inputs.warm-playwright-cache && github.ref_name == github.event.repository.default_branch && (!inputs.run-integration-tests || needs.check-verification.outputs.verified == 'true')
     needs: [check-verification]
     # Same runner as PR integration tests: the cache key includes runner.os and runner.arch.
     runs-on: ${{ fromJSON(inputs.e2e-runner) }}
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
-      - name: Check out Git repository
+      - name: Check out lockfiles
         uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            package.json
+            yarn.lock
+            pnpm-lock.yaml
+          sparse-checkout-cone-mode: false
+
+      - name: Read Playwright version from lockfile
+        id: lockfile
+        shell: bash
+        run: |
+          versions=""
+          if [ -f pnpm-lock.yaml ]; then
+            # v6 "  /@playwright/test@1.2.3:", v9 "  '@playwright/test@1.2.3':" (snapshots may add "(peer@x)")
+            versions=$(grep -oE "^ +['/]?@playwright/test@[0-9]+\.[0-9]+\.[0-9]+[^:'(]*" pnpm-lock.yaml | sed -E 's/.*@playwright\/test@//' | sort -u || true)
+          elif [ -f yarn.lock ]; then
+            # yarn v1 '  version "1.2.3"', berry '  version: 1.2.3', under a "@playwright/test@..." entry
+            versions=$(awk '/^[^ #]/ { inpw = ($0 ~ /^"?@playwright\/test@/); next }
+              inpw && /^  version:? / { v=$2; gsub(/"/,"",v); print v; inpw=0 }' yarn.lock | sort -u)
+          fi
+          if [ "$(printf '%s\n' "$versions" | grep -c .)" = "1" ]; then
+            echo "version=$versions" >> "$GITHUB_OUTPUT"
+            echo "✅ Playwright $versions in lockfile"
+          else
+            echo "ℹ️ lockfile does not resolve exactly one @playwright/test version (${versions:-none}); detecting from node_modules"
+          fi
+
+      # Key and path must match setup-playwright exactly: the path is part of the cache version.
+      - name: Check for cache on main
+        id: lookup
+        if: steps.lockfile.outputs.version != ''
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.lockfile.outputs.version }}
+          lookup-only: true
+
+      - name: Check out repository
+        if: steps.lookup.outputs.cache-hit != 'true'
+        shell: bash
+        run: git sparse-checkout disable
 
       - name: Setup Node with Cache
+        if: steps.lookup.outputs.cache-hit != 'true'
         uses: Typeform/.github/shared-actions/setup-node-with-cache@v1
         with:
           node-version: ${{ inputs.node-version }}
@@ -569,6 +614,7 @@ jobs:
           package-manager: ${{ inputs.package-manager }}
 
       - name: Setup Playwright
+        if: steps.lookup.outputs.cache-hit != 'true'
         uses: Typeform/.github/shared-actions/setup-playwright@v1
         with:
           package-manager: ${{ inputs.package-manager }}
