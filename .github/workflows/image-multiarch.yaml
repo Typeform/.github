@@ -51,6 +51,16 @@ on:
         type: string
         required: false
         default: "ci-base-scale-set"
+      cache-from:
+        description: "External cache sources for the build, e.g. type=registry,ref=<registry>/<service>:buildcache"
+        type: string
+        required: false
+        default: ""
+      cache-to:
+        description: "External cache destinations for the build, e.g. type=registry,ref=<registry>/<service>:buildcache,mode=max,image-manifest=true,oci-mediatypes=true"
+        type: string
+        required: false
+        default: ""
 env:
   VERSION_PREFIX: ''
   VERSION_LATEST: latest
@@ -91,6 +101,8 @@ jobs:
             ${{ vars.IMAGE_REGISTRY }}/${{ inputs.service }}:${{env.VERSION_PREFIX}}${{ github.sha }}
           secrets: ${{ secrets.build-secrets }}
           file: ${{ inputs.file }}
+          cache-from: ${{ inputs.cache-from }}
+          cache-to: ${{ inputs.cache-to }}
       - name: Set configured prefix on latest tag
         if: ${{ inputs.prefix != '' }}
         run: echo "VERSION_LATEST=$(echo ${{inputs.prefix}}-$VERSION_LATEST)" >> $GITHUB_ENV
